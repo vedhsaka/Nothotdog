@@ -1,0 +1,71 @@
+.configuration-component {
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .configuration-component h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #333;
+  }
+  
+  .option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    border-bottom: 1px solid #eaeaea;
+  }
+  
+  .option:last-child {
+    border-bottom: none;
+  }
+  
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    color: #555;
+  }
+  
+  .checkbox-label input {
+    margin-right: 10px;
+  }
+  
+  .buttons {
+    display: flex;
+    margin-top: 20px;
+  }
+  
+  .button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    margin: 0 10px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .button.primary {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .button.secondary {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  .button.primary:hover {
+    background-color: #0056b3;
+  }
+  
+  .button.secondary:hover {
+    background-color: #5a6268;
+  }
+  

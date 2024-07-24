@@ -1,0 +1,60 @@
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  /* Modal Content */
+  .modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    color: black;
+    position: relative;
+    border: 1px solid #888;
+    max-width: 400px;
+    width: 100%;
+  }
+  
+  /* Close Button */
+  .close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #f0f0f0;
+    cursor: pointer;
+  }
+  
+  /* Button in Modal Content */
+  .modal-content .button {
+    margin-top: 20px;
+  }
+
+  .modal-header {
+    padding: 0 5px 0 15px;
+  }
+
+  .modal-body {
+    padding: 20px 15px 20px 15px;
+  }
+
+  .modal-header h2 {
+    margin: auto;
+    padding: 10px 0;
+  }
+  
+.modal-content input {
+  width: 60%;
+  margin-left: 10px;
+}

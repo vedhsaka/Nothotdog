@@ -1,0 +1,79 @@
+.recorded-tests {
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .recorded-tests h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #333;
+  }
+  
+  .error {
+    color: red;
+    margin-bottom: 20px;
+  }
+  
+  .tests-table {
+    width: 100%;
+    border-collapse: collapse;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .tests-table th,
+  .tests-table td {
+    border: 1px solid #ddd;
+    padding: 12px 15px;
+    text-align: left;
+  }
+  
+  .tests-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+    color: #555;
+    text-transform: uppercase;
+  }
+  
+  .tests-table tr {
+    transition: background-color 0.3s ease;
+  }
+  
+  .tests-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  .tests-table tr:hover {
+    background-color: #e9f0fe;
+  }
+  
+  .tests-table td {
+    color: #333;
+    font-size: 14px;
+  }
+  
+  .tests-table audio {
+    width: 100%;
+    outline: none;
+  }
+  
+
+  audio {
+    height: 30px;
+  }
+
+  .button.delete {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .button.delete:hover {
+    background-color: #ff1a1a;
+  }

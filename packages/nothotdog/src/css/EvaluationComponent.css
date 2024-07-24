@@ -1,0 +1,470 @@
+.evaluation-component {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 20px;
+  margin: 0 auto;
+  max-width: 1300px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.input-group, .action-group, .transcript-box {
+  margin-bottom: 20px;
+}
+
+.label {
+  font-size: 16px;
+  color: #333;
+}
+
+.input, .file-input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
+.button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+.button-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.button.primary, .primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.button.secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.button.primary:hover {
+  background-color: #0056b3;
+}
+
+.button.secondary:hover {
+  background-color: #5a6268;
+}
+
+.button.evaluate-button {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.button.evaluate-button:hover {
+  background-color: #e0a800;
+}
+
+.error-box {
+  color: red;
+  margin-top: 10px;
+}
+
+.transcript-box {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: auto;
+}
+
+.transcript-box h3 {
+  margin-bottom: 20px;
+}
+
+.conversations {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.conversation-row {
+  display: grid;
+  grid-template-columns: auto 1fr 1.5fr 2fr 1fr 1fr auto; /* Adjusted widths to accommodate delete button */
+  align-items: self-start; /* Vertically align items */
+  gap: 20px;
+  padding: 35px 15px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative; /* Added for positioning the delete button */
+}
+
+.delete-row-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #dc3545;
+  transition: color 0.3s ease;
+}
+
+.delete-row-button:hover {
+  color: #c82333;
+}
+
+.audio-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.audio-label {
+  margin-top: 5px;
+  font-size: 14px;
+  color: #555;
+}
+
+.input-audio, .output-audio {
+  width: 100%; /* Full width for audio sections */
+}
+
+.conditions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.condition-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 10px;
+}
+
+.evaluation-section select, .phrase-section input {
+  width: 100%; /* Full width for select and input */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.evaluate-section {
+  display: flex;
+  align-items: center;
+}
+
+.result-section {
+  display: flex;
+  align-items: center;
+}
+
+.result-indicator {
+  border-radius: 4px;
+  font-size: 14px;
+  color: white;
+  margin-left: 10px; /* Spacing between evaluate button and result */
+  text-align: center;
+}
+
+.result-indicator.pass {
+  padding: 5px 10px;
+  background-color: rgb(211, 240, 228);
+  color: rgb(76, 175, 80);
+  border: 1px solid green;
+}
+
+.result-indicator.fail {
+  padding: 10px;
+  background-color: rgb(253, 220, 222);
+  color: maroon;
+  border: 1px solid red;
+}
+
+audio {
+  width: 200px;
+}
+
+.button.secondary {
+  background-color: #6c757d; /* Gray */
+  color: #ffffff; /* White */
+}
+
+.button.secondary:hover {
+  background-color: #5a6268; /* Darker Gray */
+}
+
+.add-row-button {
+  margin: 15px;
+  padding: 3px;
+  font-size: 20px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  background-color: #808080;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.add-row-button:hover {
+  background-color: #0056b3;
+}
+
+.add-condition-button {
+  padding: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  background-color: WHITE;
+  border: 1px solid hsl(211, 100%, 50%);
+  color: #007bff;
+  transition: background-color 0.3s ease;
+  width: 120px;
+}
+
+.add-condition-button:hover {
+  background-color: #0056b3;
+  color: white;
+}
+
+.delete-condition-button {
+  padding: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  background-color: white;
+  color: gray;
+  border: 1px solid gray;
+  transition: background-color 0.3s ease;
+}
+
+.delete-condition-button:hover {
+  background-color: gray;
+  color: white;
+}
+
+select {
+  padding: 6px;
+}
+
+input {
+  padding: 6px;
+}
+
+/* CSS for aligning buttons and input side by side */
+.action-buttons {
+  display: flex;
+  gap: 1.2rem; /* Adjust the gap as needed */
+  align-items: baseline !important;
+}
+
+.file-upload-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* Adjust the gap as needed */
+}
+
+.file-input {
+  display: inline-block;
+}
+  .input-group {
+    margin: 10px auto;
+    text-align: center;
+    border: 1px solid #ddd; /* Light gray border */
+    box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.12), 
+    0 1px 2px rgba(0, 0, 0, 0.24); 
+    width: 600px;
+    padding: 30px;
+    border-radius: 8px; /* Rounded corners for a softer look */
+    background-color: #fff; /* Ensuring the box is white */
+    width: 400px;
+  }
+
+
+.input-group input, .input-group .button-group {
+  margin: 10px auto;
+}
+.input-group input {
+  width: 65%;
+}
+
+
+.action-group {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; /* Align items to the top */
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+
+.left-action,
+.right-action {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.file-upload-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+
+
+.upload-button {
+  background-color: #6c757d;
+  color: white;
+}
+
+.upload-button:hover {
+  background-color: #5a6268;
+}
+
+.button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  border: 1px solid #ccc;
+  color: black;
+
+}
+
+.file-input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  width: 100%;
+}
+
+
+.description {
+  display: block;
+  font-size: 12px;
+  color: #777; /* Less prominent color */
+  margin: 15px auto;
+  max-width: 230px; /* Wrap to the width of the buttons */
+}
+
+
+.dropdown-upload-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.dropdown {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.semi-primary {
+  background-color: WHITE;
+  border: 1px solid hsl(211, 100%, 50%);
+  color: #007bff;
+}
+
+.semi-primary:hover {
+  background-color: #0056b3;
+  color: white;
+}
+
+.latency-row {
+  grid-column: 1 / -1; /* Span across all columns */
+  justify-self: start; /* Align the content to the start of the grid */
+  padding-top: 20px; /* Add some padding to separate from the existing content */
+  color: #333;
+  font-size: 14px;
+  color: #777;
+  text-align: left;
+  
+}
+
+.top-left-button {
+  top: 10px;
+  left: 10px;
+}
+
+.add-group-button {
+  color: white;
+  background-color: inherit;
+  border: none;
+  padding: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  width: 20px;
+}
+
+.group-form {
+  margin-top: 10px;
+}
+
+.group-form input {
+  padding: 5px;
+  margin-right: 5px;
+}
+
+/* LHS SIdeBar */
+.evaluation-container {
+  display: flex;
+}
+
+.tg-sidebar {
+  width: 250px !important;
+  background-color: #f4f4f4;
+  padding: 20px;
+  border-right: 1px solid #ddd;
+  position: fixed;
+  height: 100%;
+}
+
+.tg-sidebar h3 {
+  margin-top: 0;
+}
+
+.tg-sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.tg-sidebar ul li {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #ddd;
+}
+
+.tg-sidebar ul li:hover {
+  background-color: #ddd;
+}
+
+.evaluation-component {
+  padding: 20px;
+  width: calc(100% - 250px);
+}

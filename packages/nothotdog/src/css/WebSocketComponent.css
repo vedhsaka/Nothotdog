@@ -1,0 +1,153 @@
+/* General styles for the WebSocket component */
+.websocket-component {
+  flex: 1;
+  padding: 1rem;
+  margin: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.input-group {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  margin-bottom: 0.5rem;
+}
+
+.input {
+  padding: 0.5rem;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.button {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 14px;
+  border: none;
+  transition: background-color 0.3s;
+}
+
+.button.primary {
+  background-color: #3c82f6; /* Blue color */
+  color: white;
+}
+
+.button.primary:hover:not(:disabled) {
+  background-color: #2a5fb3;
+}
+
+.button.disabled {
+  background-color: #6c757d; /* Grey color */
+  color: white;
+  cursor: not-allowed;
+}
+
+.error-box {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background-color: #fff3cd; /* Yellow background */
+  color: #856404; /* Dark yellow text */
+  border: 1px solid #ffeeba;
+  border-radius: 5px;
+  max-width: 400px;
+}
+
+.action-group {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.file-input {
+  margin-top: 10px;
+}
+
+.transcript-box {
+  margin-top: 2rem;
+  width: 90%;
+  border: 1px solid #ddd;
+  padding: 1rem;
+  border-radius: 5px;
+  background-color: white;
+  height: fit-content;
+  overflow-y: auto;
+}
+
+.transcripts {
+  max-height: 200px;
+  overflow-y: auto;
+  text-align: left;
+  padding: 0.5rem;
+  border: 1px solid #eee;
+  border-radius: 5px;
+  background-color: #f1f1f1;
+}
+
+.transcripts p {
+  margin: 0;
+  padding: 0.5rem;
+}
+
+
+.transcript {
+  background-color: #f3f6fd;
+  border: 1px solid #e2e0f3;
+  padding: 1rem;
+  border-radius: 5px;
+  color: black;
+  width: 50%;
+  position: relative;
+  right: 10px;
+  margin: 50px 15px 0 20px;
+}
+
+/* audio {
+  width: 40%;
+  vertical-align: middle;
+} */
+
+
+.right-side {
+  width: 50%;
+  float: right;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin-right: 20px;
+}
+
+
+/* Temporarily moving modal css here */
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.file-input {
+  margin-left: 10px;
+  width: 60%;
+}

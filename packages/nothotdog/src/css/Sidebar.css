@@ -1,0 +1,136 @@
+.horizontal-sidebar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #000408;
+  padding: 10px 20px;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.horizontal-sidebar .tab-button {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: #a0a0a0;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 15px;
+  height: 100%;
+  cursor: pointer;
+  transition: color 0.3s ease, border-bottom 0.3s ease;
+  position: relative;
+}
+
+.horizontal-sidebar .tab-button .tab-icon {
+  width: 25px;
+  height: 25px;
+  margin-right: 8px;
+  filter: brightness(0) saturate(100%) invert(70%) sepia(0%) saturate(0%) hue-rotate(143deg) brightness(90%) contrast(87%);
+  transition: filter 0.3s ease;
+}
+
+.tab-button:hover .tab-icon,
+.tab-button.active .tab-icon {
+  filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(143deg) brightness(102%) contrast(101%);
+}
+
+.tab-button::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background-color: #4a90e2;
+  transition: width 0.3s ease;
+}
+
+.tab-button:hover {
+  color: #ffffff;
+}
+
+.tab-button.active {
+  color: #ffffff;
+}
+
+.tab-button.active::after {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .horizontal-sidebar {
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+
+  .tab-button {
+    flex-shrink: 0;
+  }
+}
+
+.horizontal-sidebar .sidebar-left,.horizontal-sidebar  .sidebar-right {
+  flex: 1;
+}
+
+.horizontal-sidebar .sidebar-center {
+  flex: 2;
+  display: flex;
+  justify-content: space-around;
+}
+
+.horizontal-sidebar  .flame-header {
+  display: flex;
+  align-items: center;
+}
+
+.flame-icon {
+  width: 35px;
+  height: max-content;
+  margin-right: 10px;
+}
+
+.tab-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+.tab-icon {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 5px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-info span {
+  margin-right: 10px;
+}
+
+.horizontal-sidebar .button {
+  padding: 5px 10px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.horizontal-sidebar h1 {
+  color: white;
+}
