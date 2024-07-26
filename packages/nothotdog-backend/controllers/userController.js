@@ -1,9 +1,9 @@
-const UserModel = require('../models/userModel');
+import { createUser, getUser, updateUser, deleteUser } from '../models/userModel.js';
 
-exports.createUser = async (req, res) => {
+export const create = async (req, res) => {
   try {
     const { uuid, createdAt, invitedProjectId } = req.body;
-    const result = await UserModel.createUser(uuid, createdAt, invitedProjectId);
+    const result = await createUser(uuid, createdAt, invitedProjectId);
     res.status(201).json(result);
   } catch (error) {
     console.log(error);
@@ -11,31 +11,31 @@ exports.createUser = async (req, res) => {
   }
 };
 
-exports.getUser = async (req, res) => {
+export const getAll = async (req, res) => {
   try {
     const userId = req.header("userId");
-    const user = await UserModel.getUser(userId);
+    const user = await getUser(userId);
     res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching user', error: error.message });
   }
 };
 
-exports.updateUser = async (req, res) => {
+export const update = async (req, res) => {
   try {
     const userId = req.header("userId");
     const updateData = req.body;
-    const updatedUser = await UserModel.updateUser(userId, updateData);
+    const updatedUser = await updateUser(userId, updateData);
     res.status(200).json(updatedUser);
   } catch (error) {
     res.status(500).json({ message: 'Error updating user', error: error.message });
   }
 };
 
-exports.deleteUser = async (req, res) => {
+export const remove = async (req, res) => {
   try {
     const userId = req.user.id;
-    await UserModel.deleteUser(userId);
+    await deleteUser(userId);
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting user', error: error.message });
