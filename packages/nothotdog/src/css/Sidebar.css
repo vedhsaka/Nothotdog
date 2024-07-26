@@ -59,6 +59,7 @@
 
 .tab-button.active {
   color: #ffffff;
+  padding-bottom: 10px;
 }
 
 .tab-button.active::after {

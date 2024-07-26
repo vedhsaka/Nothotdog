@@ -18,8 +18,8 @@ const Sidebar = ({ setActiveTab, activeTab, user, signIn, signOut }) => {
     <nav className="horizontal-sidebar">
       <div className="sidebar-left">
         <div className="flame-header">
-          <img src={flameIcon} alt="Flame" className="flame-icon" />
-          <h1>Flame</h1>
+          {/* <img src={flameIcon} alt="Flame" className="flame-icon" /> */}
+          <h1>NotHotDog</h1>
         </div>
       </div>
       

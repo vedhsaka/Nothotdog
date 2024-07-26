@@ -60,7 +60,7 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onVoice
         })
       });
 
-      if (response.ok) {
+      if (response.data) {
         setNewGroupDescription('');
         setShowAddGroup(false);
         fetchVoiceData(); // Refresh the list of groups
