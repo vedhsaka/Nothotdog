@@ -1,29 +1,30 @@
-const { supabase } = require('../server');
-const VoiceModel = require('../models/voiceModel');
-const ProjectModel = require("../models/projectModel");
-const GroupModel = require("../models/groupModel");
-const UserModel = require("../models/userModel");
+import { saveVoice, getVoices, deleteVoice, testVoice } from '../models/voiceModel.js';
+import { getProjectById, getProjects } from "../models/projectModel.js";
+import { getGroupById } from "../models/groupModel.js";
+import { getUser } from "../models/userModel.js";
+import Buffer from 'buffer'; 
 
-exports.saveVoice = async (req, res) => {
+
+export const save = async (req, res) => {
     try {
         let group_id = null;
         const { description, audioBase64, projectId, groupId, checks, sequence } = req.body;
         const userId = req.get("userId"); // Assuming you have middleware setting req.user
-        const user = await UserModel.getUser(userId);
+        const user = await getUser(userId);
         let order = 1;
         if (!audioBase64) {
             return res.status(400).json({ message: 'No audio data provided' });
         }
         if (groupId != null) {
-            group = await GroupModel.getGroupById(groupId);
+            const group = await getGroupById(groupId);
             group_id = group.id;
             order = sequence;
         } 
-        project = await ProjectModel.getProjectById(projectId);
+        const project = await getProjectById(projectId);
 
         // Convert base64 to Buffer
         const audioBinary = Buffer.from(audioBase64, 'base64');
-        const { data, error } = await VoiceModel.saveVoice(user.id, description, audioBinary, project.id, group_id, checks, order);
+        const { data, error } = await saveVoice(user.id, description, audioBinary, project.id, group_id, checks, order);
 
         if (error) throw error;
 
@@ -33,14 +34,14 @@ exports.saveVoice = async (req, res) => {
     }
 };
 
-exports.getVoices = async (req, res) => {
+export const getAll = async (req, res) => {
     try {
         const userId = req.get("userId"); // Assuming you have middleware setting req.user
-        const user = await UserModel.getUser(userId);
-        const projects = await ProjectModel.getProjects(user.id);
+        const user = await getUser(userId);
+        const projects = await getProjects(user.id);
         
         const projectsWithVoices = await Promise.all(projects.map(async (project) => {
-            const { data: voices, error } = await VoiceModel.getVoices(project.id);
+            const { data: voices, error } = await getVoices(project.id);
             if (error) throw error;
       
             return {
@@ -57,11 +58,11 @@ exports.getVoices = async (req, res) => {
     }
 };
 
-exports.deleteVoice = async (req, res) => {
+export const remove = async (req, res) => {
     try {
       const userId = "temp"; // Assuming you have middleware setting req.user
       const { uuid } = req.params; // Assuming voiceId is passed as a URL parameter
-      const result = await VoiceModel.deleteVoice(userId, uuid);
+      const result = await deleteVoice(userId, uuid);
       res.status(200).json(result);
     } catch (error) {
       console.error('Error in deleteVoice:', error);
@@ -73,7 +74,7 @@ exports.deleteVoice = async (req, res) => {
     }
   };
 
-exports.testVoice = async (req, res) => {
+export const test = async (req, res) => {
     try {
         const { audioBase64, checks } = req.body;
 
@@ -81,7 +82,7 @@ exports.testVoice = async (req, res) => {
         return res.status(400).json({ message: 'No audio data provided' });
         }
 
-        const result = await VoiceModel.testVoice(audioBase64, checks);
+        const result = await testVoice(audioBase64, checks);
         res.status(200).json(result);
     } catch (error) {
         console.error('Error in testVoice:', error);
