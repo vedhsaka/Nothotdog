@@ -468,3 +468,9 @@ input {
   padding: 20px;
   width: calc(100% - 250px);
 }
+.group-evaluate {
+  width: 60%;
+  float: right;
+  display: flex;
+  align-items: center;
+}

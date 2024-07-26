@@ -84,7 +84,7 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onVoice
   const renderGroups = (project) => {
     return project.voices[0].groups.map(group => (
       <li key={group.uuid} className="group-item">
-        <div onClick={() => handleGroupClick(group)} className="group-header">
+        <div className="group-header" onClick={() => handleGroupClick(group)}>
           <span className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>▶</span>
           {group.name}
         </div>

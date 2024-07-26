@@ -193,3 +193,26 @@
 .add-group-buttons button:last-child:hover {
   background-color: grey;
 }
+
+/* TestGroupSideBar.css */
+.evaluate-all-btn {
+  margin: 10px;
+  padding: 5px 10px;
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.evaluation-status {
+  color: #ff4d4d;
+  font-weight: bold;
+  margin: 10px;
+}
+
+/* EvaluationComponent.css */
+.fail-status {
+  color: red;
+  font-weight: bold;
+}
