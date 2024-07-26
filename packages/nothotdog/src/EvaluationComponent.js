@@ -723,23 +723,26 @@ const EvaluationComponent = () => {
       <hr />
       <div className="transcript-box">
        <h3>Conversations</h3>
-       <div className="group-evaluation-section">
+
+       {selectedGroup && (
+          <div className="group-evaluation-section">
           <div>{selectedGroup ? `Selected Group: ${selectedGroup.name}` : 'No group selected'}</div>
-          <div class="group-evaluate">
-            <button 
-              className="button semi-primary" 
-              onClick={handleEvaluateAll}
-              disabled={!selectedGroup}
-            >
-              Evaluate All
-            </button>
-            {evaluationStatus && (
-              <div className="evaluation-status">
-                Evaluation Status: <span className="result-indicator fail">{evaluationStatus}</span>
-              </div>
-            )}
-          </div>
+            <div class="group-evaluate">
+              <button 
+                className="button semi-primary" 
+                onClick={handleEvaluateAll}
+                disabled={!selectedGroup}
+              >
+                Evaluate All
+              </button>
+              {evaluationStatus && (
+                <div className="evaluation-status">
+                  Evaluation Status: <span className="result-indicator fail">{evaluationStatus}</span>
+                </div>
+              )}
+            </div>
         </div>
+        )}
   
   <button className="add-row-button" onClick={addConversationRow}>+</button>
   <DragDropContext onDragEnd={onDragEnd}>
