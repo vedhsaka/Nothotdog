@@ -1,5 +1,5 @@
 // groupModel.js
-const supabase = require('../supabaseClient.js');
+import { supabase } from '../supabaseClient.js';
 
 class GroupModel {
   static async createGroup(projectId, name) {
