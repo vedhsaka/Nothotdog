@@ -12,6 +12,8 @@ const Sidebar = ({ setActiveTab, activeTab, user, signIn, signOut }) => {
     { name: 'Recorded Tests', icon: voiceTests },
     { name: 'Configuration', icon: settings },
     { name: 'Evaluation', icon: flame },
+    { name: 'Rest Evaluation', icon: flame },
+
   ];
 
   return (

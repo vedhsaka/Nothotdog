@@ -1,0 +1,216 @@
+/* PostmanLikeStyles.css */
+
+.postman-like-form {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    background-color: #202020;
+    color: #f0f0f0;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .postman-like-form .request-line {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .postman-like-form .method-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #3c3c3c;
+    color: white;
+    padding: 0.5rem 2rem 0.5rem 1rem;
+    border-radius: 0.25rem 0 0 0.25rem;
+    border: 1px solid #4a4a4a;
+    font-size: 0.875rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1.5em 1.5em;
+    min-width: 100px;
+  }
+  
+  .postman-like-form .url-input {
+    flex-grow: 1;
+    background-color: #3c3c3c;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: 1px solid #4a4a4a;
+    border-left: none;
+    font-size: 0.875rem;
+  }
+  
+  .postman-like-form .send-button {
+    display: flex;
+    align-items: center;
+    background-color: #4a90e2;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0 0.25rem 0.25rem 0;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .postman-like-form .send-button:hover {
+    background-color: #3b82f6;
+  }
+  
+  .postman-like-form .send-icon {
+    margin-left: 0.5rem;
+  }
+  
+  .postman-like-form .tabs {
+    display: flex;
+    border-bottom: 1px solid #4a4a4a;
+    margin-bottom: 1rem;
+  }
+  
+  .postman-like-form .tab-button {
+    background: none;
+    border: none;
+    color: #f0f0f0;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    border-bottom: 2px solid transparent;
+  }
+  
+  .postman-like-form .tab-button:hover {
+    border-bottom: 2px solid #6b7280;
+  }
+  
+  .postman-like-form .tab-button.active {
+    border-bottom: 2px solid #3b82f6;
+  }
+  
+  .postman-like-form .section-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .postman-like-form .params-section,
+  .postman-like-form .body-section {
+    margin-top: 1rem;
+  }
+  
+  .postman-like-form .param-headers,
+  .postman-like-form .param-inputs {
+    display: flex;
+    margin-bottom: 0.5rem;
+  }
+  
+  .postman-like-form .param-headers div,
+  .postman-like-form .param-inputs input {
+    flex: 1;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .postman-like-form .param-input {
+    background-color: #3c3c3c;
+    color: white;
+    border: 1px solid #4a4a4a;
+    border-radius: 0.25rem;
+    margin-right: 0.5rem;
+  }
+  
+  .postman-like-form .param-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+  
+  .postman-like-form .add-param-button {
+    background: none;
+    border: none;
+    color: #4a90e2;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 0.5rem;
+  }
+  
+  .postman-like-form .add-param-button:hover {
+    color: #3b82f6;
+  }
+  
+  .postman-like-form .body-type-options {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  
+  .postman-like-form .radio-label {
+    display: flex;
+    align-items: center;
+    margin-right: 1rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  
+  .postman-like-form .radio-input {
+    margin-right: 0.25rem;
+  }
+  
+  .postman-like-form .body-format {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+  }
+  
+  .postman-like-form .body-format-select {
+    background-color: #3c3c3c;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #4a4a4a;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+  }
+  
+  .postman-like-form .body-textarea {
+    width: 100%;
+    height: 8rem;
+    background-color: #3c3c3c;
+    color: white;
+    padding: 0.5rem;
+    border: 1px solid #4a4a4a;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    resize: vertical;
+  }
+  
+  .postman-like-form .body-textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+.postman-like-form .response-section {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #2c2c2c;
+    border-radius: 0.25rem;
+  }
+  
+  .postman-like-form .response-section h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .postman-like-form .response-section h4 {
+    font-size: 0.875rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .postman-like-form .response-section pre {
+    background-color: #1c1c1c;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    overflow-x: auto;
+    font-size: 0.75rem;
+  }

@@ -4,6 +4,7 @@ import WebSocketComponent from './WebSocketComponent';
 import RecordedTests from './RecordedTestsComponent';
 import ConfigurationComponent from './ConfigurationComponent';
 import EvaluationComponent from './EvaluationComponent';
+import RestEvaluationComponent from './RestEvaluationComponent';
 import Sidebar from './Sidebar';
 import { AuthProvider, useAuth } from './AuthContext';
 
@@ -21,6 +22,8 @@ function AppContent() {
         return <ConfigurationComponent />;
       case 'Evaluation':
         return <EvaluationComponent />;
+      case 'Rest Evaluation':
+        return <RestEvaluationComponent />;
       default:
         return <div>Select a tab</div>;
     }

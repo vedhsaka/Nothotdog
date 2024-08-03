@@ -6,6 +6,8 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onInput
   const [expandedGroups, setExpandedGroups] = useState({});
   const [showAddGroup, setShowAddGroup] = useState(false);
   const [newGroupDescription, setNewGroupDescription] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchVoiceData();
@@ -20,8 +22,11 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onInput
       });
       const data = await response;
       setVoiceData(data.data);
+      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching voice data:', error);
+      setError('Failed to fetch voice data.');
+      setIsLoading(false);
     }
   };
 
@@ -108,6 +113,14 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onInput
     ));
   };
 
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
   return (
     <div className="test-group-sidebar">
       <div className="sidebar-header">
@@ -126,7 +139,7 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onInput
           />
           <div className="add-group-buttons">
             <button onClick={handleAddGroup}>Save</button>
-            <button onClick={() => setShowAddGroup(false)}>X</button>
+            <button onClick={() => setShowAddGroup(false)}>Cancel</button>
           </div>
         </div>
       )}
