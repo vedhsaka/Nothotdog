@@ -112,7 +112,7 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onVoice
         <br/>
 
       </div>
-      <button className="add-group-btn" onClick={() => setShowAddGroup(true)}>+</button>
+      <button className="add-group-btn" onClick={() => setShowAddGroup(true)}>+New Test Group</button>
 
 
       {showAddGroup && (
