@@ -2,14 +2,10 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const projectController = require('../controllers/projectController');
-const voiceController = require('../controllers/voiceController');
+const inputController = require('../controllers/inputController');
 const groupController = require('../controllers/groupController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// // Example route
-// router.get('/test', (req, res) => {
-//     res.json({ message: 'API is working!' });
-// });
 
 router.post('/users', userController.createUser);
 router.get('/user', userController.getUser);
@@ -26,10 +22,10 @@ router.post('/groups', groupController.createGroup);
 router.get('/groups/:project_id', groupController.getGroups);
 // router.put('/groups/:id', groupController.updateGroup);
 
-router.post('/voices', voiceController.saveVoice); // Note the correction here
-router.get('/voices', voiceController.getVoices);
-router.delete('/voices/:uuid', voiceController.deleteVoice);
-router.post('/test-voices', voiceController.testVoice);
+router.post('/inputs', inputController.saveInput); // Note the correction here
+router.get('/inputs', inputController.getInputs);
+router.delete('/inputs/:uuid', inputController.deleteInput);
+router.post('/test-inputs', inputController.testInput);
 
 
 
