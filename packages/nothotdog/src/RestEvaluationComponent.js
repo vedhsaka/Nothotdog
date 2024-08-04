@@ -7,7 +7,7 @@ import useAuthFetch from './AuthFetch';
 import fetchTests from './fetchTests';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import TestGroupSidebar from './TestGroupSideBar';
-import APIConnectionForm from './APIConnectionForm';
+import APIRequestForm from './APIConnectionForm';
 import { SaveTestModal, SignInModal } from './UtilityModals';
 
 
@@ -336,7 +336,7 @@ const RestEvaluationComponent = () => {
         onVoiceSelect={handleVoiceSelect}
       />
       <div className="evaluation-component">
-        <APIConnectionForm 
+        <APIRequestForm 
           url={url}
           authToken={authToken}
           queryParams={queryParams}
