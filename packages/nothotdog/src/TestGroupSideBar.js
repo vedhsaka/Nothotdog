@@ -13,7 +13,7 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onVoice
 
   const fetchVoiceData = async () => {
     try {
-      const response = await authFetch('api/voices/', {
+      const response = await authFetch('api/inputs/', {
         headers: {
           'userId': userId
         }

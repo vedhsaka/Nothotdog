@@ -78,7 +78,7 @@ const EvaluationComponent = () => {
   const handleGroupSelect = (group) => {
     setSelectedGroup(group);
     clearConversationRows();
-    group.voices.forEach(voice => loadVoiceAsConversationRow(voice));
+    group.inputs.forEach(input => loadVoiceAsConversationRow(input));
   };
 
   const handleEvaluateAll = () => {
@@ -378,13 +378,14 @@ const EvaluationComponent = () => {
   
       const data = {
         description: description,
-        audioBase64: base64Audio,
+        content: base64Audio,
         projectId: projectId, // Static or dynamic project ID
         checks: checks,
+        type: "voice",
         sequence: Number(selectedIndex + 1)
       };
   
-      const response = await authFetch('api/voices', {
+      const response = await authFetch('api/inputs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -419,7 +420,7 @@ const EvaluationComponent = () => {
         checks[evaluationMapping[evalType]] = phrase[idx];
       });
 
-      const response = await authFetch('api/test-voices', {
+      const response = await authFetch('api/test-inputs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -427,6 +428,7 @@ const EvaluationComponent = () => {
         body: JSON.stringify({
           audioBase64: base64Audio,
           checks,
+          inputType: "voice"
         }),
       });
 

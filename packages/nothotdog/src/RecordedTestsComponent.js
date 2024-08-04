@@ -10,7 +10,7 @@ const RecordedTests = () => {
   useEffect(() => {
     const fetchTests = async () => {
       try {
-        const response = await authFetch('api/voices/');
+        const response = await authFetch('api/inputs/');
         const data = await response;
         setProjects(data.data);
       } catch (err) {
@@ -32,7 +32,10 @@ const RecordedTests = () => {
         setProjects((prevProjects) =>
           prevProjects.map((project) => ({
             ...project,
-            voices: project.voices.filter((voice) => voice.uuid !== uuid),
+            groups: project.groups.map((group) => ({
+              ...group,
+              inputs: group.inputs.filter((input) => input.uuid !== uuid),
+            })),
           }))
         );
       } else {
@@ -69,19 +72,26 @@ const RecordedTests = () => {
           {projects.map((project) => (
             <React.Fragment key={project.uuid}>
               <tr>
-                <td colSpan="6" className="project-name"> <h4> {project.name}</h4></td>
+                <td colSpan="6" className="project-name"><h4>{project.name}</h4></td>
               </tr>
-              {project.voices.map((voice) => (
-                <tr key={voice.uuid}>
-                  <td></td>
-                  <td>{voice.created_by}</td>
-                  <td>{voice.description}</td>
-                  <td>{voice.file_name}</td>
-                  <td><AudioPlayer audioBase64={voice.audioBase64} /></td>
-                  <td>
-                    <button className="button delete" onClick={() => handleDelete(voice.uuid)}>Delete</button>
-                  </td>
-                </tr>
+              {project.groups.map((group) => (
+                <React.Fragment key={group.uuid}>
+                  <tr>
+                    <td colSpan="6" className="group-name"><h5>{group.name}</h5></td>
+                  </tr>
+                  {group.inputs.map((input) => (
+                    <tr key={input.uuid}>
+                      <td></td>
+                      <td>{input.created_by}</td>
+                      <td>{input.description}</td>
+                      <td>{input.file_name}</td>
+                      <td><AudioPlayer audioBase64={input.audioBase64} /></td>
+                      <td>
+                        <button className="button delete" onClick={() => handleDelete(input.uuid)}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
               ))}
             </React.Fragment>
           ))}

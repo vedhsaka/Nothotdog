@@ -3,6 +3,7 @@ import './css/WebSocketComponent.css';
 import './Components/Modal.css';
 import ModalComponent from './Components/ModalComponent';
 import { useAuth } from './AuthContext';
+import useAuthFetch from './AuthFetch';
 
 const WebSocketComponent = () => {
   const { user, signIn } = useAuth(); // Correctly get user and signIn from useAuth
@@ -23,7 +24,7 @@ const WebSocketComponent = () => {
   const [description, setDescription] = useState('');
   const [showSignInModal, setShowSignInModal] = useState(false);
   const { projectId } = useAuth();
-
+  const authFetch = useAuthFetch(); // Use the custom hook
 
   const AudioPlayer = ({ audioBlob }) => {
     const [url, setUrl] = useState(null);
@@ -182,15 +183,19 @@ const WebSocketComponent = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64Audio = reader.result.split(',')[1];
-      const response = await fetch('api/voices', {
+      const response = await authFetch('api/inputs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           description,
-          audioBase64: base64Audio,
-          projectId: projectId // Static or dynamic project ID
+          content: base64Audio,
+          type: "voice",
+          projectId: projectId, // Static or dynamic project ID,
+          groupId: null,
+          checks: {},
+          sequence: 1
 
         }),
       });

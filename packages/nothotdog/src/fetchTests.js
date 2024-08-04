@@ -2,7 +2,7 @@ import { b64toBlob } from './utils'; // You can create a utility function for b6
 
 const fetchTests = async (authFetch, setTests, setError) => {
   try {
-    const response = await authFetch('api/voices/');
+    const response = await authFetch('api/inputs/');
     const data = response;
 
     const allVoices = data.data.flatMap(project => {
