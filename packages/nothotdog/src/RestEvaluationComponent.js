@@ -51,26 +51,6 @@ const RestEvaluationComponent = () => {
     clearConversationRows();
     group.inputs.filter(input => input.input_type === 'text').forEach(text => loadTextAsConversationRow(text));
   };
-
-  const clearConversationRows = () => {
-    setInputs([]);
-    setOutputs([]);
-    setEvaluations([]);
-    setPhrases([]);
-    setResults([]);
-    setLatencies([]);
-  };
-
-  const loadTextAsConversationRow = (text) => {
-    const checks = text.checks || {};
-    const evaluationTypes = Object.keys(checks).map(key => {
-      const mappedType = evaluationMapping[key];
-      return mappedType || 'exact_match';
-    });
-    const phraseValues = Object.values(checks);
-    updateStateArrays(text.text_content, null, evaluationTypes, phraseValues, null);
-  };
-
   const handleEvaluate = async (index) => {
     const evaluation = evaluations[index];
     const phrase = phrases[index];
@@ -159,6 +139,25 @@ const RestEvaluationComponent = () => {
     }
   };
 
+
+  const handleTextSelect = (text) => {
+    clearConversationRows();
+    loadTextAsConversationRow(text);
+  };
+  
+  const loadTextAsConversationRow = (text) => {
+    const textId = Date.now() + Math.random(); // Generate a unique ID
+    const checks = text.checks || {};
+    const evaluationTypes = Object.keys(checks).map(key => {
+      const mappedType = evaluationMapping[key];
+      return mappedType || 'exact_match'; // Default to 'exact_match' if no mapping found
+    });
+    const phraseValues = Object.values(checks);
+    
+    // Update state arrays with text content
+    updateStateArrays(textId, text.content, null, evaluationTypes, phraseValues, null);
+  };
+
   const handlePhraseChange = useCallback((index, conditionIndex, value) => {
     setPhrases(prevPhrases => {
       const newPhrases = [...prevPhrases];
@@ -230,13 +229,22 @@ const RestEvaluationComponent = () => {
     setLatencies(prev => reorder(prev, result.source.index, result.destination.index));
   };
 
-  const updateStateArrays = (input, endTime, evaluation, phrase, result) => {
-    setInputs(prev => [...prev, input]);
-    setOutputs(prev => [...prev, '']);
+  const updateStateArrays = (id, inputText, outputText, evaluation, phrase, result) => {
+    setInputs(prev => [...prev, inputText]);
+    setOutputs(prev => [...prev, outputText]);
     setEvaluations(prev => [...prev, evaluation]);
     setPhrases(prev => [...prev, phrase]);
     setResults(prev => [...prev, result]);
-    setLatencies(prev => [...prev, { startTime: endTime, latency: null }]);
+    setLatencies(prev => [...prev, { startTime: null, latency: null }]);
+  };
+  
+  const clearConversationRows = () => {
+    setInputs([]);
+    setOutputs([]);
+    setEvaluations([]);
+    setPhrases([]);
+    setResults([]);
+    setLatencies([]);
   };
 
   return (
@@ -247,6 +255,7 @@ const RestEvaluationComponent = () => {
         projectId={projectId}
         authFetch={authFetch} 
         userId={userId}
+        onInputSelect={handleTextSelect}
       />
       <div className="evaluation-component">
         <APIRequestForm 
