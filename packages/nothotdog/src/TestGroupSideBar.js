@@ -144,4 +144,30 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onInput
   );
 };
 
+const AudioPlayer = ({ audioBase64 }) => {
+  let audioUrl;
+
+  try {
+    if (audioBase64 && typeof audioBase64 === 'string' && isValidBase64(audioBase64)) {
+      audioUrl = `data:audio/wav;base64,${audioBase64}`;
+    } else {
+      throw new Error('Invalid base64 string');
+    }
+  } catch (error) {
+    console.error('Failed to decode base64 audio:', error);
+    audioUrl = ''; // Provide a fallback or leave it empty
+  }
+
+  return <audio controls src={audioUrl} />;
+};
+
+// Utility function to check if a string is valid base64
+const isValidBase64 = (str) => {
+  try {
+    return btoa(atob(str)) === str;
+  } catch (err) {
+    return false;
+  }
+};
+
 export default TestGroupSidebar;

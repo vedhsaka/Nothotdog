@@ -1,25 +1,25 @@
-import { b64toBlob } from './utils'; // You can create a utility function for b64toBlob if needed
+import { b64toBlob } from './utils';
 
 const fetchTests = async (authFetch, setTests, setError) => {
   try {
     const response = await authFetch('api/inputs/');
     const data = response;
 
-    const allVoices = data.data.flatMap(project => {
-      const projectVoices = project.voices.flatMap(voice => voice.voices.map(v => ({
-        ...v,
-        audioBlob: b64toBlob(v.audioBase64, 'audio/webm'),
+    const allInputs = data.data.flatMap(project => {
+      const projectInputs = project.inputs.map(input => ({
+        ...input,
+        audioBlob: input.input_type === 'voice' ? b64toBlob(input.audioBase64, 'audio/webm') : null,
+      }));
+
+      const groupInputs = project.groups.flatMap(group => group.inputs.map(input => ({
+        ...input,
+        audioBlob: input.input_type === 'voice' ? b64toBlob(input.audioBase64, 'audio/webm') : null,
       })));
 
-      const groupVoices = project.voices.flatMap(voice => voice.groups.flatMap(group => group.voices.map(v => ({
-        ...v,
-        audioBlob: b64toBlob(v.audioBase64, 'audio/webm'),
-      }))));
-
-      return [...projectVoices, ...groupVoices];
+      return [...projectInputs, ...groupInputs];
     });
 
-    setTests(allVoices);
+    setTests(allInputs);
   } catch (err) {
     setError('Failed to fetch recorded tests');
     console.error('Fetch error:', err);

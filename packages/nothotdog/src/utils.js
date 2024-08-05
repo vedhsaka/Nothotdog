@@ -1,7 +1,7 @@
 export const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
+  try {
     const byteCharacters = atob(b64Data);
     const byteArrays = [];
-  
     for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
       const slice = byteCharacters.slice(offset, offset + sliceSize);
   
@@ -16,7 +16,11 @@ export const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
   
     const blob = new Blob(byteArrays, { type: contentType });
     return blob;
-  };
+  } catch (error) {
+    console.error("Failed to convert base64 to blob:", error);
+    return null; // or throw an error, depending on how you want to handle it
+  }
+};
 
   export const capitalizeFirstLetter = (string) => {
     return string.charAt(0).toUpperCase() + string.slice(1);

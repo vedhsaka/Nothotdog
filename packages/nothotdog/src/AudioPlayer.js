@@ -9,10 +9,16 @@ const AudioPlayer = ({ audioId }) => {
 
     const fetchAudio = async () => {
       if (audioId) {
-        const audioBlob = await getAudio(audioId);
-        if (audioBlob) {
-          objectURL = URL.createObjectURL(audioBlob);
-          setUrl(objectURL);
+        try {
+          const audioBlob = await getAudio(audioId);
+          if (audioBlob) {
+            objectURL = URL.createObjectURL(audioBlob);
+            setUrl(objectURL);
+          } else {
+            console.error("Audio blob is null or undefined");
+          }
+        } catch (error) {
+          console.error("Failed to fetch audio:", error);
         }
       }
     };
