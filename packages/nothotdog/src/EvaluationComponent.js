@@ -89,7 +89,7 @@ const EvaluationComponent = () => {
       alert("Please select a group first");
       return;
     }
-    // Mock evaluation
+    // Mock evaluationF
     setEvaluationStatus('Evaluating...');
     setTimeout(() => {
       setEvaluationStatus('FAIL');

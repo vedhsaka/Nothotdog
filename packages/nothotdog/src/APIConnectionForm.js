@@ -459,18 +459,18 @@ const APIRequestForm = () => {
       </div>
 
       <div className="form-sections">
-        <div className="section params-section">
+        <div className="section params-section api-form">
           <h3>Query Params</h3>
           {params.map((param, index) => (
             <div key={index} className="input-group">
               <input
-                className="input"
+                className="input key"
                 value={param.key}
                 onChange={(e) => updateParam(index, 'key', e.target.value)}
                 placeholder="Key"
               />
               <input
-                className="input"
+                className="input value"
                 value={param.value}
                 onChange={(e) => updateParam(index, 'value', e.target.value)}
                 placeholder="Value"
@@ -482,7 +482,7 @@ const APIRequestForm = () => {
           </button>
         </div>
 
-        <div className="section headers-section">
+        <div className="section headers-section api-form">
           <h3>Headers</h3>
           {headers.map((header, index) => (
             <div key={index} className="input-group">

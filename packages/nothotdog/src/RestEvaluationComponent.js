@@ -1,20 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './css/EvaluationComponent.css';
 import './Components/Modal.css';
-import ModalComponent from './Components/ModalComponent';
 import { useAuth } from './AuthContext';
 import useAuthFetch from './AuthFetch';
-import fetchTests from './fetchTests';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import TestGroupSidebar from './TestGroupSideBar';
 import APIRequestForm from './APIConnectionForm';
 import { SaveTestModal, SignInModal } from './UtilityModals';
-
-
-import { 
-  capitalizeFirstLetter,
-  evaluationMapping
-} from './utils';
+import ConversationRow from './ConversationRow';
+import { capitalizeFirstLetter, evaluationMapping } from './utils';
 
 const StrictModeDroppable = ({ children, ...props }) => {
   const [enabled, setEnabled] = useState(false);
@@ -33,178 +27,97 @@ const StrictModeDroppable = ({ children, ...props }) => {
 
 const RestEvaluationComponent = () => {
   const { user, signIn, projectId, userId } = useAuth();
+  const authFetch = useAuthFetch();
 
-  const [transcripts, setTranscripts] = useState([]);
+  const [inputs, setInputs] = useState([]);
+  const [outputs, setOutputs] = useState([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState('');
   const [url, setUrl] = useState('');
   const [authToken, setAuthToken] = useState('');
-  const [bodyParams, setBodyParams] = useState('{}'); // Default to an empty JSON object
+  const [bodyParams, setBodyParams] = useState('{}');
   const [queryParams, setQueryParams] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [description, setDescription] = useState('');
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [evaluations, setEvaluations] = useState([]); // Array of arrays
-  const [phrases, setPhrases] = useState([]); // Array of arrays
-  const [results, setResults] = useState([]);
-  const authFetch = useAuthFetch(); // Use the custom hook
-
-  const [tests, setTests] = useState([]);
-  const [selectedTest, setSelectedTest] = useState(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [description, setDescription] = useState('');
+  const [evaluations, setEvaluations] = useState([]);
+  const [phrases, setPhrases] = useState([]);
+  const [results, setResults] = useState([]);
   const [latencies, setLatencies] = useState([]);
-  const [testGroups, setTestGroups] = useState([]);
-
-  const [evaluationStatus, setEvaluationStatus] = useState('');
   const [selectedGroup, setSelectedGroup] = useState(null);
-
-  const handleSaveGroup = async (data) => {
-    return await authFetch('api/groups', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-  };
+  const [selectedIndex, setSelectedIndex] = useState(null);
 
   const handleGroupSelect = (group) => {
     setSelectedGroup(group);
     clearConversationRows();
-    group.voices.forEach(voice => loadVoiceAsConversationRow(voice));
-  };
-
-  const handleEvaluateAll = () => {
-    if (!selectedGroup) {
-      alert("Please select a group first");
-      return;
-    }
-    // Mock evaluation
-    setEvaluationStatus('Evaluating...');
-    setTimeout(() => {
-      setEvaluationStatus('FAIL');
-    }, 1000); // Simulate a delay
-  };
-
-  const handleVoiceSelect = (voice) => {
-    clearConversationRows();
-    loadVoiceAsConversationRow(voice);
+    group.inputs.filter(input => input.input_type === 'text').forEach(text => loadTextAsConversationRow(text));
   };
 
   const clearConversationRows = () => {
-    setTranscripts([]);
+    setInputs([]);
+    setOutputs([]);
     setEvaluations([]);
     setPhrases([]);
     setResults([]);
     setLatencies([]);
   };
 
-  const loadVoiceAsConversationRow = (voice) => {
-    const audioId = Date.now() + Math.random(); // Generate a unique ID
-    const checks = voice.checks || {};
+  const loadTextAsConversationRow = (text) => {
+    const checks = text.checks || {};
     const evaluationTypes = Object.keys(checks).map(key => {
       const mappedType = evaluationMapping[key];
-      return mappedType || 'exact_match'; // Default to 'exact_match' if no mapping found
+      return mappedType || 'exact_match';
     });
     const phraseValues = Object.values(checks);
-    updateStateArrays(audioId, null, evaluationTypes, phraseValues, null);
-    setTranscripts(prev => [...prev, voice.transcript]);
-  };
-
-  const handleUrlChange = (e) => {
-    setUrl(e.target.value);
-  };
-
-  const handleAuthTokenChange = (e) => {
-    setAuthToken(e.target.value);
-  };
-
-  const handleBodyParamsChange = (e) => {
-    setBodyParams(e.target.value);
-  };
-
-  const handleQueryParamsChange = (e) => {
-    setQueryParams(e.target.value);
-  };
-
-  const handleSaveTest = (audioId) => {
-    if (!user) {
-      localStorage.setItem('audioId', JSON.stringify(audioId));
-      setShowSignInModal(true);
-      return;
-    }
-    setShowModal(true);
+    updateStateArrays(text.text_content, null, evaluationTypes, phraseValues, null);
   };
 
   const handleSave = (index) => {
-    setDescription(''); // Reset description to empty string
+    setDescription('');
     setSelectedIndex(index);
     setShowSaveModal(true);
-  }; 
-  
+  };
+
   const saveTest = async () => {
-    if (description.trim() === '') {
-      alert('Please provide a description.');
-      setShowSaveModal(false);
+    if (description.trim() === '' || selectedIndex === null) {
+      alert('Please provide a description and select a test to save.');
       return;
     }
-  
-    if (selectedIndex === null) {
-      alert('No test selected for saving.');
-      setShowSaveModal(false);
-      return;
-    }
-  
+
     const checks = {};
-  
     evaluations[selectedIndex].forEach((evalType, idx) => {
       checks[evaluationMapping[evalType]] = phrases[selectedIndex][idx];
     });
-  
+
     const data = {
       description,
-      transcript: transcripts[selectedIndex],
-      projectId: projectId,
-      checks: checks,
+      content: inputs[selectedIndex],
+      projectId,
+      checks,
+      input_type: "text",
       sequence: Number(selectedIndex + 1)
     };
-  
-    const response = await authFetch('api/voices', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-  
-    if (response.ok) {
-      console.log('Test saved successfully');
-      setDescription(''); // Clear description after saving
-      setShowSaveModal(false); // Close modal
-    } else {
-      console.error('Failed to save the test');
+
+    try {
+      const response = await authFetch('api/inputs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        console.log('Test saved successfully');
+        setDescription('');
+        setShowSaveModal(false);
+      } else {
+        console.error('Failed to save the test');
+      }
+    } catch (error) {
+      console.error('Error saving test:', error);
     }
   };
 
   const handleEvaluate = async (index) => {
-    const evaluation = evaluations[index];
-    const phrase = phrases[index];
-
-    const checks = {};
-
-    evaluation.forEach((evalType, idx) => {
-      checks[evaluationMapping[evalType]] = phrase[idx];
-    });
-
-    const body = {
-      description: description,
-      audioBase64: 'Uk1GRjIAAABXQVZFZm10IBIAAAABAAEA....', // Placeholder
-      projectId: projectId,
-      groupId: selectedGroup ? selectedGroup.uuid : '',
-      checks,
-    };
-
     const startTime = new Date().getTime();
 
     try {
@@ -214,23 +127,33 @@ const RestEvaluationComponent = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ ...JSON.parse(bodyParams), input: inputs[index] }),
       });
 
       const endTime = new Date().getTime();
-      const latency = endTime - startTime;
+      const result = await response.text();
 
-      const result = await response.json();
+      setOutputs(prev => {
+        const newOutputs = [...prev];
+        newOutputs[index] = result;
+        return newOutputs;
+      });
 
-      const newResults = [...results];
-      newResults[index] = result.test_result; // Assuming the API returns a "test_result" field with "Pass" or "Fail"
-      setResults(newResults);
-
-      setLatencies((prev) => {
+      setLatencies(prev => {
         const newLatencies = [...prev];
-        newLatencies[index] = { startTime, latency };
+        newLatencies[index] = { startTime, latency: endTime - startTime };
         return newLatencies;
       });
+
+      // Perform evaluations here based on the output and phrases
+      // This is a placeholder and should be replaced with actual evaluation logic
+      const evaluationResult = 'pass'; // or 'fail' based on your evaluation logic
+      setResults(prev => {
+        const newResults = [...prev];
+        newResults[index] = evaluationResult;
+        return newResults;
+      });
+
     } catch (error) {
       console.error('Failed to evaluate the test:', error);
       setError('Failed to evaluate the test. Please check the URL and try again.');
@@ -238,7 +161,7 @@ const RestEvaluationComponent = () => {
   };
 
   const handlePhraseChange = useCallback((index, conditionIndex, value) => {
-    setPhrases((prevPhrases) => {
+    setPhrases(prevPhrases => {
       const newPhrases = [...prevPhrases];
       newPhrases[index][conditionIndex] = value;
       return newPhrases;
@@ -246,20 +169,21 @@ const RestEvaluationComponent = () => {
   }, []);
 
   const handleDeleteRow = (index) => {
-    setTranscripts((prev) => prev.filter((_, i) => i !== index));
-    setEvaluations((prev) => prev.filter((_, i) => i !== index));
-    setPhrases((prev) => prev.filter((_, i) => i !== index));
-    setResults((prev) => prev.filter((_, i) => i !== index));
-    setLatencies((prev) => prev.filter((_, i) => i !== index));
+    setInputs(prev => prev.filter((_, i) => i !== index));
+    setOutputs(prev => prev.filter((_, i) => i !== index));
+    setEvaluations(prev => prev.filter((_, i) => i !== index));
+    setPhrases(prev => prev.filter((_, i) => i !== index));
+    setResults(prev => prev.filter((_, i) => i !== index));
+    setLatencies(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDeleteCondition = (rowIndex, conditionIndex) => {
-    setEvaluations((prevEvaluations) => {
+    setEvaluations(prevEvaluations => {
       const newEvaluations = [...prevEvaluations];
       newEvaluations[rowIndex].splice(conditionIndex, 1);
       return newEvaluations;
     });
-    setPhrases((prevPhrases) => {
+    setPhrases(prevPhrases => {
       const newPhrases = [...prevPhrases];
       newPhrases[rowIndex].splice(conditionIndex, 1);
       return newPhrases;
@@ -267,7 +191,7 @@ const RestEvaluationComponent = () => {
   };
 
   const addCondition = (index) => {
-    setEvaluations((prev) => {
+    setEvaluations(prev => {
       const newEvaluations = [...prev];
       if (!Array.isArray(newEvaluations[index])) {
         newEvaluations[index] = [];
@@ -275,7 +199,7 @@ const RestEvaluationComponent = () => {
       newEvaluations[index] = [...newEvaluations[index], ''];
       return newEvaluations;
     });
-    setPhrases((prev) => {
+    setPhrases(prev => {
       const newPhrases = [...prev];
       if (!Array.isArray(newPhrases[index])) {
         newPhrases[index] = [];
@@ -286,17 +210,8 @@ const RestEvaluationComponent = () => {
   };
 
   const addConversationRow = () => {
-    updateStateArrays(null, null, [], [], null);
+    updateStateArrays('', null, [], [], null);
   };
-
-  useEffect(() => {
-    fetchTests(authFetch, setTests, setError);
-    const storedAudioId = localStorage.getItem('audioId');
-    if (storedAudioId) {
-      setShowSignInModal(true);
-      localStorage.removeItem('audioId');
-    }
-  }, []); // make sure this useEffect block runs only once on mount
 
   const onDragEnd = (result) => {
     if (!result.destination) return;
@@ -308,32 +223,31 @@ const RestEvaluationComponent = () => {
       return result;
     };
 
-    setTranscripts((prev) => reorder(prev, result.source.index, result.destination.index));
-    setEvaluations((prev) => reorder(prev, result.source.index, result.destination.index));
-    setPhrases((prev) => reorder(prev, result.source.index, result.destination.index));
-    setResults((prev) => reorder(prev, result.source.index, result.destination.index));
-    setLatencies((prev) => reorder(prev, result.source.index, result.destination.index));
+    setInputs(prev => reorder(prev, result.source.index, result.destination.index));
+    setOutputs(prev => reorder(prev, result.source.index, result.destination.index));
+    setEvaluations(prev => reorder(prev, result.source.index, result.destination.index));
+    setPhrases(prev => reorder(prev, result.source.index, result.destination.index));
+    setResults(prev => reorder(prev, result.source.index, result.destination.index));
+    setLatencies(prev => reorder(prev, result.source.index, result.destination.index));
   };
 
-  const updateStateArrays = (audioId, endTime, evaluation, phrase, result) => {
-    setTranscripts((prev) => [...prev, '']);
-    setEvaluations((prev) => [...prev, evaluation]);
-    setPhrases((prev) => [...prev, phrase]);
-    setResults((prev) => [...prev, result]);
-    setLatencies((prev) => [...prev, { startTime: endTime, latency: null }]);
+  const updateStateArrays = (input, endTime, evaluation, phrase, result) => {
+    setInputs(prev => [...prev, input]);
+    setOutputs(prev => [...prev, '']);
+    setEvaluations(prev => [...prev, evaluation]);
+    setPhrases(prev => [...prev, phrase]);
+    setResults(prev => [...prev, result]);
+    setLatencies(prev => [...prev, { startTime: endTime, latency: null }]);
   };
 
   return (
     <div className="evaluation-container">
       <TestGroupSidebar 
-        testGroups={testGroups} 
-        onSelectGroup={handleGroupSelect} 
-        onGroupSelect={handleGroupSelect} 
-        onSaveGroup={handleSaveGroup}
+        testGroups={[]} // You may need to fetch and pass the actual test groups
+        onSelectGroup={handleGroupSelect}
         projectId={projectId}
         authFetch={authFetch} 
         userId={userId}
-        onVoiceSelect={handleVoiceSelect}
       />
       <div className="evaluation-component">
         <APIRequestForm 
@@ -352,25 +266,6 @@ const RestEvaluationComponent = () => {
         <hr />
         <div className="transcript-box">
           <h3>Conversations</h3>
-          {selectedGroup && (
-            <div className="group-evaluation-section">
-              <div>{selectedGroup ? `Selected Group: ${selectedGroup.name}` : 'No group selected'}</div>
-              <div className="group-evaluate">
-                <button 
-                  className="button semi-primary" 
-                  onClick={handleEvaluateAll}
-                  disabled={!selectedGroup}
-                >
-                  Evaluate All
-                </button>
-                {evaluationStatus && (
-                  <div className="evaluation-status">
-                    Evaluation Status: <span className="result-indicator fail">{evaluationStatus}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
           <button className="add-row-button" onClick={addConversationRow}>+</button>
           <DragDropContext onDragEnd={onDragEnd}>
             <StrictModeDroppable droppableId="droppable-conversations">
@@ -380,18 +275,19 @@ const RestEvaluationComponent = () => {
                   {...provided.droppableProps}
                   ref={provided.innerRef}
                 >
-                  {transcripts.map((transcript, rowIndex) => (
+                  {inputs.map((input, rowIndex) => (
                     <Draggable
                       key={rowIndex}
-                      draggableId={`transcript-${rowIndex}`}
+                      draggableId={`input-${rowIndex}`}
                       index={rowIndex}
                     >
                       {(provided) => (
                         <ConversationRow
                           rowIndex={rowIndex}
-                          transcript={transcript}
-                          transcripts={transcripts}
-                          setTranscripts={setTranscripts}
+                          input={input}
+                          output={outputs[rowIndex]}
+                          setInputs={setInputs}
+                          setOutputs={setOutputs}
                           evaluations={evaluations}
                           setEvaluations={setEvaluations}
                           phrases={phrases}
@@ -404,6 +300,9 @@ const RestEvaluationComponent = () => {
                           handleSave={handleSave}
                           results={results}
                           latencies={latencies}
+                          dragHandleProps={provided.dragHandleProps}
+                          draggableProps={provided.draggableProps}
+                          ref={provided.innerRef}
                         />
                       )}
                     </Draggable>
@@ -415,8 +314,8 @@ const RestEvaluationComponent = () => {
           </DragDropContext>
         </div>
         <SaveTestModal
-          showModal={showModal}
-          setShowModal={setShowModal}
+          showModal={showSaveModal}
+          setShowModal={setShowSaveModal}
           description={description}
           setDescription={setDescription}
           saveTest={saveTest}
@@ -428,7 +327,7 @@ const RestEvaluationComponent = () => {
         />
       </div>
     </div>
-  );  
+  );
 };
 
 export default RestEvaluationComponent;
