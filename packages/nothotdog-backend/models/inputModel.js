@@ -8,8 +8,19 @@ class InputModel {
     static async saveInput(userId, description, inputType, content, project_id, group_id, checks, sequence) {
         if (group_id !== null) {
           await this.validateSequence(group_id, sequence);
+          // Check if the group already has inputs and if their type matches the new input
+          const { data: existingInputs, error: fetchError } = await supabase
+            .from('collections')
+            .select('input_type')
+            .eq('group_id', group_id)
+            .limit(1);
+          
+          if (fetchError) throw fetchError;
+          
+          if (existingInputs.length > 0 && existingInputs[0].input_type !== inputType) {
+            throw new Error(`Type mismatch with existing inputs in the group. The group contains ${existingInputs[0].input_type} inputs. Please create a new group for ${inputType} inputs.`);
+          }
         }
-
         let fileName = null;
         let textContent = null;
         let audioBase64 = null;
