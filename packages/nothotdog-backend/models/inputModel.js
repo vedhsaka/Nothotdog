@@ -12,6 +12,7 @@ class InputModel {
 
         let fileName = null;
         let textContent = null;
+        let audioBase64 = null;
 
         if (inputType == "voice") {
 
@@ -24,6 +25,8 @@ class InputModel {
               .upload("public/"+fileName, audioBlob);
 
           if (fileError) throw fileError;
+          audioBase64 = content;
+
         } else if (inputType === 'text') {
           textContent = content;
         } else {
@@ -49,7 +52,14 @@ class InputModel {
             .select();
 
         if (error) throw error;
-        return { data };
+
+        const standardizedOutput = {
+          ...data[0],
+          
+          content: inputType === 'voice' ? audioBase64 : textContent
+        };
+        delete standardizedOutput.text_content;
+        return { data: [standardizedOutput] };
     }
 
     static async getInputs(projectId) {
@@ -59,9 +69,9 @@ class InputModel {
         .select('*')
         .eq('id', projectId)
         .single();
-    
+  
       if (projectError) throw projectError;
-    
+  
       // Fetch inputs directly associated with the project
       const { data: projectInputs, error: inputsError } = await supabase
         .from('collections')
@@ -69,57 +79,74 @@ class InputModel {
         .eq('project_id', projectId)
         .is('group_id', null)
         .order('created_at');
-    
+  
       if (inputsError) throw inputsError;
-    
+  
       // Fetch groups associated with the project
       const { data: groups, error: groupsError } = await supabase
         .from('groups')
         .select('*')
         .eq('project_id', projectId)
         .order('created_at');
-    
+  
       if (groupsError) throw groupsError;
-    
-      // Fetch inputs for each group
+  
+      // Standardize inputs
+      const standardizeInput = async (input) => {
+        const standardizedInput = { ...input };
+        if (input.input_type === 'voice') {
+          standardizedInput.content = await this.getAudioBase64(input.file_name);
+        } else {
+          standardizedInput.content = input.text_content;
+        }
+        delete standardizedInput.text_content;
+        delete standardizedInput.file_name;
+        return standardizedInput;
+      };
+  
+      // Fetch and standardize inputs for each group
       const groupsWithInputs = await Promise.all(groups.map(async (group) => {
         const { data: groupInputs, error: groupInputsError } = await supabase
           .from('collections')
           .select('*')
           .eq('group_id', group.id)
           .order('sequence');
-    
+  
         if (groupInputsError) throw groupInputsError;
-
-        const processedInputs = await Promise.all(groupInputs.map(async (input) => {
-            if (input.input_type === 'voice') {
-                input.audioBase64 = await this.getAudioBase64(input.file_name);
-            }
-            return input;
-        }));
-
+  
+        const standardizedGroupInputs = await Promise.all(groupInputs.map(standardizeInput));
+  
         return {
           ...group,
-          inputs: processedInputs
+          inputs: standardizedGroupInputs
         };
       }));
-
-      // Add audio to project Inputs
-      const processedProjectInputs = await Promise.all(projectInputs.map(async (input) => {
-        if (input.input_type === 'voice') {
-            input.audioBase64 = await this.getAudioBase64(input.file_name);
-        }
-        return input;
-      }));
-    
+  
+      // Standardize project inputs
+      const standardizedProjectInputs = await Promise.all(projectInputs.map(standardizeInput));
+  
       // Combine all data
       const result = {
         ...project,
-        inputs: processedProjectInputs,
+        inputs: standardizedProjectInputs,
         groups: groupsWithInputs
       };
-    
-      return result;
+  
+      return { data: [result] };
+    }
+  
+    // Helper method to get audio as base64
+    static async getAudioBase64(fileName) {
+      if (!fileName) return null;
+      
+      const { data: audioBlob, error: audioError } = await supabase.storage
+        .from('audio')
+        .download(`public/${fileName}`);
+  
+      if (audioError) throw audioError;
+  
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      return Buffer.from(arrayBuffer).toString('base64');
     }
     
     // Helper method to get audio as base64
