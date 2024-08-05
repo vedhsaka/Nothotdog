@@ -78,7 +78,10 @@ const EvaluationComponent = () => {
   const handleGroupSelect = (group) => {
     setSelectedGroup(group);
     clearConversationRows();
-    group.voices.forEach(voice => loadVoiceAsConversationRow(voice));
+    // Filter and process only voice inputs
+    group.inputs
+      .filter(input => input.input_type === 'voice')
+      .forEach(voice => loadVoiceAsConversationRow(voice));
   };
 
   const handleEvaluateAll = () => {
