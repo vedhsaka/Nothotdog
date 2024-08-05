@@ -7,7 +7,7 @@ const UserModel = require("../models/userModel");
 exports.saveInput = async (req, res) => {
     try {
         let group_id = null;
-        const { description, type, content, projectId, groupId, checks, sequence } = req.body;
+        const { description, inputType, content, projectId, groupId, checks, sequence } = req.body;
         const userId = req.get("userId"); // Assuming you have middleware setting req.user
         const user = await UserModel.getUser(userId);
         let order = 1;
@@ -21,7 +21,7 @@ exports.saveInput = async (req, res) => {
         } 
         project = await ProjectModel.getProjectById(projectId);
 
-        const { data, error } = await InputModel.saveInput(user.id, description, type, content, project.id, group_id, checks, order);
+        const { data, error } = await InputModel.saveInput(user.id, description, inputType, content, project.id, group_id, checks, order);
 
         if (error) throw error;
 
