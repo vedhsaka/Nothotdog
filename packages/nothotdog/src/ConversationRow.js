@@ -50,8 +50,6 @@ const ConversationRow = React.forwardRef(({
     });
   };
 
-  const isOutputEditable = !output || (typeof output === 'string' && output.trim() === '');
-
   return (
     <div className="conversation-row" ref={ref} {...draggableProps}>
       <div className="drag-handle" {...dragHandleProps}>⋮</div>
@@ -71,8 +69,7 @@ const ConversationRow = React.forwardRef(({
           <textarea
             value={output}
             onChange={handleOutputChange}
-            readOnly={!isOutputEditable}
-            placeholder={isOutputEditable ? "Enter expected output" : "API output will appear here"}
+            placeholder="Enter expected output or API output will appear here"
             className="output-textarea"
           />
           <span className="output-label">Output</span>

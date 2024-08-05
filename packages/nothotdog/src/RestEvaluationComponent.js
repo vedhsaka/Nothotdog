@@ -72,63 +72,40 @@ const RestEvaluationComponent = () => {
   };
 
   const handleEvaluate = async (index) => {
-    const startTime = new Date().getTime();
-
+    const evaluation = evaluations[index];
+    const phrase = phrases[index];
+    const outputText = outputs[index];
+  
     try {
-      const response = await fetch(`${url}?${queryParams}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ ...JSON.parse(bodyParams), input: inputs[index] }),
-      });
-
-      const endTime = new Date().getTime();
-      const result = await response.text();
-
-      setOutputs(prev => {
-        const newOutputs = [...prev];
-        newOutputs[index] = result;
-        return newOutputs;
-      });
-
-      setLatencies(prev => {
-        const newLatencies = [...prev];
-        newLatencies[index] = { startTime, latency: endTime - startTime };
-        return newLatencies;
-      });
-
       const checks = {};
-      evaluations[index].forEach((evalType, idx) => {
-        checks[evaluationMapping[evalType]] = phrases[index][idx];
+  
+      evaluation.forEach((evalType, idx) => {
+        checks[evaluationMapping[evalType]] = phrase[idx];
       });
-
-      const evalResponse = await authFetch('api/test-inputs', {
+  
+      const response = await authFetch('api/test-inputs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: result,
+          content: outputText,
           checks,
           inputType: "text"
         }),
       });
-
-      if (evalResponse.ok) {
-        const evalResult = await evalResponse.json();
-        setResults(prev => {
-          const newResults = [...prev];
-          newResults[index] = evalResult.test_result;
-          return newResults;
-        });
+  
+      if (response) {
+        const result = response;
+        const newResults = [...results];
+  
+        newResults[index] = result.test_result; // Assuming the API returns a "test_result" field with "Pass" or "Fail"
+        setResults(newResults);
       } else {
         console.error('Failed to evaluate the test');
       }
     } catch (error) {
-      console.error('Failed to evaluate the test:', error);
-      setError('Failed to evaluate the test. Please check the URL and try again.');
+      console.error('Error during evaluation:', error);
     }
   };
 
@@ -159,7 +136,7 @@ const RestEvaluationComponent = () => {
       content: inputs[selectedIndex],
       projectId,
       checks,
-      input_type: "text",
+      type: "text",
       sequence: Number(selectedIndex + 1)
     };
 
@@ -170,7 +147,7 @@ const RestEvaluationComponent = () => {
         body: JSON.stringify(data),
       });
 
-      if (response.ok) {
+      if (response) {
         console.log('Test saved successfully');
         setDescription('');
         setShowSaveModal(false);
