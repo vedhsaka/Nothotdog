@@ -33,6 +33,15 @@ const ConversationRow = React.forwardRef(({
     });
   };
 
+  const handleOutputChange = (e) => {
+    const newOutput = e.target.value;
+    setOutputs(prev => {
+      const newOutputs = [...prev];
+      newOutputs[rowIndex] = newOutput;
+      return newOutputs;
+    });
+  };
+
   const handleEvaluationChange = (conditionIndex, newValue) => {
     setEvaluations(prev => {
       const newEvaluations = [...prev];
@@ -40,6 +49,8 @@ const ConversationRow = React.forwardRef(({
       return newEvaluations;
     });
   };
+
+  const isOutputEditable = !output || (typeof output === 'string' && output.trim() === '');
 
   return (
     <div className="conversation-row" ref={ref} {...draggableProps}>
@@ -59,8 +70,9 @@ const ConversationRow = React.forwardRef(({
         <div className="output-section">
           <textarea
             value={output}
-            readOnly
-            placeholder="API output will appear here"
+            onChange={handleOutputChange}
+            readOnly={!isOutputEditable}
+            placeholder={isOutputEditable ? "Enter expected output" : "API output will appear here"}
             className="output-textarea"
           />
           <span className="output-label">Output</span>
@@ -100,22 +112,21 @@ const ConversationRow = React.forwardRef(({
 
       {results[rowIndex] !== null && (
         <div className={`result-section result-section-${rowIndex}`}>
-            <span className={`result-indicator ${
+          <span className={`result-indicator ${
             results[rowIndex] === 'pass' ? 'pass' : 
             results[rowIndex] === 'fail' ? 'fail' : ''
-            }`}>
+          }`}>
             {results[rowIndex] === 'pass' || results[rowIndex] === 'fail' ? capitalizeFirstLetter(results[rowIndex]) : ''}
-            </span>
+          </span>
         </div>
-        )}
+      )}
 
-        <div className="latency-row">
+      <div className="latency-row">
         <span className="latency-label">Latency:</span>
         <span className="latency-value">
-            {latencies[rowIndex]?.latency != null ? `${latencies[rowIndex].latency} ms` : 'N/A'}
+          {latencies[rowIndex]?.latency != null ? `${latencies[rowIndex].latency} ms` : 'N/A'}
         </span>
-        </div>
-
+      </div>
     </div>
   );
 });

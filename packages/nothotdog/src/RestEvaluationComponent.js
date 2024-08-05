@@ -28,7 +28,6 @@ const StrictModeDroppable = ({ children, ...props }) => {
 const RestEvaluationComponent = () => {
   const { user, signIn, projectId, userId } = useAuth();
   const authFetch = useAuthFetch();
-
   const [inputs, setInputs] = useState([]);
   const [outputs, setOutputs] = useState([]);
   const [connected, setConnected] = useState(false);
@@ -72,9 +71,75 @@ const RestEvaluationComponent = () => {
     updateStateArrays(text.text_content, null, evaluationTypes, phraseValues, null);
   };
 
-  const handleSave = (index) => {
-    setDescription('');
+  const handleEvaluate = async (index) => {
+    const startTime = new Date().getTime();
+
+    try {
+      const response = await fetch(`${url}?${queryParams}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ ...JSON.parse(bodyParams), input: inputs[index] }),
+      });
+
+      const endTime = new Date().getTime();
+      const result = await response.text();
+
+      setOutputs(prev => {
+        const newOutputs = [...prev];
+        newOutputs[index] = result;
+        return newOutputs;
+      });
+
+      setLatencies(prev => {
+        const newLatencies = [...prev];
+        newLatencies[index] = { startTime, latency: endTime - startTime };
+        return newLatencies;
+      });
+
+      const checks = {};
+      evaluations[index].forEach((evalType, idx) => {
+        checks[evaluationMapping[evalType]] = phrases[index][idx];
+      });
+
+      const evalResponse = await authFetch('api/test-inputs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: result,
+          checks,
+          inputType: "text"
+        }),
+      });
+
+      if (evalResponse.ok) {
+        const evalResult = await evalResponse.json();
+        setResults(prev => {
+          const newResults = [...prev];
+          newResults[index] = evalResult.test_result;
+          return newResults;
+        });
+      } else {
+        console.error('Failed to evaluate the test');
+      }
+    } catch (error) {
+      console.error('Failed to evaluate the test:', error);
+      setError('Failed to evaluate the test. Please check the URL and try again.');
+    }
+  };
+
+  const handleSave = async (index) => {
+    if (!user) {
+      setSelectedIndex(index);
+      setShowSignInModal(true);
+      return;
+    }
     setSelectedIndex(index);
+    setDescription('');
     setShowSaveModal(true);
   };
 
@@ -114,49 +179,6 @@ const RestEvaluationComponent = () => {
       }
     } catch (error) {
       console.error('Error saving test:', error);
-    }
-  };
-
-  const handleEvaluate = async (index) => {
-    const startTime = new Date().getTime();
-
-    try {
-      const response = await fetch(`${url}?${queryParams}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ ...JSON.parse(bodyParams), input: inputs[index] }),
-      });
-
-      const endTime = new Date().getTime();
-      const result = await response.text();
-
-      setOutputs(prev => {
-        const newOutputs = [...prev];
-        newOutputs[index] = result;
-        return newOutputs;
-      });
-
-      setLatencies(prev => {
-        const newLatencies = [...prev];
-        newLatencies[index] = { startTime, latency: endTime - startTime };
-        return newLatencies;
-      });
-
-      // Perform evaluations here based on the output and phrases
-      // This is a placeholder and should be replaced with actual evaluation logic
-      const evaluationResult = 'pass'; // or 'fail' based on your evaluation logic
-      setResults(prev => {
-        const newResults = [...prev];
-        newResults[index] = evaluationResult;
-        return newResults;
-      });
-
-    } catch (error) {
-      console.error('Failed to evaluate the test:', error);
-      setError('Failed to evaluate the test. Please check the URL and try again.');
     }
   };
 
