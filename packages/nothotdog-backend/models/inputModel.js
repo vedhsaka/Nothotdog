@@ -137,13 +137,13 @@ class InputModel {
       const standardizedProjectInputs = await Promise.all(projectInputs.map(standardizeInput));
   
       // Combine all data
-      const result = {
+      const data = {
         ...project,
         inputs: standardizedProjectInputs,
         groups: groupsWithInputs
       };
   
-      return { data: [result] };
+      return data;
     }
   
     // Helper method to get audio as base64
