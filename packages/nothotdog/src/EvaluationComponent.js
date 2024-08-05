@@ -65,6 +65,29 @@ const EvaluationComponent = () => {
   const [evaluationStatus, setEvaluationStatus] = useState('');
   const [selectedGroup, setSelectedGroup] = useState(null);
 
+  const [groupOptions, setGroupOptions] = useState([]);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const response = await authFetch(`api/groups/${projectId}`);
+        const groupsData = await response;
+        const groups = groupsData.data.map(group => ({
+          id: group.id,
+          name: group.name
+        }));
+        setGroupOptions(groups);
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+      }
+    };
+  
+    fetchGroups();
+  }, []);
+  
+  
+
   const handleSaveGroup = async (data) => {
     return await authFetch('api/groups', {
       method: 'POST',
@@ -385,7 +408,8 @@ const EvaluationComponent = () => {
         projectId: projectId, // Static or dynamic project ID
         checks: checks,
         input_type: "voice",
-        sequence: Number(selectedIndex + 1)
+        sequence: Number(selectedIndex + 1),
+        groupId: selectedGroupId  // Include selected groupId
       };
   
       const response = await authFetch('api/inputs', {
@@ -406,7 +430,7 @@ const EvaluationComponent = () => {
     };
     reader.readAsDataURL(audioBlob);
   };
-
+  
   const handleEvaluate = async (index) => {
     const evaluation = evaluations[index];
     const phrase = phrases[index];
@@ -776,29 +800,6 @@ const EvaluationComponent = () => {
 </DragDropContext>
 </div>
       <ModalComponent
-        showModal={showModal}
-        onClose={() => setShowModal(false)}
-        headerContent={'Save Test'}
-      >
-        <label htmlFor="description">Description:</label>
-        <input
-          className='file-input'
-          type="text"
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Enter description"
-        />
-        <div className="button-group">
-          <button className="button primary" onClick={saveTest}>
-            Save
-          </button>
-          <button className="button" onClick={() => setShowModal(false)}>
-            Cancel
-          </button>
-        </div>
-      </ModalComponent>
-      <ModalComponent
         showModal={showSignInModal}
         onClose={() => setShowSignInModal(false)}
         headerContent={'Sign In Required'}
@@ -820,6 +821,20 @@ const EvaluationComponent = () => {
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Enter description"
         />
+        
+        <label htmlFor="group">Select Group:</label>
+          <select
+            id="group"
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+          >
+            <option value="">Select a group</option>
+            {groupOptions.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
         <div className="button-group">
           <button className="button primary" onClick={saveTest}>
             Save
