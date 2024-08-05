@@ -78,7 +78,7 @@ const EvaluationComponent = () => {
   const handleGroupSelect = (group) => {
     setSelectedGroup(group);
     clearConversationRows();
-    group.inputs.forEach(input => loadVoiceAsConversationRow(input));
+    group.inputs.forEach(input => loadInputAsConversationRow(input));
   };
 
   const handleEvaluateAll = () => {
@@ -92,9 +92,10 @@ const EvaluationComponent = () => {
       setEvaluationStatus('FAIL');
     }, 1000); // Simulate a delay
   };
-  const handleVoiceSelect = (voice) => {
+
+  const handleInputSelect = (input) => {
     clearConversationRows();
-    loadVoiceAsConversationRow(voice);
+    loadInputAsConversationRow(input);
   };
 
   const clearConversationRows = () => {
@@ -106,25 +107,29 @@ const EvaluationComponent = () => {
     setLatencies([]);
   };
 
-  const loadVoiceAsConversationRow = (voice) => {
-    const audioId = Date.now() + Math.random(); // Generate a unique ID
-    const checks = voice.checks || {};
+  const loadInputAsConversationRow = (input) => {
+    const id = Date.now() + Math.random(); // Generate a unique ID
+    const checks = input.checks || {};
     const evaluationTypes = Object.keys(checks).map(key => {
       const mappedType = evaluationMapping[key];
       return mappedType || 'exact_match'; // Default to 'exact_match' if no mapping found
     });
     const phraseValues = Object.values(checks);
-    updateStateArrays(audioId, null, evaluationTypes, phraseValues, null);
-    // Store the audio data
-    const audioBlob = b64toBlob(voice.audioBase64, 'audio/webm');
-    storeAudio(audioId, audioBlob);
+    updateStateArrays(id, null, evaluationTypes, phraseValues, null);
+
+    if (input.input_type === 'voice') {
+      const audioBlob = b64toBlob(input.audioBase64, 'audio/webm');
+      storeAudio(id, audioBlob);
+    } else if (input.input_type === 'text') {
+      setTranscripts(prev => [...prev, input.text_content]);
+    }
   };
 
   const handleSelectGroup = (groupId) => {
     console.log('Selected group ID:', groupId);
     // Here you can handle what happens when a group is selected
   };
-  
+
   useEffect(() => {
     fetchTests(authFetch, setTests, setError);
   }, []); // make sure this useEffect block runs only once on mount
@@ -426,7 +431,7 @@ const EvaluationComponent = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          audioBase64: base64Audio,
+          content: base64Audio,
           checks,
           inputType: "voice"
         }),
@@ -565,7 +570,7 @@ const EvaluationComponent = () => {
         projectId={projectId}
         authFetch={authFetch} 
         userId={userId}
-        onVoiceSelect={handleVoiceSelect}
+        onInputSelect={handleInputSelect}
       />
 
     <div className="evaluation-component">
@@ -713,7 +718,11 @@ const EvaluationComponent = () => {
               <div className="conversation-row" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                 <button className="delete-row-button" onClick={() => handleDeleteRow(rowIndex)}>X</button>
                 <div className="audio-section input-audio">
-                  <AudioPlayer audioId={audioId} />
+                  {transcripts[rowIndex] ? (
+                    <div className="text-input">{transcripts[rowIndex]}</div>
+                  ) : (
+                    <AudioPlayer audioId={audioId} />
+                  )}
                   <span className="audio-label">Input</span>
                 </div>
                 <div className="audio-section output-audio">

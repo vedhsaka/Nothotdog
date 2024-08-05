@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './css/TestGroupSideBar.css';
 
-const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onVoiceSelect }) => {
+const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onInputSelect }) => {
   const [voiceData, setVoiceData] = useState([]);
   const [expandedGroups, setExpandedGroups] = useState({});
   const [showAddGroup, setShowAddGroup] = useState(false);
@@ -37,8 +37,8 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onVoice
     onGroupSelect(group);
   };
 
-  const handleVoiceClick = (voice) => {
-    onVoiceSelect(voice);
+  const handleInputClick = (input) => {
+    onInputSelect(input);
   };
 
   const handleAddGroup = async () => {
@@ -73,34 +73,37 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onVoice
     }
   };
 
-  const renderVoices = (voices) => {
-    return voices.map(voice => (
-      <li key={voice.uuid} className="voice-item" onClick={() => handleVoiceClick(voice)}>
-        {voice.description || voice.file_name}
+  const renderInputs = (inputs) => {
+    return inputs.map(input => (
+      <li key={input.uuid} className="voice-item" onClick={() => handleInputClick(input)}>
+        {input.description || input.file_name || input.text_content}
       </li>
     ));
   };
 
   const renderGroups = (project) => {
-    return project.voices[0].groups.map(group => (
-      <li key={group.uuid} className="group-item">
-        <div className="group-header" onClick={() => handleGroupClick(group)}>
-          <span className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>▶</span>
-          {group.name}
-        </div>
-        {expandedGroups[group.uuid] && (
-          <ul className={`voice-list ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>
-            {renderVoices(group.voices)}
-          </ul>
-        )}
-      </li>
-    ));
+    return project.groups.map(group => {
+      const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
+      return (
+        <li key={group.uuid} className="group-item">
+          <div className="group-header" onClick={() => handleGroupClick(group)}>
+            <span className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>▶</span>
+            {group.name} ({groupType})
+          </div>
+          {expandedGroups[group.uuid] && (
+            <ul className={`voice-list ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>
+              {renderInputs(group.inputs)}
+            </ul>
+          )}
+        </li>
+      );
+    });
   };
 
-  const renderIndividualVoices = (project) => {
-    return project.voices[0].voices.map(voice => (
-      <li key={voice.uuid} className="individual-voice-item" onClick={() => handleVoiceClick(voice)}>
-        {voice.description || voice.file_name}
+  const renderIndividualInputs = (project) => {
+    return project.inputs.map(input => (
+      <li key={input.uuid} className="individual-voice-item" onClick={() => handleInputClick(input)}>
+        {input.description || input.file_name || input.text_content}
       </li>
     ));
   };
@@ -108,12 +111,10 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onVoice
   return (
     <div className="test-group-sidebar">
       <div className="sidebar-header">
-        <h3>Test Groups and Voices</h3>
+        <h3>Test Groups and Inputs</h3>
         <br/>
-
       </div>
       <button className="add-group-btn" onClick={() => setShowAddGroup(true)}>+New Test Group</button>
-
 
       {showAddGroup && (
         <div className="add-group-form">
@@ -135,7 +136,7 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onVoice
             {renderGroups(project)}
           </ul>
           <ul className="individual-voice-list">
-            {renderIndividualVoices(project)}
+            {renderIndividualInputs(project)}
           </ul>
         </div>
       ))}
