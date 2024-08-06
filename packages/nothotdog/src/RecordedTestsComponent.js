@@ -85,7 +85,7 @@ const RecordedTests = () => {
                       <td>{input.created_by}</td>
                       <td>{input.description}</td>
                       <td>{input.file_name}</td>
-                      <td><AudioPlayer audioBase64={input.audioBase64} /></td>
+                      <td><AudioPlayer audioBase64={input.content} /></td>
                       <td>
                         <button className="button delete" onClick={() => handleDelete(input.uuid)}>Delete</button>
                       </td>

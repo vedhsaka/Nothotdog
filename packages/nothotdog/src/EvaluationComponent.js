@@ -74,7 +74,7 @@ const EvaluationComponent = () => {
         const response = await authFetch(`api/groups/${projectId}`);
         const groupsData = await response;
         const groups = groupsData.data.map(group => ({
-          id: group.id,
+          id: group.uuid,
           name: group.name
         }));
         setGroupOptions(groups);
@@ -142,7 +142,7 @@ const EvaluationComponent = () => {
     const phraseValues = Object.values(checks);
     updateStateArrays(audioId, null, evaluationTypes, phraseValues, null);
     // Store the audio data
-    const audioBlob = b64toBlob(voice.audioBase64, 'audio/webm');
+    const audioBlob = b64toBlob(voice.content, 'audio/webm');
     storeAudio(audioId, audioBlob);
   };
 
@@ -407,7 +407,7 @@ const EvaluationComponent = () => {
         content: base64Audio,
         projectId: projectId, // Static or dynamic project ID
         checks: checks,
-        input_type: "voice",
+        inputType: "voice",
         sequence: Number(selectedIndex + 1),
         groupId: selectedGroupId  // Include selected groupId
       };
@@ -420,7 +420,7 @@ const EvaluationComponent = () => {
         body: JSON.stringify(data),
       });
   
-      if (response.ok) {
+      if (response) {
         console.log('Test saved successfully');
         setDescription(''); // Clear description after saving
         setShowSaveModal(false); // Close modal
