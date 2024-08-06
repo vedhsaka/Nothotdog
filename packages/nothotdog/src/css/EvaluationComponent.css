@@ -99,7 +99,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr 1.5fr 1fr 1fr 1fr auto; /* Adjusted widths to accommodate delete button */
   align-items: self-start; /* Vertically align items */
-  gap: 20px;
+  gap: 15px;
   padding: 35px 15px;
   background-color: #fff;
   border-radius: 8px;
@@ -473,4 +473,18 @@ input {
   float: right;
   display: flex;
   align-items: center;
+}
+
+.dot {
+  height: 5px;
+  width: 5px;
+  display: inline-block;
+}
+
+.green {
+  background-color: green;
+}
+
+.red {
+  background-color: red;
 }

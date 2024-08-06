@@ -69,6 +69,8 @@ const EvaluationComponent = () => {
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [audioToSend, setAudioToSend] = useState(null);
 
+  const [checkResults, setCheckResults] = useState([]); // Array of objects
+
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -133,7 +135,6 @@ const EvaluationComponent = () => {
     setResults([]);
     setLatencies([]);
   };
-
   const loadVoiceAsConversationRow = (voice) => {
     const audioId = Date.now() + Math.random(); // Generate a unique ID
     const checks = voice.checks || {};
@@ -507,20 +508,28 @@ const EvaluationComponent = () => {
           inputType: "voice"
         }),
       });
-
+  
       if (response) {
         const result = await response;
-        const newResults = [...results];
-
-        newResults[index] = result.test_result; // Assuming the API returns a "result" field with "Pass" or "Fail"
-        setResults(newResults);
+        setResults((prevResults) => {
+          const newResults = [...prevResults];
+          newResults[index] = result.test_result;
+          return newResults;
+        });
+  
+        setCheckResults((prevCheckResults) => {
+          const newCheckResults = [...prevCheckResults];
+          newCheckResults[index] = result.checks;
+          return newCheckResults;
+        });
       } else {
         console.error('Failed to evaluate the test');
       }
     };
-
+  
     reader.readAsDataURL(outputAudioBlob);
   };
+  
 
   const handlePhraseChange = useCallback((index, conditionIndex, value) => {
     setPhrases((prevPhrases) => {
@@ -797,24 +806,33 @@ const EvaluationComponent = () => {
                   <span className="audio-label">Output</span>
                 </div>
                 <div className="conditions-section">
-                  {evaluations[rowIndex] && evaluations[rowIndex].map((evaluation, conditionIndex) => (
-                    <div key={conditionIndex} className="condition-row">
-                      <select value={evaluation || 'exact_match'} onChange={(e) => {
-                        const newEvaluations = [...evaluations];
-                        newEvaluations[rowIndex][conditionIndex] = e.target.value;
-                        setEvaluations(newEvaluations);
-                      }}>
-                        <option value="exact_match">Exact Match</option>
-                        <option value="word_count">Word Count</option>
-                        <option value="contains">Contains</option>
-                        <option value="ends">Ends With</option>
-                        <option value="contextually">Contextually Contains</option>
-                        <option value="begins_with">Begins With</option>
-                      </select>
-                      <input type="text" value={phrases[rowIndex][conditionIndex] || ''} onChange={(e) => handlePhraseChange(rowIndex, conditionIndex, e.target.value)} placeholder="Enter phrase" />
-                      <button className="delete-condition-button" onClick={() => handleDeleteCondition(rowIndex, conditionIndex)}>X</button>
-                    </div>
-                  ))}
+                  {evaluations[rowIndex] && evaluations[rowIndex].map((evaluation, conditionIndex) => {
+                    const checkResult = checkResults[rowIndex] && checkResults[rowIndex][evaluationMapping[evaluation]];
+                    const passed = checkResult ? checkResult.passed : null;
+                    const details = checkResult ? checkResult.details : null;
+
+                    return (
+                      <div key={conditionIndex} className="condition-row">
+                        <select value={evaluation || 'exact_match'} onChange={(e) => {
+                          const newEvaluations = [...evaluations];
+                          newEvaluations[rowIndex][conditionIndex] = e.target.value;
+                          setEvaluations(newEvaluations);
+                        }}>
+                          <option value="exact_match">Exact Match</option>
+                          <option value="word_count">Word Count</option>
+                          <option value="contains">Contains</option>
+                          <option value="ends">Ends With</option>
+                          <option value="contextually">Contextually Contains</option>
+                          <option value="begins_with">Begins With</option>
+                        </select>
+                        <input type="text" value={phrases[rowIndex][conditionIndex] || ''} onChange={(e) => handlePhraseChange(rowIndex, conditionIndex, e.target.value)} placeholder="Enter phrase" />
+                        <button className="delete-condition-button" onClick={() => handleDeleteCondition(rowIndex, conditionIndex)}>X</button>
+                        {passed !== null && (
+                          <span className={`dot ${passed ? 'green' : 'red'}`} title={details}></span>
+                        )}
+                      </div>
+                    );
+                  })}
                   <button className="add-condition-button" onClick={() => addCondition(rowIndex)}>Add Condition</button>
                 </div>
                 <div className="evaluate-section">
