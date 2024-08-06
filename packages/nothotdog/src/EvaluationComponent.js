@@ -71,6 +71,7 @@ const EvaluationComponent = () => {
 
   const [checkResults, setCheckResults] = useState([]); // Array of objects
 
+  const [groupPassStatus, setGroupPassStatus] = useState(true);
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -111,17 +112,29 @@ const EvaluationComponent = () => {
       .forEach(voice => loadVoiceAsConversationRow(voice));
   };
 
-  const handleEvaluateAll = () => {
+  const evaluateAllTests = async () => {
     if (!selectedGroup) {
       alert("Please select a group first");
       return;
     }
-    // Mock evaluationF
+    let groupPassStatus = true;
     setEvaluationStatus('Evaluating...');
-    setTimeout(() => {
-      setEvaluationStatus('FAIL');
-    }, 1000); // Simulate a delay
-  };
+  
+    for (let i = 0; i < audioData.length; i++) {
+      const audioBlob = await getAudio(audioData[i]);
+      await sendAudioToWebSocket(audioBlob, i);
+      try {
+        const evaluationResult = await handleEvaluate(i);
+        if (evaluationResult === 'fail') {
+          groupPassStatus = false;
+        }
+      } catch (error) {
+        groupPassStatus = false;
+      }
+    }
+  
+    setEvaluationStatus(groupPassStatus ? 'PASS' : 'FAIL');
+  };  
   const handleVoiceSelect = (voice) => {
     clearConversationRows();
     loadVoiceAsConversationRow(voice);
@@ -187,42 +200,51 @@ const EvaluationComponent = () => {
     }
   };
 
-  const sendAudioToWebSocket = async (audioBlob, index) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      const startTime = new Date().getTime(); // Capture start time
-      console.log('Request sent at:', startTime);
+  const sendAudioToWebSocket = (audioBlob, index) => {
+    return new Promise((resolve, reject) => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        const startTime = new Date().getTime(); // Capture start time
+        console.log('Request sent at:', startTime);
   
-      wsRef.current.send(audioBlob);
+        wsRef.current.send(audioBlob);
   
-      setLatencies((prev) => [...prev, { startTime, latency: null }]);
-      
-      wsRef.current.onmessage = async (event) => {
-        const endTime = new Date().getTime();
-        console.log('WebSocket message received at:', endTime);
-        console.log('WebSocket message:', event.data);
-        const outputAudioBlob = new Blob([event.data], { type: 'audio/webm' });
-        const id = Date.now();
-        await storeAudio(id, outputAudioBlob);
-        
-        setLatencies((prevLatencies) => {
-          const newLatencies = [...prevLatencies];
-          const lastIndex = newLatencies.length - 1;
-          if (lastIndex >= 0 && newLatencies[lastIndex].startTime) {
-            const latency = endTime - newLatencies[lastIndex].startTime;
-            console.log('Start time:', newLatencies[lastIndex].startTime);
-            console.log('End time:', endTime);
-            console.log('Calculated latency:', latency);
-            newLatencies[lastIndex] = { ...newLatencies[lastIndex], latency };
-          }
-          return newLatencies;
-        });
-        
-        updateOutputAudioDataById(id, index);
-        setTranscripts((prevTranscripts) => [...prevTranscripts, event.data]);
-      }; 
-    } else {
-      setError('WebSocket is not connected. Please connect first.');
-    }
+        wsRef.current.onmessage = async (event) => {
+          const endTime = new Date().getTime();
+          console.log('WebSocket message received at:', endTime);
+          console.log('WebSocket message:', event.data);
+          const outputAudioBlob = new Blob([event.data], { type: 'audio/webm' });
+          const id = Date.now();
+          await storeAudio(id, outputAudioBlob);
+  
+          setLatencies((prevLatencies) => {
+            const newLatencies = [...prevLatencies];
+            const lastIndex = newLatencies.length - 1;
+            if (lastIndex >= 0 && newLatencies[lastIndex].startTime) {
+              const latency = endTime - newLatencies[lastIndex].startTime;
+              console.log('Start time:', newLatencies[lastIndex].startTime);
+              console.log('End time:', endTime);
+              console.log('Calculated latency:', latency);
+              newLatencies[lastIndex] = { ...newLatencies[lastIndex], latency };
+            }
+            return newLatencies;
+          });
+  
+          updateOutputAudioDataById(id, index);
+          setTranscripts((prevTranscripts) => [...prevTranscripts, event.data]);
+  
+          resolve(); // Resolve the promise when the message is received
+        };
+  
+        wsRef.current.onerror = (error) => {
+          setError('WebSocket error');
+          console.error('WebSocket error:', error);
+          reject(error); // Reject the promise if there's an error
+        };
+      } else {
+        setError('WebSocket is not connected. Please connect first.');
+        reject(new Error('WebSocket is not connected'));
+      }
+    });
   };  
 
   const updateOutputAudioDataById = (id, index) => {
@@ -482,32 +504,33 @@ const EvaluationComponent = () => {
   };
   
   const handleEvaluate = async (index) => {
-    const evaluation = evaluations[index];
-    const phrase = phrases[index];
-    const outputAudioId = outputAudioData[index];
-
-    const outputAudioBlob = await getAudio(outputAudioId);
-
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64Audio = reader.result.split(',')[1];
-      const checks = {};
-
-      evaluation.forEach((evalType, idx) => {
-        checks[evaluationMapping[evalType]] = phrase[idx];
-      });
-
-      const response = await authFetch('api/test-inputs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: base64Audio,
-          checks,
-          inputType: "voice"
-        }),
-      });
+    return new Promise(async (resolve, reject) => {
+      const evaluation = evaluations[index];
+      const phrase = phrases[index];
+      const outputAudioId = outputAudioData[index];
+  
+      const outputAudioBlob = await getAudio(outputAudioId);
+  
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Audio = reader.result.split(',')[1];
+        const checks = {};
+  
+        evaluation.forEach((evalType, idx) => {
+          checks[evaluationMapping[evalType]] = phrase[idx];
+        });
+  
+        const response = await authFetch('api/test-inputs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: base64Audio,
+            checks,
+            inputType: "voice"
+          }),
+        });
   
       if (response) {
         const result = await response;
@@ -516,18 +539,20 @@ const EvaluationComponent = () => {
           newResults[index] = result.test_result;
           return newResults;
         });
-  
+
         setCheckResults((prevCheckResults) => {
           const newCheckResults = [...prevCheckResults];
           newCheckResults[index] = result.checks;
           return newCheckResults;
         });
+        resolve(result.test_result); // Resolve with the test result
       } else {
         console.error('Failed to evaluate the test');
+        reject('FAIL'); // Reject with 'FAIL' if the evaluation fails
       }
     };
-  
-    reader.readAsDataURL(outputAudioBlob);
+      reader.readAsDataURL(outputAudioBlob);
+    });
   };
   
 
@@ -762,23 +787,22 @@ const EvaluationComponent = () => {
        {selectedGroup && (
           <div className="group-evaluation-section">
           <div>{selectedGroup ? `Selected Group: ${selectedGroup.name}` : 'No group selected'}</div>
-            <div class="group-evaluate">
-              <button 
-                className="button semi-primary" 
-                onClick={handleEvaluateAll}
-                disabled={!selectedGroup}
-              >
-                Evaluate All
-              </button>
-              {evaluationStatus && (
-                <div className="evaluation-status">
-                  Evaluation Status: <span className="result-indicator fail">{evaluationStatus}</span>
-                </div>
-              )}
-            </div>
+          <div className="group-evaluate">
+            <button 
+              className="button semi-primary" 
+              onClick={evaluateAllTests}
+              disabled={!selectedGroup}
+            >
+              Evaluate All
+            </button>
+            {evaluationStatus && (
+              <div className="evaluation-status">
+                Evaluation Status: <span className={`result-indicator`}>Group Passed = {groupPassStatus}</span>
+              </div>
+            )}
+          </div>
         </div>
         )}
-  
   <button className="add-row-button" onClick={addConversationRow}>+</button>
   <DragDropContext onDragEnd={onDragEnd}>
   <StrictModeDroppable droppableId="droppable-conversations">
