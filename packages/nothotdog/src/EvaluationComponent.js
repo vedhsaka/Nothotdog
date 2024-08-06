@@ -67,6 +67,8 @@ const EvaluationComponent = () => {
 
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [audioToSend, setAudioToSend] = useState(null);
+
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -144,7 +146,8 @@ const EvaluationComponent = () => {
     // Store the audio data
     const audioBlob = b64toBlob(voice.content, 'audio/webm');
     storeAudio(audioId, audioBlob);
-  };
+    setAudioToSend(audioBlob);
+  };  
 
   const handleSelectGroup = (groupId) => {
     console.log('Selected group ID:', groupId);
@@ -182,6 +185,52 @@ const EvaluationComponent = () => {
       console.error('Error:', error);
     }
   };
+
+  const sendAudioToWebSocket = async (audioBlob, index) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      const startTime = new Date().getTime(); // Capture start time
+      console.log('Request sent at:', startTime);
+  
+      wsRef.current.send(audioBlob);
+  
+      setLatencies((prev) => [...prev, { startTime, latency: null }]);
+      
+      wsRef.current.onmessage = async (event) => {
+        const endTime = new Date().getTime();
+        console.log('WebSocket message received at:', endTime);
+        console.log('WebSocket message:', event.data);
+        const outputAudioBlob = new Blob([event.data], { type: 'audio/webm' });
+        const id = Date.now();
+        await storeAudio(id, outputAudioBlob);
+        
+        setLatencies((prevLatencies) => {
+          const newLatencies = [...prevLatencies];
+          const lastIndex = newLatencies.length - 1;
+          if (lastIndex >= 0 && newLatencies[lastIndex].startTime) {
+            const latency = endTime - newLatencies[lastIndex].startTime;
+            console.log('Start time:', newLatencies[lastIndex].startTime);
+            console.log('End time:', endTime);
+            console.log('Calculated latency:', latency);
+            newLatencies[lastIndex] = { ...newLatencies[lastIndex], latency };
+          }
+          return newLatencies;
+        });
+        
+        updateOutputAudioDataById(id, index);
+        setTranscripts((prevTranscripts) => [...prevTranscripts, event.data]);
+      }; 
+    } else {
+      setError('WebSocket is not connected. Please connect first.');
+    }
+  };  
+
+  const updateOutputAudioDataById = (id, index) => {
+    setOutputAudioData((prevOutputAudioData) => {
+      const newOutputAudioData = [...prevOutputAudioData];
+      newOutputAudioData[index] = id;
+      return newOutputAudioData;
+    });
+  };  
 
   const connectWebSocket = () => {
     if (wsRef.current || !url) return;
@@ -789,6 +838,16 @@ const EvaluationComponent = () => {
                     {latencies[rowIndex]?.latency != null ? `Latency: ${latencies[rowIndex].latency} ms` : 'Latency: N/A'}
                   </span>
                 </div>
+                {audioToSend && audioId === audioData[rowIndex] && (
+                  <div className="connect-websocket">
+                    <button
+                      className="button semi-primary"
+                      onClick={() => sendAudioToWebSocket(audioToSend, rowIndex)}
+                    >
+                      Send to WebSocket
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </Draggable>
@@ -798,6 +857,7 @@ const EvaluationComponent = () => {
     )}
   </StrictModeDroppable>
 </DragDropContext>
+
 </div>
       <ModalComponent
         showModal={showSignInModal}
