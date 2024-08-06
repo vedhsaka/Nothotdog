@@ -191,3 +191,18 @@
       flex-direction: column;
     }
   }
+
+  .response-line {
+    position: relative;
+  }
+  
+  .set-output-btn {
+    position: absolute;
+    right: 10px;
+    display: none;
+  }
+  
+  .response-line:hover .set-output-btn {
+    display: inline;
+  }
+  

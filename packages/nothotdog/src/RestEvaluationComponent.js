@@ -9,6 +9,8 @@ import APIRequestForm from './APIConnectionForm';
 import { SaveTestModal, SignInModal } from './UtilityModals';
 import ConversationRow from './ConversationRow';
 import { capitalizeFirstLetter, evaluationMapping } from './utils';
+import NodeSelectionModal from './NodeSelectionModal';
+
 
 const StrictModeDroppable = ({ children, ...props }) => {
   const [enabled, setEnabled] = useState(false);
@@ -48,6 +50,12 @@ const RestEvaluationComponent = () => {
 
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
+
+  const [jsonResponse, setJsonResponse] = useState(null);
+  const [selectedNodePath, setSelectedNodePath] = useState('');
+  const [selectedNodeValue, setSelectedNodeValue] = useState('');
+  const [showNodeSelectionModal, setShowNodeSelectionModal] = useState(false);
+
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -159,7 +167,7 @@ const RestEvaluationComponent = () => {
     } catch (error) {
       console.error('Error saving test:', error);
     }
-  };
+  };  
 
 
   const handleTextSelect = (text) => {
@@ -268,6 +276,19 @@ const RestEvaluationComponent = () => {
     setResults([]);
     setLatencies([]);
   };
+  const handleApiResponse = (response) => {
+    setJsonResponse(response);
+  };
+
+  const handleSetOutputValue = (value) => {
+    setSelectedNodeValue(value);
+    setOutputs(prevOutputs => {
+      const newOutputs = [...prevOutputs];
+      newOutputs[newOutputs.length - 1] = value;
+      return newOutputs;
+    });
+  };
+  
 
   return (
     <div className="evaluation-container">
@@ -280,8 +301,16 @@ const RestEvaluationComponent = () => {
         onInputSelect={handleTextSelect}
         onGroupSelect={handleGroupSelect} 
       />
+      <NodeSelectionModal
+        showModal={showNodeSelectionModal}
+        setShowModal={setShowNodeSelectionModal}
+        jsonResponse={jsonResponse}
+        setSelectedNodePath={setSelectedNodePath}
+        setSelectedNodeValue={setSelectedNodeValue}
+      />
+
       <div className="evaluation-component">
-        <APIRequestForm 
+      <APIRequestForm 
           url={url}
           authToken={authToken}
           queryParams={queryParams}
@@ -293,11 +322,33 @@ const RestEvaluationComponent = () => {
           connected={connected}
           setConnected={setConnected}
           error={error}
+          onApiResponse={handleApiResponse}
+          setOutputValue={handleSetOutputValue}
         />
         <hr />
         <div className="transcript-box">
           <h3>Conversations</h3>
           <button className="add-row-button" onClick={addConversationRow}>+</button>
+
+          {selectedGroup && (
+          <div className="group-evaluation-section">
+          <div>{selectedGroup ? `Selected Group: ${selectedGroup.name}` : 'No group selected'}</div>
+          <div className="group-evaluate">
+            <button 
+              className="button semi-primary" 
+              onClick={evaluateAllTests}
+              disabled={!selectedGroup}
+            >
+              Evaluate All
+            </button>
+            {evaluationStatus && (
+              <div className="evaluation-status">
+                Evaluation Status: <span className={`result-indicator`}>Group Passed = {groupPassStatus}</span>
+              </div>
+            )}
+          </div>
+        </div>
+        )}
           <DragDropContext onDragEnd={onDragEnd}>
             <StrictModeDroppable droppableId="droppable-conversations">
               {(provided) => (
@@ -359,6 +410,13 @@ const RestEvaluationComponent = () => {
           setShowSignInModal={setShowSignInModal}
           signIn={signIn}
         />
+
+        {selectedNodePath && (
+          <div className="selected-node-info">
+            <p>Selected Node: {selectedNodePath}</p>
+            <p>Value: {selectedNodeValue}</p>
+          </div>
+        )}
       </div>
     </div>
   );
