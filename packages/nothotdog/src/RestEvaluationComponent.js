@@ -46,6 +46,27 @@ const RestEvaluationComponent = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
 
+  const [groupOptions, setGroupOptions] = useState([]);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const response = await authFetch(`api/groups/${projectId}`);
+        const groupsData = await response;
+        const groups = groupsData.data.map(group => ({
+          id: group.uuid,
+          name: group.name
+        }));
+        setGroupOptions(groups);
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+      }
+    };
+  
+    fetchGroups();
+  }, []);
+
   const handleGroupSelect = (group) => {
     setSelectedGroup(group);
     clearConversationRows();
@@ -117,6 +138,7 @@ const RestEvaluationComponent = () => {
       projectId,
       checks,
       type: "text",
+      groupId: selectedGroupId,  // Include selected groupId
       sequence: Number(selectedIndex + 1)
     };
 
@@ -256,6 +278,7 @@ const RestEvaluationComponent = () => {
         authFetch={authFetch} 
         userId={userId}
         onInputSelect={handleTextSelect}
+        onGroupSelect={handleGroupSelect} 
       />
       <div className="evaluation-component">
         <APIRequestForm 
@@ -327,6 +350,9 @@ const RestEvaluationComponent = () => {
           description={description}
           setDescription={setDescription}
           saveTest={saveTest}
+          groupOptions={groupOptions}
+          selectedGroupId={selectedGroupId}
+          setSelectedGroupId={setSelectedGroupId}
         />
         <SignInModal
           showSignInModal={showSignInModal}

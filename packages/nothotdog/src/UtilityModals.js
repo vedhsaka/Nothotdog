@@ -2,7 +2,7 @@
 import React from 'react';
 import ModalComponent from './Components/ModalComponent';
 
-export const SaveTestModal = ({ showModal, setShowModal, description, setDescription, saveTest }) => (
+export const SaveTestModal = ({ showModal, setShowModal, description, setDescription, groupOptions, setSelectedGroupId, selectedGroupId, saveTest }) => (
   <ModalComponent
     showModal={showModal}
     onClose={() => setShowModal(false)}
@@ -17,6 +17,19 @@ export const SaveTestModal = ({ showModal, setShowModal, description, setDescrip
       onChange={(e) => setDescription(e.target.value)}
       placeholder="Enter description"
     />
+    <label htmlFor="group">Select Group:</label>
+          <select
+            id="group"
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+          >
+            <option value="">Select a group</option>
+            {groupOptions.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+    </select>
     <div className="button-group">
       <button className="button primary" onClick={saveTest}>Save</button>
       <button className="button" onClick={() => setShowModal(false)}>Cancel</button>
