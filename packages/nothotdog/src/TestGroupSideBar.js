@@ -19,7 +19,8 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect }) => {
       fetchVoiceData();
     } else {
       setIsLoading(false);
-      setShowSignInModal(true);
+      setError('Please login to view recorded tests.');
+      // setShowSignInModal(true);
     }
   }, [userId]);
 
@@ -133,7 +134,7 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect }) => {
   }
 
   if (error) {
-    return <div>{error}</div>;
+    return <div class="error-message">{error}</div>;
   }
 
   return (

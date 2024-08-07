@@ -1,40 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import './css/RecordedTests.css';
 import useAuthFetch from './AuthFetch';
-import { useAuth } from './AuthContext';
-import { SignInModal } from './UtilityModals';
 
 const RecordedTests = () => {
-  const { signIn, userId } = useAuth();
-  const { authFetch, showSignInModal, setShowSignInModal } = useAuthFetch();
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState('');
+  const authFetch = useAuthFetch(); // Use the custom hook
 
   useEffect(() => {
-    if (userId) {
-      fetchTests();
-    } else {
-      setShowSignInModal(true);
-    }
-  }, [userId]);
+    const fetchTests = async () => {
+      try {
+        const response = await authFetch('api/inputs/');
+        const data = await response;
+        setProjects(data.data);
+      } catch (err) {
+        setError('Please login to view recorded tests');
+        console.error('Fetch error:', err);
+      }
+    };
 
-  const fetchTests = async () => {
-    try {
-      const response = await authFetch('api/inputs/');
-      const data = await response;
-      setProjects(data.data);
-    } catch (err) {
-      setError('Failed to fetch recorded tests');
-      console.error('Fetch error:', err);
-    }
-  };
+    fetchTests();
+  }, []);
 
   const handleDelete = async (uuid) => {
-    if (!userId) {
-      setShowSignInModal(true);
-      return;
-    }
-
     try {
       const response = await authFetch(`api/delete-voice/${uuid}`, {
         method: 'DELETE',
@@ -68,7 +56,7 @@ const RecordedTests = () => {
   return (
     <div className="recorded-tests">
       <h2>Recorded Tests</h2>
-      {error && <div className="error">{error}</div>}
+      {error && <div className="error-message">{error}</div>}
       <table className="tests-table">
         <thead>
           <tr>
@@ -109,13 +97,6 @@ const RecordedTests = () => {
           ))}
         </tbody>
       </table>
-      {showSignInModal && (
-        <SignInModal
-          showSignInModal={showSignInModal}
-          setShowSignInModal={setShowSignInModal}
-          signIn={signIn}
-        />
-      )}
     </div>
   );
 };

@@ -9,6 +9,8 @@ import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import AudioPlayer from './AudioPlayer';
 import fetchTests from './fetchTests'; // Import fetchTests
 import TestGroupSidebar from './TestGroupSideBar';
+import { SignInModal } from './UtilityModals'; // Ensure SignInModal is correctly imported
+
 import { 
   b64toBlob, 
   capitalizeFirstLetter,
@@ -79,9 +81,7 @@ const EvaluationComponent = () => {
       try {
         if (!userId) {
           console.error('User ID not found');
-          setShowSignInModal(true);
           return;
-
         }
         const response = await authFetch(`api/groups/${projectId}`);
         const groupsData = await response;
@@ -450,6 +450,12 @@ const EvaluationComponent = () => {
   };
 
   const handleSave = (index) => {
+
+    if (!userId) {
+      setShowSignInModal(true);
+      console.error('User ID not found');
+      return;
+    }
     setCurrentAudioBlob(audioData[index]);
     setDescription(''); // Reset description to empty string
     setSelectedIndex(index);
@@ -908,14 +914,14 @@ const EvaluationComponent = () => {
 </DragDropContext>
 
 </div>
-      <ModalComponent
-        showModal={showSignInModal}
-        onClose={() => setShowSignInModal(false)}
-        headerContent={'Sign In Required'}
-      >
-        <p>You need to sign in to save tests.</p>
-        <button className="button primary" onClick={signIn}>Sign In</button>
-      </ModalComponent>
+{showSignInModal && (
+        <SignInModal
+          showSignInModal={showSignInModal}
+          setShowSignInModal={setShowSignInModal}
+          headerContent="Sign In Required"
+          signIn={signIn} // Make sure signIn function is available
+        />
+      )}
 
       <ModalComponent
         showModal={showSaveModal}
