@@ -1,28 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import './css/RecordedTests.css';
 import useAuthFetch from './AuthFetch';
+import { useAuth } from './AuthContext';
+import { SignInModal } from './UtilityModals';
 
 const RecordedTests = () => {
+  const { signIn, userId } = useAuth();
+  const { authFetch, showSignInModal, setShowSignInModal } = useAuthFetch();
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState('');
-  const authFetch = useAuthFetch(); // Use the custom hook
 
   useEffect(() => {
-    const fetchTests = async () => {
-      try {
-        const response = await authFetch('api/inputs/');
-        const data = await response;
-        setProjects(data.data);
-      } catch (err) {
-        setError('Failed to fetch recorded tests');
-        console.error('Fetch error:', err);
-      }
-    };
+    if (userId) {
+      fetchTests();
+    } else {
+      setShowSignInModal(true);
+    }
+  }, [userId]);
 
-    fetchTests();
-  }, []);
+  const fetchTests = async () => {
+    try {
+      const response = await authFetch('api/inputs/');
+      const data = await response;
+      setProjects(data.data);
+    } catch (err) {
+      setError('Failed to fetch recorded tests');
+      console.error('Fetch error:', err);
+    }
+  };
 
   const handleDelete = async (uuid) => {
+    if (!userId) {
+      setShowSignInModal(true);
+      return;
+    }
+
     try {
       const response = await authFetch(`api/delete-voice/${uuid}`, {
         method: 'DELETE',
@@ -97,6 +109,13 @@ const RecordedTests = () => {
           ))}
         </tbody>
       </table>
+      {showSignInModal && (
+        <SignInModal
+          showSignInModal={showSignInModal}
+          setShowSignInModal={setShowSignInModal}
+          signIn={signIn}
+        />
+      )}
     </div>
   );
 };

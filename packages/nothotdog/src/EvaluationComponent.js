@@ -55,6 +55,7 @@ const EvaluationComponent = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const authFetch = useAuthFetch(); // Use the custom hook
 
+
   const [tests, setTests] = useState([]);
   const [selectedTest, setSelectedTest] = useState(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -76,6 +77,12 @@ const EvaluationComponent = () => {
   useEffect(() => {
     const fetchGroups = async () => {
       try {
+        if (!userId) {
+          console.error('User ID not found');
+          setShowSignInModal(true);
+          return;
+
+        }
         const response = await authFetch(`api/groups/${projectId}`);
         const groupsData = await response;
         const groups = groupsData.data.map(group => ({
