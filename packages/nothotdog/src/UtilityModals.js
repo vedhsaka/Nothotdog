@@ -37,13 +37,16 @@ export const SaveTestModal = ({ showModal, setShowModal, description, setDescrip
   </ModalComponent>
 );
 
-export const SignInModal = ({ showSignInModal, setShowSignInModal, signIn }) => (
-  <ModalComponent
-    showModal={showSignInModal}
-    onClose={() => setShowSignInModal(false)}
-    headerContent={'Sign In Required'}
-  >
-    <p>You need to sign in to save tests.</p>
-    <button className="button primary" onClick={signIn}>Sign In</button>
-  </ModalComponent>
-);
+export const SignInModal = ({ showSignInModal, setShowSignInModal, signIn }) => {
+  return (
+    showSignInModal && (
+      <div className="signin-modal">
+        <div className="signin-modal-content">
+          <span className="signin-modal-close" onClick={() => setShowSignInModal(false)}>&times;</span>
+          <p>Please login using your Google Account to use these features.</p>
+          <button className="signin-modal-button primary" onClick={signIn}>SIGN IN</button>
+        </div>
+      </div>
+    )
+  );
+};

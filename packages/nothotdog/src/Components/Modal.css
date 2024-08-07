@@ -67,3 +67,69 @@
   display: inline-block;
   width: 100px;
 }
+
+/* CSS for SignInModal Component */
+
+.signin-modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.signin-modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  color: black;
+  width: 300px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  position: relative;
+  animation: fadeIn 0.3s;
+}
+.signin-modal-content p {
+  text-align:left;
+}
+
+.signin-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: #aaa;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.signin-modal-button {
+  text-align: left;
+}
+
+.signin-modal-close:hover,
+.signin-modal-close:focus {
+  color: #000;
+}
+
+.signin-modal-button {
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s;
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

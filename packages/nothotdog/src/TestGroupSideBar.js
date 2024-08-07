@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import './css/TestGroupSideBar.css';
+import { SignInModal } from './UtilityModals'; // Ensure SignInModal is correctly imported
+import useAuthFetch from './AuthFetch';
+import { useAuth } from './AuthContext';
 
-const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onInputSelect }) => {
+const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect }) => {
+  const { signIn, userId } = useAuth(); // Access signIn and userId function
+  const { authFetch, showSignInModal, setShowSignInModal } = useAuthFetch(); // Destructure showSignInModal and setShowSignInModal
   const [voiceData, setVoiceData] = useState([]);
   const [expandedGroups, setExpandedGroups] = useState({});
   const [showAddGroup, setShowAddGroup] = useState(false);
@@ -10,8 +15,13 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onInput
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchVoiceData();
-  }, []);
+    if (userId) {
+      fetchVoiceData();
+    } else {
+      setIsLoading(false);
+      setShowSignInModal(true);
+    }
+  }, [userId]);
 
   const fetchVoiceData = async () => {
     try {
@@ -47,6 +57,11 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onInput
   };
 
   const handleAddGroup = async () => {
+    if (!userId) {
+      setShowSignInModal(true);
+      return;
+    }
+
     if (newGroupDescription.trim() === '') {
       alert('Please enter a description for the new group.');
       return;
@@ -153,6 +168,14 @@ const TestGroupSidebar = ({ authFetch, userId, projectId, onGroupSelect, onInput
           </ul>
         </div>
       ))}
+
+      {showSignInModal && (
+        <SignInModal
+          showSignInModal={showSignInModal}
+          setShowSignInModal={setShowSignInModal}
+          signIn={signIn} // Make sure signIn function is available
+        />
+      )}
     </div>
   );
 };
