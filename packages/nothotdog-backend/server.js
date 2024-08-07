@@ -7,10 +7,12 @@ const PORT = process.env.PORT || 3000;
 
 // Configure CORS
 const corsOptions = {
-  origin: 'http://localhost:3000', // Update this to the origin of your client application
+  origin: process.env.CLIENT, // Update this to the origin of your client application
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   allowedHeaders: 'Content-Type,Authorization,userId',
+  optionsSuccessStatus: 200
 };
+
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // Preflight request handler
