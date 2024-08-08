@@ -5,7 +5,7 @@ const { createClient } = require("@deepgram/sdk");
 require("dotenv").config({ path: '.env.local' });
 
 class InputModel {
-    static async saveInput(userId, description, inputType, content, project_id, group_id, checks, sequence) {
+    static async saveInput(userId, description, inputType, content, project_id, group_id, checks, sequence, url, apiType, method, headers, query_params, content_type) {
         if (group_id !== null) {
           await this.validateSequence(group_id, sequence);
           // Check if the group already has inputs and if their type matches the new input
@@ -53,7 +53,13 @@ class InputModel {
           project_id: project_id,
           sequence: sequence,
           checks: checks,
-          group_id: group_id
+          group_id: group_id,
+          url: url,
+          api_type: apiType,
+          method: method,
+          query_params: query_params,
+          headers: headers,
+          content_type: content_type
         };
 
         // Save metadata to Supabase table
