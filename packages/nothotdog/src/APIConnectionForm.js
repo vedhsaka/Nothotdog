@@ -20,7 +20,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue }) => {
   };
 
   useEffect(() => {
-    if (method === 'POST') {
+    if (method === 'POST' || method === 'PUT') {
       setHeaders((prevHeaders) => {
         const contentTypeHeader = prevHeaders.find((h) => h.key.toLowerCase() === 'content-type');
         if (contentTypeHeader) {
@@ -73,7 +73,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue }) => {
         headers: requestHeaders,
       };
 
-      if (method === 'POST' || method === 'GET') {
+      if (method === 'POST' || method === 'PUT') {
         requestOptions.body = body;
       }
 
@@ -119,6 +119,8 @@ const APIRequestForm = ({ onApiResponse, setOutputValue }) => {
         <select className="method-select" value={method} onChange={(e) => setMethod(e.target.value)}>
           <option>GET</option>
           <option>POST</option>
+          <option>PUT</option>
+          <option>DELETE</option>
         </select>
         <input
           type="text"
