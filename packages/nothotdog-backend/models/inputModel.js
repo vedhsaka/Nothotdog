@@ -237,100 +237,131 @@ class InputModel {
     }
 
     static async testInput(inputType, content, checks) {
-        // Validate checks
-        const validatedChecks = {};
-        for (const [key, value] of Object.entries(checks)) {
-            if (VALID_CHECKS.includes(key)) {
-                validatedChecks[key] = value;
+      let processedContent;
+
+      if (inputType === "voice") {
+          processedContent = await this.processVoiceInput(content);
+      } else {
+          processedContent = this.processNonVoiceInput(content);
+      }
+
+      // Perform checks
+      const checkResults = [];
+      let allChecksPassed = true;
+
+      for (const check of checks) {
+          const { field, rule, value } = check;
+          let passed = false;
+          let details = '';
+          let actualValue;
+
+          try {
+              actualValue = this.getNestedValue(processedContent, field);
+          } catch (error) {
+              checkResults.push({ ...check, passed: false, details: `Error accessing field: ${error.message}`, actualValue: undefined });
+              allChecksPassed = false;
+              continue;
+          }
+
+          switch (rule) {
+              case 'contains':
+                  passed = String(actualValue).includes(String(value));
+                  details = `Checked if ${field} contains: "${value}"`;
+                  break;
+              case 'exact_match':
+                  passed = actualValue === value;
+                  details = `Checked if ${field} exactly matches: "${value}"`;
+                  break;
+              case 'greater_than':
+                  passed = Number(actualValue) > Number(value);
+                  details = `Checked if ${field} is greater than: ${value}`;
+                  break;
+              case 'less_than':
+                  passed = Number(actualValue) < Number(value);
+                  details = `Checked if ${field} is less than: ${value}`;
+                  break;
+              case 'equals':
+                  passed = actualValue == value; // Using loose equality for flexibility
+                  details = `Checked if ${field} equals: "${value}"`;
+                  break;
+              case 'word_count':
+                  const wordCount = String(actualValue).split(/\s+/).length;
+                  passed = wordCount === parseInt(value, 10);
+                  details = `Expected word count: ${value}, Actual: ${wordCount}`;
+                  break;
+              case 'context_match':
+                  passed = await this.checkContextMatch(String(actualValue), String(value));
+                  details = `Checked for context match: "${value}"`;
+                  break;
+              // Add more checks as needed
+              default:
+                  passed = false;
+                  details = 'Check rule not implemented';
+          }
+
+          checkResults.push({ ...check, passed, details, actualValue });
+          if (!passed) allChecksPassed = false;
+      }
+
+      return {
+          test_result: allChecksPassed ? "pass" : "fail",
+          checks: checkResults,
+          processedContent: inputType === "voice" ? processedContent.transcript : undefined
+      };
+  }
+
+
+  static async processVoiceInput(content) {
+    const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
+    const audioBuffer = Buffer.from(content, 'base64');
+    
+    try {
+        const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
+            audioBuffer,
+            {
+                model: "nova-2",
+                smart_format: true,
             }
-        }
-
-        let cleanContent = '';
-        let transcription = '';
-
-        if (inputType === "voice") {
-            // Create a Deepgram client
-            const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
-            
-            // Convert base64 to Buffer
-            const audioBuffer = Buffer.from(content, 'base64');
-            
-            try {
-                // Transcribe the audio using Deepgram
-                const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
-                    audioBuffer,
-                    {
-                        model: "nova-2",
-                        smart_format: true,
-                    }
-                );
-                
-                if (error) throw error;
-                
-                // Process the transcription result
-                transcription = result.results.channels[0].alternatives[0].transcript;
-                cleanContent = this.cleanText(transcription);
-            } catch (error) {
-                console.error('Error in Deepgram transcription:', error);
-                throw error;
-            }
-        } else if (inputType === "text") {
-            cleanContent = this.cleanText(content);
-        } else {
-            throw new Error('Invalid input type');
-        }
-
-        // Perform checks
-        const checkResults = {};
-        let allChecksPassed = true;
-
-        for (const [key, value] of Object.entries(validatedChecks)) {
-            const cleanValue = this.cleanText(value);
-            let passed = false;
-            let details = '';
-
-            switch (key) {
-                case 'contains':
-                    passed = cleanContent.includes(cleanValue);
-                    details = `Checked for: "${value}"`;
-                    break;
-                case 'exact_match':
-                    passed = cleanContent === cleanValue;
-                    details = `Checked for exact match: "${value}"`;
-                    break;
-                case 'begins_with':
-                    passed = cleanContent.startsWith(cleanValue);
-                    details = `Checked for beginning with: "${value}"`;
-                    break;
-                case 'ends_with':
-                    passed = cleanContent.endsWith(cleanValue);
-                    details = `Checked for ending with: "${value}"`;
-                    break;
-                case 'word_count':
-                    const wordCount = cleanContent.split(/\s+/).length;
-                    passed = wordCount === parseInt(value, 10);
-                    details = `Expected: ${value}, Actual: ${wordCount}`;
-                    break;
-                case 'context_match':
-                    passed = await this.checkContextMatch(cleanContent, cleanValue);
-                    details = `Checked for context match: "${value}"`;
-                    break;
-                // Add more checks as needed
-                default:
-                    passed = false;
-                    details = 'Check not implemented';
-            }
-
-            checkResults[key] = { passed, details };
-            if (!passed) allChecksPassed = false;
-        }
-
+        );
+        
+        if (error) throw error;
+        
         return {
-            test_result: allChecksPassed ? "pass" : "fail",
-            checks: checkResults,
-            transcription: inputType === "voice" ? transcription : undefined
+            transcript: result.results.channels[0].alternatives[0].transcript,
+            fullResult: result
         };
+    } catch (error) {
+        console.error('Error in Deepgram transcription:', error);
+        throw error;
     }
+}
+
+static processNonVoiceInput(content) {
+    if (typeof content === 'string') {
+        try {
+            return JSON.parse(content);
+        } catch (error) {
+            // If it's not valid JSON, return it as-is
+            return content;
+        }
+    }
+    return content; // If it's already an object, return as-is
+}
+
+static getNestedValue(obj, path) {
+  const keys = path.match(/\[(\d+)\]|\.?([^\.\[\]]+)/g);
+  return keys.reduce((current, key) => {
+      if (current === null || current === undefined) {
+          return undefined;
+      }
+      if (key.startsWith('[') && key.endsWith(']')) {
+          // Array index
+          return current[parseInt(key.slice(1, -1), 10)];
+      }
+      // Object property (remove leading '.' if present)
+      return current[key.startsWith('.') ? key.slice(1) : key];
+  }, obj);
+}
 
     static cleanText(text) {
         if (typeof text !== 'string') return text;
