@@ -349,21 +349,18 @@ static processNonVoiceInput(content) {
 }
 
 static getNestedValue(obj, path) {
-    return path.split('.').reduce((current, key) => {
-        if (current === null || current === undefined) {
-            return undefined;
-        }
-        if (key.includes('[') && key.includes(']')) {
-            const arrayKey = key.split('[')[0];
-            const index = parseInt(key.split('[')[1].split(']')[0]);
-            console.log(arrayKey);
-            console.log("=========")
-            console.log(index);
-            console.log(current);
-            return current[arrayKey][index];
-        }
-        return current[key];
-    }, obj);
+  const keys = path.match(/\[(\d+)\]|\.?([^\.\[\]]+)/g);
+  return keys.reduce((current, key) => {
+      if (current === null || current === undefined) {
+          return undefined;
+      }
+      if (key.startsWith('[') && key.endsWith(']')) {
+          // Array index
+          return current[parseInt(key.slice(1, -1), 10)];
+      }
+      // Object property (remove leading '.' if present)
+      return current[key.startsWith('.') ? key.slice(1) : key];
+  }, obj);
 }
 
     static cleanText(text) {
