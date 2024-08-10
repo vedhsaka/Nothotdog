@@ -178,9 +178,71 @@ class InputModel {
       return Buffer.from(arrayBuffer).toString('base64');
     }
 
-    static async deleteInput(userId, uuid) {
-      // First, get the input entry to retrieve the file name if it's a voice input
-      const { data: inputData, error: fetchError } = await supabase
+    static async updateInput(userId, uuid, updateData) {
+      const { data: existingInput, error: fetchError } = await supabase
+          .from('collections')
+          .select('*')
+          .eq('uuid', uuid)
+          .eq('created_by', userId)
+          .single();
+
+      if (fetchError) throw fetchError;
+      if (!existingInput) throw new Error('Input not found');
+
+      const { description, inputType, content, checks, sequence, url, apiType, method, headers, query_params, content_type } = updateData;
+
+      let fileName = existingInput.file_name;
+      let textContent = existingInput.text_content;
+
+      if (inputType === 'voice' && content) {
+          // Delete old audio file if it exists
+          if (fileName) {
+              const { error: deleteError } = await supabase.storage
+                  .from('audio')
+                  .remove([`public/${fileName}`]);
+              if (deleteError) throw deleteError;
+          }
+
+          // Upload new audio file
+          fileName = `voice_${Date.now()}.wav`;
+          const audioBlob = Buffer.from(content, 'base64');
+          const { error: uploadError } = await supabase.storage
+              .from('audio')
+              .upload(`public/${fileName}`, audioBlob);
+          if (uploadError) throw uploadError;
+      } else if (inputType === 'text') {
+          textContent = content;
+      }
+
+      const updateObject = {
+          description,
+          input_type: inputType,
+          file_name: fileName,
+          text_content: textContent,
+          sequence,
+          checks,
+          url,
+          api_type: apiType,
+          method,
+          query_params,
+          headers,
+          content_type
+      };
+
+      const { data, error } = await supabase
+          .from('collections')
+          .update(updateObject)
+          .eq('uuid', uuid)
+          .eq('created_by', userId)
+          .select();
+
+      if (error) throw error;
+
+      return data[0];
+  }
+
+  static async deleteInput(userId, uuid) {
+      const { data: input, error: fetchError } = await supabase
           .from('collections')
           .select('file_name, id, input_type')
           .eq('uuid', uuid)
@@ -188,22 +250,21 @@ class InputModel {
           .single();
 
       if (fetchError) throw fetchError;
-      if (!inputData) throw new Error('Input entry not found');
+      if (!input) throw new Error('Input not found');
 
-      // If it's a voice input, delete the file from storage
-      if (inputData.input_type === 'voice') {
+      if (input.input_type === 'voice' && input.file_name) {
           const { error: storageError } = await supabase.storage
               .from('audio')
-              .remove([`public/${inputData.file_name}`]);
+              .remove([`public/${input.file_name}`]);
 
           if (storageError) throw storageError;
       }
 
-      // Delete the entry from the collections table
       const { error: deleteError } = await supabase
           .from('collections')
           .delete()
-          .match({ id: inputData.id, created_by: userId });
+          .eq('id', input.id)
+          .eq('created_by', userId);
 
       if (deleteError) throw deleteError;
 

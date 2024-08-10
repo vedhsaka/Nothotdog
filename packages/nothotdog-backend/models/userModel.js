@@ -35,7 +35,7 @@ class UserModel {
   }
 
   static async updateUser(uuid, updateData) {
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('users')
       .update(updateData)
       .eq('uuid', uuid)
@@ -45,20 +45,26 @@ class UserModel {
     return data[0];
   }
 
-//   static async deleteUser(userId) {
-//     const { data: projects } = await ProjectModel.getProjects(userId);
-//     for (const project of projects) {
-//       await ProjectModel.deleteProject(project.id, userId);
-//     }
+  static async deleteUser(userId) {
+    // Get all projects associated with the user
+    const projects = await ProjectModel.getProjects(userId);
+    console.log(projects);
 
-//     const { error } = await supabase
-//       .from('users')
-//       .delete()
-//       .eq('id', userId);
+    // Remove the user from all associated projects
+    for (const project of projects) {
+      await ProjectModel.removeUserFromProject(project.id, userId);
+    }
 
-//     if (error) throw error;
-//     return { message: 'User deleted successfully' };
-//   }
+    // Delete the user's personal data
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userId);
+
+    if (error) throw error;
+
+    return { message: 'User deleted and removed from all associated projects successfully' };
+  }
 }
 
 module.exports = UserModel;

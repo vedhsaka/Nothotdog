@@ -24,8 +24,9 @@ exports.getUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const userId = req.header("userId");
+    const user = await UserModel.getUser(userId);
     const updateData = req.body;
-    const updatedUser = await UserModel.updateUser(userId, updateData);
+    const updatedUser = await UserModel.updateUser(user.id, updateData);
     res.status(200).json(updatedUser);
   } catch (error) {
     res.status(500).json({ message: 'Error updating user', error: error.message });
@@ -34,8 +35,9 @@ exports.updateUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   try {
-    const userId = req.user.id;
-    await UserModel.deleteUser(userId);
+    const userId = req.header("userId");
+    const user = await UserModel.getUser(userId);
+    await UserModel.deleteUser(user.id);
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting user', error: error.message });

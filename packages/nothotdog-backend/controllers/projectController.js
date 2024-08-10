@@ -23,10 +23,37 @@ exports.getProjects = async (req, res) => {
   }
 };
 
+exports.updateProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { name } = req.body;
+    const updatedProject = await ProjectModel.updateProject(projectId, name);
+    res.status(200).json(updatedProject);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating project', error: error.message });
+  }
+};
+
+exports.deleteProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const userId = req.header("userId");
+    await ProjectModel.deleteProject(projectId, userId);
+    res.status(200).json({ message: 'Project deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting project', error: error.message });
+  }
+};
+
 exports.addUserToProject = async (req, res) => {
   try {
-    const { projectId, userIdToAdd } = req.body;
-    const result = await ProjectModel.addUserToProject(projectId, userIdToAdd);
+    const { projectId, userId } = req.body;
+    const user = await UserModel.getUser(userId)
+    console.log(user.id)
+
+    const project = await ProjectModel.getProjectById(projectId)
+    console.log(project.id)
+    const result = await ProjectModel.addUserToProject(project.id, user.id);
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: 'Error adding user to project', error: error.message });
@@ -35,21 +62,17 @@ exports.addUserToProject = async (req, res) => {
 
 exports.removeUserFromProject = async (req, res) => {
   try {
-    const { projectId, userIdToRemove } = req.body;
-    const result = await ProjectModel.removeUserFromProject(projectId, userIdToRemove);
+    const { projectId, userId } = req.body;
+    console.log(userId);
+    const user = await UserModel.getUser(userId)
+    console.log(user)
+
+    const project = await ProjectModel.getProjectById(projectId)
+    console.log(project.id)
+
+    const result = await ProjectModel.removeUserFromProject(project.id, user.id);
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: 'Error removing user from project', error: error.message });
   }
 };
-
-// exports.deleteProject = async (req, res) => {
-//   try {
-//     const { projectId } = req.params;
-//     const userId = req.user.id;
-//     await ProjectModel.deleteProject(projectId, userId);
-//     res.status(200).json({ message: 'Project deleted successfully' });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error deleting project', error: error.message });
-// //   }
-// };

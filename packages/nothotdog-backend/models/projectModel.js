@@ -2,12 +2,6 @@ const supabase = require('../supabaseClient.js');
 
 class ProjectModel {
   static async createProject(userId, projectName) {
-		let user_id = null;
-		try {
-			user_id = await this.getUser(userId);
-		} catch(e) {
-		}
-
     const { data, error } = await supabase
       .from('projects')
       .insert({ name: projectName, created_by: userId })
@@ -16,7 +10,7 @@ class ProjectModel {
 
 		const { data2 , error2 } = await supabase
     .from('user_project_mapping')
-    .insert({ project_id: data[0].id, user_id: user_id.id})
+    .insert({ project_id: data[0].id, user_id: userId})
     .select();
 
     return data[0];
@@ -30,10 +24,10 @@ class ProjectModel {
       created_at, 
       name, 
       uuid, 
-      user_project_mapping!inner(user_id)
+      user_project_mapping!inner(userId)
     `)
     .eq('user_project_mapping.user_id', userId)
-
+    
     if (error) throw error;
 		return data.map(({ user_project_mapping, ...project }) => project);
   }
@@ -49,57 +43,77 @@ class ProjectModel {
     return data;
   }
 
-  static async addUserToProject(projectId, userIdToAdd) {
-		let project = null;
-		let user = null;
-		try {
-			project = await this.getProjectById(projectId);
-			user = await this.getUser(userIdToAdd);
-		} catch (e) {
-			console.error('Error getting project or user:', e);
-			throw new Error('Project or user not found');
-		}
+  static async updateProject(projectId, name) {
+    const { data, error } = await supabase
+      .from('projects')
+      .update({ name })
+      .eq('uuid', projectId)
+      .select();
 
+    if (error) throw error;
+    return data[0];
+  }
+
+  static async deleteProject(projectId, userId) {
+    const project = await this.getProjectById(projectId);
+
+    // Delete all inputs associated with the project
+    const { error: inputDeleteError } = await supabase
+      .from('collections')
+      .delete()
+      .eq('project_id', project.id);
+
+    if (inputDeleteError) throw inputDeleteError;
+
+    // Delete all groups associated with the project
+    const { error: groupDeleteError } = await supabase
+      .from('groups')
+      .delete()
+      .eq('project_id', project.id);
+
+    if (groupDeleteError) throw groupDeleteError;
+
+    // Delete the project itself
+    const { error: projectDeleteError } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', project.id)
+      .eq('created_by', userId);
+
+    if (projectDeleteError) throw projectDeleteError;
+
+    // Delete the user-project mapping
+    const { error: mappingDeleteError } = await supabase
+      .from('user_project_mapping')
+      .delete()
+      .eq('project_id', project.id)
+      .eq('user_id', userId);
+
+    if (mappingDeleteError) throw mappingDeleteError;
+
+    return { message: 'Project and all associated data deleted successfully' };
+  }
+
+  static async addUserToProject(projectId, userId) {
     const { error: insertError } = await supabase
       .from('user_project_mapping')
-      .insert({ project_id: project.id, user_id: user.id });
+      .insert({ project_id: projectId, user_id: userId });
 
     if (insertError) throw insertError;
 
     return { message: 'User added to project successfully' };
   }
 
-  static async removeUserFromProject(projectId, userIdToRemove) {
-		let project = null;
-		let user = null;
-		try {
-			project = await this.getProjectById(projectId);
-			user = await this.getUser(userIdToRemove);
-		} catch (e) {
-			console.error('Error getting project or user:', e);
-			throw new Error('Project or user not found');
-		}
-
+  static async removeUserFromProject(projectId, userId) {
     const { error: removeError } = await supabase
       .from('user_project_mapping')
 			.delete()
-      .eq('project_id', project.id)
-      .eq('user_id', user.id);
+      .eq('project_id', projectId)
+      .eq('user_id', userId);
   
     if (removeError) throw removeError;
   
     return { message: 'User removed from project successfully' };
-  }
-
-	static async getUser(userId) {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('uuid', userId)
-      .single();
-
-    if (error) throw error;
-    return data;
   }
 }
 

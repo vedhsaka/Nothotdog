@@ -48,10 +48,22 @@ exports.getInputs = async (req, res) => {
     }
 };
 
+exports.updateInput = async (req, res) => {
+    try {
+        const { uuid } = req.params;
+        const updateData = req.body;
+        const userId = req.get("userId");
+        const updatedInput = await InputModel.updateInput(userId, uuid, updateData);
+        res.status(200).json({ message: 'Input updated successfully', data: updatedInput });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating Input', error: error.message });
+    }
+};
+
 exports.deleteInput = async (req, res) => {
     try {
-      const userId = "temp"; // Assuming you have middleware setting req.user
-      const { uuid } = req.params; // Assuming inputId is passed as a URL parameter
+      const userId = req.get("userId");
+      const { uuid } = req.params;
       const result = await InputModel.deleteInput(userId, uuid);
       res.status(200).json(result);
     } catch (error) {
@@ -62,7 +74,7 @@ exports.deleteInput = async (req, res) => {
         stack: error.stack 
       });
     }
-  };
+};
 
 exports.testInput = async (req, res) => {
     try {

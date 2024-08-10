@@ -37,3 +37,13 @@ exports.updateGroup = async (req, res) => {
     res.status(500).json({ message: 'Error updating group', error: error.message });
   }
 };
+
+exports.deleteGroup = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await GroupModel.deleteGroup(id);
+    res.status(200).json({ message: 'Group deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting group', error: error.message });
+  }
+};

@@ -27,12 +27,13 @@ class GroupModel {
     const { data, error } = await supabase
       .from('groups')
       .update({ name })
-      .eq('id', groupId)
+      .eq('uuid', groupId)
       .select();
 
     if (error) throw error;
     return data[0];
   }
+
 
   static async getGroupById(groupId) {
     const { data, error } = await supabase
@@ -43,6 +44,28 @@ class GroupModel {
 
     if (error) throw error;
     return data;
+  }
+
+  static async deleteGroup(groupId) {
+    const group = await this.getGroupById(groupId);
+
+    // Delete all inputs associated with the group
+    const { error: inputDeleteError } = await supabase
+      .from('collections')
+      .delete()
+      .eq('group_id', group.id);
+
+    if (inputDeleteError) throw inputDeleteError;
+
+    // Delete the group itself
+    const { error: groupDeleteError } = await supabase
+      .from('groups')
+      .delete()
+      .eq('id', group.id);
+
+    if (groupDeleteError) throw groupDeleteError;
+
+    return { message: 'Group and all associated inputs deleted successfully' };
   }
 }
 
