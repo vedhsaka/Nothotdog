@@ -8,54 +8,23 @@ import TestGroupSidebar from './TestGroupSideBar';
 import APIRequestForm from './APIConnectionForm';
 import { SaveTestModal, SignInModal } from './UtilityModals';
 import ConversationRow from './ConversationRow';
-import { capitalizeFirstLetter, evaluationMapping } from './utils';
 import NodeSelectionModal from './NodeSelectionModal';
-
-
-const StrictModeDroppable = ({ children, ...props }) => {
-  const [enabled, setEnabled] = useState(false);
-  useEffect(() => {
-    const animation = requestAnimationFrame(() => setEnabled(true));
-    return () => {
-      cancelAnimationFrame(animation);
-      setEnabled(false);
-    };
-  }, []);
-  if (!enabled) {
-    return null;
-  }
-  return <Droppable {...props}>{children}</Droppable>;
-};
 
 const RestEvaluationComponent = () => {
   const { user, signIn, projectId, userId } = useAuth();
   const authFetch = useAuthFetch();
-  const [inputs, setInputs] = useState([]);
-  const [outputs, setOutputs] = useState([]);
+  const [rows, setRows] = useState([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState('');
-  const [url, setUrl] = useState('');
-  const [authToken, setAuthToken] = useState('');
-  const [bodyParams, setBodyParams] = useState('{}');
-  const [queryParams, setQueryParams] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [description, setDescription] = useState('');
-  const [evaluations, setEvaluations] = useState([]);
-  const [phrases, setPhrases] = useState([]);
-  const [results, setResults] = useState([]);
-  const [latencies, setLatencies] = useState([]);
-  const [selectedGroup, setSelectedGroup] = useState(null);
-  const [selectedIndex, setSelectedIndex] = useState(null);
-
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
-
   const [jsonResponse, setJsonResponse] = useState(null);
   const [selectedNodePath, setSelectedNodePath] = useState('');
   const [selectedNodeValue, setSelectedNodeValue] = useState('');
   const [showNodeSelectionModal, setShowNodeSelectionModal] = useState(false);
-
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -76,20 +45,19 @@ const RestEvaluationComponent = () => {
   }, []);
 
   const handleGroupSelect = (group) => {
-    setSelectedGroup(group);
+    setSelectedGroupId(group.id);
     clearConversationRows();
     group.inputs.filter(input => input.input_type === 'text').forEach(text => loadTextAsConversationRow(text));
   };
+
   const handleEvaluate = async (index) => {
-    const evaluation = evaluations[index];
-    const phrase = phrases[index];
-    const outputText = outputs[index];
+    const row = rows[index];
   
     try {
       const checks = {};
   
-      evaluation.forEach((evalType, idx) => {
-        checks[evaluationMapping[evalType]] = phrase[idx];
+      row.conversation.evaluations.forEach((evalType, idx) => {
+        checks[evaluationMapping[evalType]] = row.conversation.phrases[idx];
       });
   
       const response = await authFetch('api/test-inputs', {
@@ -98,7 +66,7 @@ const RestEvaluationComponent = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: outputText,
+          content: row.conversation.output,
           checks,
           inputType: "text"
         }),
@@ -106,10 +74,11 @@ const RestEvaluationComponent = () => {
   
       if (response) {
         const result = response;
-        const newResults = [...results];
-  
-        newResults[index] = result.test_result; // Assuming the API returns a "test_result" field with "Pass" or "Fail"
-        setResults(newResults);
+        setRows(prev => {
+          const newRows = [...prev];
+          newRows[index].conversation.result = result.test_result; // Assuming the API returns a "test_result" field with "Pass" or "Fail"
+          return newRows;
+        });
       } else {
         console.error('Failed to evaluate the test');
       }
@@ -124,30 +93,26 @@ const RestEvaluationComponent = () => {
       setShowSignInModal(true);
       return;
     }
-    setSelectedIndex(index);
-    setDescription('');
-    setShowSaveModal(true);
-  };
 
-  const saveTest = async () => {
-    if (description.trim() === '' || selectedIndex === null) {
-      alert('Please provide a description and select a test to save.');
-      return;
-    }
-
-    const checks = {};
-    evaluations[selectedIndex].forEach((evalType, idx) => {
-      checks[evaluationMapping[evalType]] = phrases[selectedIndex][idx];
-    });
+    const row = rows[index];
 
     const data = {
       description,
-      content: inputs[selectedIndex],
+      inputType: "text",
+      content: row.conversation.input,
       projectId,
-      checks,
-      type: "text",
-      groupId: selectedGroupId,  // Include selected groupId
-      sequence: Number(selectedIndex + 1)
+      groupId: selectedGroupId,
+      checks: row.conversation.evaluations.reduce((acc, evalType, idx) => {
+        acc[evaluationMapping[evalType]] = row.conversation.phrases[idx];
+        return acc;
+      }, {}),
+      sequence: index + 1,
+      url: row.api.url,
+      apiType: "REST",
+      method: row.api.method,
+      headers: row.api.headers.reduce((acc, header) => ({ ...acc, [header.key]: header.value }), {}),
+      query_params: row.api.queryParams.reduce((acc, param) => ({ ...acc, [param.key]: param.value }), {}),
+      content_type: "application/json",
     };
 
     try {
@@ -167,8 +132,30 @@ const RestEvaluationComponent = () => {
     } catch (error) {
       console.error('Error saving test:', error);
     }
-  };  
+  };
 
+  const addConversationRow = () => {
+    setRows(prev => [
+      ...prev,
+      {
+        api: {
+          method: 'GET',
+          url: '',
+          headers: [{ key: '', value: '' }],
+          queryParams: [{ key: '', value: '' }],
+          body: '',
+        },
+        conversation: {
+          input: '',
+          output: '',
+          evaluations: [],
+          phrases: [],
+          result: null,
+          latency: { startTime: null, latency: null },
+        },
+      }
+    ]);
+  };
 
   const handleTextSelect = (text) => {
     clearConversationRows();
@@ -189,56 +176,36 @@ const RestEvaluationComponent = () => {
   };
 
   const handlePhraseChange = useCallback((index, conditionIndex, value) => {
-    setPhrases(prevPhrases => {
-      const newPhrases = [...prevPhrases];
-      newPhrases[index][conditionIndex] = value;
-      return newPhrases;
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[index].conversation.phrases[conditionIndex] = value;
+      return newRows;
     });
   }, []);
 
   const handleDeleteRow = (index) => {
-    setInputs(prev => prev.filter((_, i) => i !== index));
-    setOutputs(prev => prev.filter((_, i) => i !== index));
-    setEvaluations(prev => prev.filter((_, i) => i !== index));
-    setPhrases(prev => prev.filter((_, i) => i !== index));
-    setResults(prev => prev.filter((_, i) => i !== index));
-    setLatencies(prev => prev.filter((_, i) => i !== index));
+    setRows(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDeleteCondition = (rowIndex, conditionIndex) => {
-    setEvaluations(prevEvaluations => {
-      const newEvaluations = [...prevEvaluations];
-      newEvaluations[rowIndex].splice(conditionIndex, 1);
-      return newEvaluations;
-    });
-    setPhrases(prevPhrases => {
-      const newPhrases = [...prevPhrases];
-      newPhrases[rowIndex].splice(conditionIndex, 1);
-      return newPhrases;
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[rowIndex].conversation.evaluations.splice(conditionIndex, 1);
+      newRows[rowIndex].conversation.phrases.splice(conditionIndex, 1);
+      return newRows;
     });
   };
 
   const addCondition = (index) => {
-    setEvaluations(prev => {
-      const newEvaluations = [...prev];
-      if (!Array.isArray(newEvaluations[index])) {
-        newEvaluations[index] = [];
+    setRows(prev => {
+      const newRows = [...prev];
+      if (!Array.isArray(newRows[index].conversation.evaluations)) {
+        newRows[index].conversation.evaluations = [];
       }
-      newEvaluations[index] = [...newEvaluations[index], ''];
-      return newEvaluations;
+      newRows[index].conversation.evaluations.push('');
+      newRows[index].conversation.phrases.push('');
+      return newRows;
     });
-    setPhrases(prev => {
-      const newPhrases = [...prev];
-      if (!Array.isArray(newPhrases[index])) {
-        newPhrases[index] = [];
-      }
-      newPhrases[index] = [...newPhrases[index], ''];
-      return newPhrases;
-    });
-  };
-
-  const addConversationRow = () => {
-    updateStateArrays('', null, [], [], null);
   };
 
   const onDragEnd = (result) => {
@@ -251,45 +218,26 @@ const RestEvaluationComponent = () => {
       return result;
     };
 
-    setInputs(prev => reorder(prev, result.source.index, result.destination.index));
-    setOutputs(prev => reorder(prev, result.source.index, result.destination.index));
-    setEvaluations(prev => reorder(prev, result.source.index, result.destination.index));
-    setPhrases(prev => reorder(prev, result.source.index, result.destination.index));
-    setResults(prev => reorder(prev, result.source.index, result.destination.index));
-    setLatencies(prev => reorder(prev, result.source.index, result.destination.index));
+    setRows(prev => reorder(prev, result.source.index, result.destination.index));
   };
 
-  const updateStateArrays = (id, inputText, outputText, evaluation, phrase, result) => {
-    setInputs(prev => [...prev, inputText]);
-    setOutputs(prev => [...prev, outputText]);
-    setEvaluations(prev => [...prev, evaluation]);
-    setPhrases(prev => [...prev, phrase]);
-    setResults(prev => [...prev, result]);
-    setLatencies(prev => [...prev, { startTime: null, latency: null }]);
-  };
-  
   const clearConversationRows = () => {
-    setInputs([]);
-    setOutputs([]);
-    setEvaluations([]);
-    setPhrases([]);
-    setResults([]);
-    setLatencies([]);
+    setRows([]);
   };
+
   const handleApiResponse = (response) => {
     setJsonResponse(response);
   };
 
   const handleSetOutputValue = (value) => {
     setSelectedNodeValue(value);
-    setOutputs(prevOutputs => {
-      const newOutputs = [...prevOutputs];
-      newOutputs[newOutputs.length - 1] = value;
-      return newOutputs;
+    setRows(prevRows => {
+      const newRows = [...prevRows];
+      newRows[newRows.length - 1].conversation.output = value;
+      return newRows;
     });
   };
   
-
   return (
     <div className="evaluation-container">
       <TestGroupSidebar 
@@ -310,15 +258,32 @@ const RestEvaluationComponent = () => {
       />
 
       <div className="evaluation-component">
-      <APIRequestForm 
-          url={url}
-          authToken={authToken}
-          queryParams={queryParams}
-          bodyParams={bodyParams}
-          setUrl={setUrl}
-          setAuthToken={setAuthToken}
-          setQueryParams={setQueryParams}
-          setBodyParams={setBodyParams}
+        <APIRequestForm 
+          // Assume these props are passed to the last added row
+          url={rows[rows.length - 1]?.api.url || ''}
+          authToken={rows[rows.length - 1]?.api.authToken || ''}
+          queryParams={rows[rows.length - 1]?.api.queryParams || []}
+          bodyParams={rows[rows.length - 1]?.api.body || ''}
+          setUrl={(url) => setRows(prevRows => {
+            const newRows = [...prevRows];
+            newRows[newRows.length - 1].api.url = url;
+            return newRows;
+          })}
+          setAuthToken={(token) => setRows(prevRows => {
+            const newRows = [...prevRows];
+            newRows[newRows.length - 1].api.authToken = token;
+            return newRows;
+          })}
+          setQueryParams={(params) => setRows(prevRows => {
+            const newRows = [...prevRows];
+            newRows[newRows.length - 1].api.queryParams = params;
+            return newRows;
+          })}
+          setBodyParams={(body) => setRows(prevRows => {
+            const newRows = [...prevRows];
+            newRows[newRows.length - 1].api.body = body;
+            return newRows;
+          })}
           connected={connected}
           setConnected={setConnected}
           error={error}
@@ -330,34 +295,15 @@ const RestEvaluationComponent = () => {
           <h3>Conversations</h3>
           <button className="add-row-button" onClick={addConversationRow}>+</button>
 
-          {selectedGroup && (
-          <div className="group-evaluation-section">
-          <div>{selectedGroup ? `Selected Group: ${selectedGroup.name}` : 'No group selected'}</div>
-          <div className="group-evaluate">
-            <button 
-              className="button semi-primary" 
-              onClick={evaluateAllTests}
-              disabled={!selectedGroup}
-            >
-              Evaluate All
-            </button>
-            {evaluationStatus && (
-              <div className="evaluation-status">
-                Evaluation Status: <span className={`result-indicator`}>Group Passed = {groupPassStatus}</span>
-              </div>
-            )}
-          </div>
-        </div>
-        )}
           <DragDropContext onDragEnd={onDragEnd}>
-            <StrictModeDroppable droppableId="droppable-conversations">
+            <Droppable droppableId="droppable-conversations">
               {(provided) => (
                 <div
                   className="conversations"
                   {...provided.droppableProps}
                   ref={provided.innerRef}
                 >
-                  {inputs.map((input, rowIndex) => (
+                  {rows.map((rowData, rowIndex) => (
                     <Draggable
                       key={rowIndex}
                       draggableId={`input-${rowIndex}`}
@@ -366,22 +312,14 @@ const RestEvaluationComponent = () => {
                       {(provided) => (
                         <ConversationRow
                           rowIndex={rowIndex}
-                          input={input}
-                          output={outputs[rowIndex]}
-                          setInputs={setInputs}
-                          setOutputs={setOutputs}
-                          evaluations={evaluations}
-                          setEvaluations={setEvaluations}
-                          phrases={phrases}
-                          setPhrases={setPhrases}
+                          rowData={rowData}
+                          setRows={setRows}
                           handlePhraseChange={handlePhraseChange}
                           handleDeleteRow={handleDeleteRow}
                           handleDeleteCondition={handleDeleteCondition}
                           addCondition={addCondition}
                           handleEvaluate={handleEvaluate}
                           handleSave={handleSave}
-                          results={results}
-                          latencies={latencies}
                           dragHandleProps={provided.dragHandleProps}
                           draggableProps={provided.draggableProps}
                           ref={provided.innerRef}
@@ -392,7 +330,7 @@ const RestEvaluationComponent = () => {
                   {provided.placeholder}
                 </div>
               )}
-            </StrictModeDroppable>
+            </Droppable>
           </DragDropContext>
         </div>
         <SaveTestModal
@@ -400,7 +338,7 @@ const RestEvaluationComponent = () => {
           setShowModal={setShowSaveModal}
           description={description}
           setDescription={setDescription}
-          saveTest={saveTest}
+          saveTest={handleSave}
           groupOptions={groupOptions}
           selectedGroupId={selectedGroupId}
           setSelectedGroupId={setSelectedGroupId}

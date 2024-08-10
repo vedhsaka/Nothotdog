@@ -1,64 +1,79 @@
 import React from 'react';
 import { capitalizeFirstLetter } from './utils';
 import './css/ConversationRow.css';
+import APIConnectionForm from './APIConnectionForm';
+
 
 const ConversationRow = React.forwardRef(({
   rowIndex,
-  input,
-  output,
-  setInputs,
-  setOutputs,
-  evaluations,
-  setEvaluations,
-  phrases,
-  setPhrases,
+  rowData,
+  setRows,
   handlePhraseChange,
   handleDeleteRow,
   handleDeleteCondition,
   addCondition,
   handleEvaluate,
   handleSave,
-  results,
-  latencies,
   dragHandleProps,
   draggableProps
 }, ref) => {
+  const apiDetails = rowData.apiDetails; // Assuming `apiDetails` is part of rowData
+  const onSaveAPIConnection = (newData) => {
+    // Logic to handle saving API connection details for this specific row
+    handleSave(rowIndex, newData);
+  };
 
   const handleInputChange = (e) => {
     const newInput = e.target.value;
-    setInputs(prev => {
-      const newInputs = [...prev];
-      newInputs[rowIndex] = newInput;
-      return newInputs;
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[rowIndex].conversation.input = newInput;
+      return newRows;
     });
   };
 
   const handleOutputChange = (e) => {
     const newOutput = e.target.value;
-    setOutputs(prev => {
-      const newOutputs = [...prev];
-      newOutputs[rowIndex] = newOutput;
-      return newOutputs;
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[rowIndex].conversation.output = newOutput;
+      return newRows;
     });
   };
 
   const handleEvaluationChange = (conditionIndex, newValue) => {
-    setEvaluations(prev => {
-      const newEvaluations = [...prev];
-      newEvaluations[rowIndex][conditionIndex] = newValue;
-      return newEvaluations;
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[rowIndex].conversation.evaluations[conditionIndex] = newValue;
+      return newRows;
+    });
+  };
+
+  const handleApiChange = (field, value) => {
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[rowIndex].api[field] = value;
+      return newRows;
     });
   };
 
   return (
-    <div className="conversation-row" ref={ref} {...draggableProps}>
+    <div className="parent-conversation-row" ref={ref} {...draggableProps}>
       <div className="drag-handle" {...dragHandleProps}>⋮</div>
       <button className="delete-row-button" onClick={() => handleDeleteRow(rowIndex)}>X</button>
-      
+      <div className="api-connection-form">
+        <APIConnectionForm 
+          initialValues={apiDetails} 
+          onSave={onSaveAPIConnection}
+
+        />
+      </div>
+      <div className="conversation-row">
+      {/* Conversation Section */}
       <div className="input-output-section">
         <div className="input-section">
           <textarea
-            value={input}
+            value={rowData.conversation.input}
             onChange={handleInputChange}
             placeholder="Enter API input"
             className="input-textarea"
@@ -67,7 +82,7 @@ const ConversationRow = React.forwardRef(({
         </div>
         <div className="output-section">
           <textarea
-            value={output}
+            value={rowData.conversation.output}
             onChange={handleOutputChange}
             placeholder="Enter expected output or API output will appear here"
             className="output-textarea"
@@ -77,7 +92,7 @@ const ConversationRow = React.forwardRef(({
       </div>
 
       <div className="conditions-section">
-        {evaluations[rowIndex] && evaluations[rowIndex].map((evaluation, conditionIndex) => (
+        {rowData.conversation.evaluations && rowData.conversation.evaluations.map((evaluation, conditionIndex) => (
           <div key={conditionIndex} className="condition-row">
             <select 
               value={evaluation || 'exact_match'} 
@@ -92,7 +107,7 @@ const ConversationRow = React.forwardRef(({
             </select>
             <input 
               type="text" 
-              value={phrases[rowIndex][conditionIndex] || ''} 
+              value={rowData.conversation.phrases[conditionIndex] || ''} 
               onChange={(e) => handlePhraseChange(rowIndex, conditionIndex, e.target.value)} 
               placeholder="Enter phrase or value"
             />
@@ -107,13 +122,13 @@ const ConversationRow = React.forwardRef(({
         <button className="button semi-primary" onClick={() => handleSave(rowIndex)}>Save</button>
       </div>
 
-      {results[rowIndex] !== null && (
+      {rowData.conversation.result !== null && (
         <div className={`result-section result-section-${rowIndex}`}>
           <span className={`result-indicator ${
-            results[rowIndex] === 'pass' ? 'pass' : 
-            results[rowIndex] === 'fail' ? 'fail' : ''
+            rowData.conversation.result === 'pass' ? 'pass' : 
+            rowData.conversation.result === 'fail' ? 'fail' : ''
           }`}>
-            {results[rowIndex] === 'pass' || results[rowIndex] === 'fail' ? capitalizeFirstLetter(results[rowIndex]) : ''}
+            {rowData.conversation.result === 'pass' || rowData.conversation.result === 'fail' ? capitalizeFirstLetter(rowData.conversation.result) : ''}
           </span>
         </div>
       )}
@@ -121,9 +136,11 @@ const ConversationRow = React.forwardRef(({
       <div className="latency-row">
         <span className="latency-label">Latency:</span>
         <span className="latency-value">
-          {latencies[rowIndex]?.latency != null ? `${latencies[rowIndex].latency} ms` : 'N/A'}
+          {rowData.conversation.latency?.latency != null ? `${rowData.conversation.latency.latency} ms` : 'N/A'}
         </span>
       </div>
+      </div>
+      <hr></hr>
     </div>
   );
 });
