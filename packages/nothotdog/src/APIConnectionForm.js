@@ -112,6 +112,9 @@ const APIRequestForm = ({ onApiResponse, setOutputValue }) => {
       setOutputValue(cleanedValue);
     }
   };
+  
+  // Use `handleSetOutputValue` where appropriate
+  
 
   return (
     <div className="api-request-form">

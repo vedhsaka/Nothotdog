@@ -144,6 +144,28 @@
   .latency-value {
     font-family: monospace;
   }
+
+  .parent-conversation-row {
+    padding: 10px;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+  }
+  
+  .delete-row-button {
+    position: relative; /* Changed from absolute */
+    margin-left: auto;
+    top: 5px;
+    float: right;
+    padding: 5px 10px;
+    background-color: red;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .delete-row-button:hover {
+    background-color: darkred;
+  }
   
   /* Responsive adjustments */
   @media (max-width: 768px) {

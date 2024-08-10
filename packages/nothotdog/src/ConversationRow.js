@@ -10,6 +10,7 @@ const ConversationRow = React.forwardRef(({
   setRows,
   handlePhraseChange,
   handleDeleteRow,
+  setOutputValue,
   handleDeleteCondition,
   addCondition,
   handleEvaluate,
@@ -65,6 +66,8 @@ const ConversationRow = React.forwardRef(({
         <APIConnectionForm 
           initialValues={apiDetails} 
           onSave={onSaveAPIConnection}
+          setOutputValue={setOutputValue}
+          handleApiChange={handleApiChange}
 
         />
       </div>
