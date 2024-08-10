@@ -147,19 +147,19 @@
 
   .parent-conversation-row {
     padding: 10px;
-    border: 1px solid #ccc;
+    background-color: #e7eef570;
+    border: 1px solid #e7eef5;
     margin-bottom: 10px;
   }
   
   .delete-row-button {
     position: relative; /* Changed from absolute */
     margin-left: auto;
-    top: 5px;
+    font-weight: bold;
     float: right;
     padding: 5px 10px;
-    background-color: red;
-    color: white;
-    border: none;
+    background-color:transparent;
+    color: red;
     cursor: pointer;
   }
   

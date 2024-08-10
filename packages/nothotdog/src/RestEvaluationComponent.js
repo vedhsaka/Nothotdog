@@ -258,7 +258,7 @@ const RestEvaluationComponent = () => {
       />
 
       <div className="evaluation-component">
-        <APIRequestForm 
+        {/* <APIRequestForm 
           // Assume these props are passed to the last added row
           url={rows[rows.length - 1]?.api.url || ''}
           authToken={rows[rows.length - 1]?.api.authToken || ''}
@@ -289,7 +289,7 @@ const RestEvaluationComponent = () => {
           error={error}
           onApiResponse={handleApiResponse}
           setOutputValue={handleSetOutputValue}
-        />
+        /> */}
         <hr />
         <div className="transcript-box">
           <h3>Conversations</h3>
@@ -323,6 +323,7 @@ const RestEvaluationComponent = () => {
                           dragHandleProps={provided.dragHandleProps}
                           draggableProps={provided.draggableProps}
                           ref={provided.innerRef}
+                          setOutputValue={handleSetOutputValue}
                         />
                       )}
                     </Draggable>

@@ -100,6 +100,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue }) => {
       });
     } finally {
       setIsLoading(false);
+      setActiveTab('response');
     }
   };
 
