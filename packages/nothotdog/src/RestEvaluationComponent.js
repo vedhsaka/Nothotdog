@@ -23,6 +23,7 @@ const RestEvaluationComponent = () => {
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [apiResponse, setApiResponse] = useState(null);
+  const [currentSavingIndex, setCurrentSavingIndex] = useState(null);
 
 
 
@@ -50,20 +51,20 @@ const RestEvaluationComponent = () => {
     group.inputs.filter(input => input.input_type === 'text').forEach(text => loadTextAsConversationRow(text));
   };
 
-  const handleApiResponse = (rowIndex, response) => {
-    setRows(prev => {
-      const newRows = [...prev];
-      newRows[rowIndex] = {
-        ...newRows[rowIndex],
-        apiResponse: response,
-        conversation: {
-          ...newRows[rowIndex].conversation,
-          output: response && response.body ? JSON.stringify(response.body, null, 2) : ''
-        }
-      };
-      return newRows;
-    });
-  };
+  // const handleApiResponse = (rowIndex, response) => {
+  //   setRows(prev => {
+  //     const newRows = [...prev];
+  //     newRows[rowIndex] = {
+  //       ...newRows[rowIndex],
+  //       apiResponse: response,
+  //       conversation: {
+  //         ...newRows[rowIndex].conversation,
+  //         output: response && response.body ? JSON.stringify(response.body, null, 2) : ''
+  //       }
+  //     };
+  //     return newRows;
+  //   });
+  // };
 
   const handleEvaluate = async (index) => {
     const row = rows[index];
@@ -103,31 +104,101 @@ const RestEvaluationComponent = () => {
     }
   };
 
-  const handleSave = async (index) => {
+  // const handleSave = async (index) => {
+  //   if (!user) {
+  //     setShowSignInModal(true);
+  //     return;
+  //   }
+
+  //   const row = rows[index];
+
+  //   const data = {
+  //     description,
+  //     inputType: "text",
+  //     content: row.outputValue,
+  //     projectId,
+  //     groupId: selectedGroupId,
+  //     checks: row.conditions.reduce((acc, condition) => {
+  //       acc[evaluationMapping[condition.evaluationType]] = condition.phrase;
+  //       return acc;
+  //     }, {}),
+  //     sequence: index + 1,
+  //     url: row.api.url,
+  //     apiType: "REST",
+  //     method: row.api.method,
+  //     headers: row.api.headers.reduce((acc, header) => ({ ...acc, [header.key]: header.value }), {}),
+  //     query_params: row.api.queryParams.reduce((acc, param) => ({ ...acc, [param.key]: param.value }), {}),
+  //     content_type: "application/json",
+  //   };
+
+  //   try {
+  //     const response = await authFetch('api/inputs', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify(data),
+  //     });
+
+  //     if (response) {
+  //       console.log('Test saved successfully');
+  //       setDescription('');
+  //       setShowSaveModal(false);
+  //     } else {
+  //       console.error('Failed to save the test');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error saving test:', error);
+  //   }
+  // };
+
+  const handleApiResponse = useCallback((rowIndex, apiData) => {
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[rowIndex] = {
+        ...newRows[rowIndex],
+        api: {
+          method: apiData.method,
+          url: apiData.url,
+          headers: apiData.headers,
+          queryParams: apiData.queryParams,
+          body: apiData.body,
+        },
+        apiResponse: apiData.response,
+      };
+      return newRows;
+    });
+  }, []);
+
+  const handleSave = (index) => {
     if (!user) {
       setShowSignInModal(true);
       return;
     }
+    setCurrentSavingIndex(index);
+    setShowSaveModal(true);
+  };
 
-    const row = rows[index];
+  const handleSaveConfirm = async () => {
+    if (currentSavingIndex === null) return;
+    const row = rows[currentSavingIndex];
 
     const data = {
-      description,
+      description: description, // From the modal
       inputType: "text",
-      content: row.outputValue,
+      content: JSON.stringify(row.apiResponse?.body || {}),
       projectId,
-      groupId: selectedGroupId,
-      checks: row.conditions.reduce((acc, condition) => {
-        acc[evaluationMapping[condition.evaluationType]] = condition.phrase;
-        return acc;
-      }, {}),
-      sequence: index + 1,
-      url: row.api.url,
+      groupId: selectedGroupId, // From the modal dropdown
+      checks: row.conversation.evaluations.map((evaluation, idx) => ({
+        field: row.conversation.outputKeys[idx] || '',
+        rule: evaluation,
+        value: row.conversation.phrases[idx]
+      })),
+      sequence: currentSavingIndex + 1,
+      url: row.api?.url || '',
       apiType: "REST",
-      method: row.api.method,
-      headers: row.api.headers.reduce((acc, header) => ({ ...acc, [header.key]: header.value }), {}),
-      query_params: row.api.queryParams.reduce((acc, param) => ({ ...acc, [param.key]: param.value }), {}),
-      content_type: "application/json",
+      method: row.api?.method || 'GET',
+      headers: row.api?.headers || {},
+      query_params: row.api?.queryParams || {},
+      content_type: "json"
     };
 
     try {
@@ -137,10 +208,11 @@ const RestEvaluationComponent = () => {
         body: JSON.stringify(data),
       });
 
-      if (response) {
+      if (response.ok) {
         console.log('Test saved successfully');
         setDescription('');
         setShowSaveModal(false);
+        setCurrentSavingIndex(null);
       } else {
         console.error('Failed to save the test');
       }
@@ -148,6 +220,7 @@ const RestEvaluationComponent = () => {
       console.error('Error saving test:', error);
     }
   };
+
   const handleTextSelect = (text) => {
     clearConversationRows();
     loadTextAsConversationRow(text);
@@ -362,7 +435,7 @@ const RestEvaluationComponent = () => {
           setShowModal={setShowSaveModal}
           description={description}
           setDescription={setDescription}
-          saveTest={handleSave}
+          saveTest={handleSaveConfirm}
           groupOptions={groupOptions}
           selectedGroupId={selectedGroupId}
           setSelectedGroupId={setSelectedGroupId}

@@ -21,8 +21,8 @@ const ConversationRow = React.forwardRef(({
   const apiDetails = rowData?.apiDetails || {};
   const conversation = rowData?.conversation || { evaluations: [], phrases: [], fields: [], outputKeys: [], outputValues: [] };
 
-  const onSaveAPIConnection = (newData) => {
-    handleSave(rowIndex, newData);
+  const onSaveAPIConnection = (apiData) => {
+    handleApiResponse(rowIndex, apiData);
   };
 
   const handleInputChange = (e) => {
@@ -144,11 +144,11 @@ const ConversationRow = React.forwardRef(({
       <button className="delete-row-button" onClick={() => handleDeleteRow(rowIndex)}>X</button>
       <div className="api-connection-form">
         <APIConnectionForm 
-          initialValues={apiDetails} 
+          initialValues={rowData.api}
+          onApiResponse={onSaveAPIConnection}
           onSave={onSaveAPIConnection}
           setOutputValue={(key, value) => handleSetOutput(key, value)}
           handleApiChange={handleApiChange}
-          onApiResponse={(response) => handleApiResponse(rowIndex, response)}
           onFullApiResponse={(fullResponse) => handleApiResponse(rowIndex, fullResponse)}
         />
       </div>

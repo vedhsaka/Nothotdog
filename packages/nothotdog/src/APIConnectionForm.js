@@ -83,7 +83,6 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse }) =>
       let responseData;
       if (contentType && contentType.indexOf('application/json') !== -1) {
         responseData = await response.json();
-        if (onApiResponse) onApiResponse(responseData);
       } else {
         responseData = await response.text();
       }
@@ -95,16 +94,19 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse }) =>
         body: responseData,
       };
 
-
       setResponse(fullResponse);
       
-      // Call the new prop function with the full response
-      if (onFullApiResponse) onFullApiResponse(fullResponse);
-
-      setResponse(fullResponse);
-      
-      // Call onApiResponse with the full response
-      if (onApiResponse) onApiResponse(fullResponse);
+      // Call onApiResponse with the full API details
+      if (onApiResponse) {
+        onApiResponse({
+          method,
+          url: urlWithParams.toString(),
+          headers: Object.fromEntries(requestHeaders.entries()),
+          queryParams: Object.fromEntries(urlWithParams.searchParams.entries()),
+          body: requestOptions.body,
+          response: fullResponse
+        });
+      }
     } catch (error) {
       setResponse({
         error: error.message,
