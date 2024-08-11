@@ -72,7 +72,7 @@ const RestEvaluationComponent = () => {
       let content = row.apiResponse ? row.apiResponse.body : {};
   
       const checks = row.conversation.evaluations.map((evaluation, idx) => ({
-        field: row.conversation.fields[idx] || '',
+        field: row.conversation.outputValues[idx] || '',
         rule: evaluation,
         value: row.conversation.phrases[idx]
       }));
@@ -207,8 +207,15 @@ const RestEvaluationComponent = () => {
       if (!newRows[rowIndex].conversation) {
         newRows[rowIndex].conversation = {};
       }
-      newRows[rowIndex].conversation.outputKey = key;
-      newRows[rowIndex].conversation.output = JSON.stringify(value);
+      if (!newRows[rowIndex].conversation.outputKeys) {
+        newRows[rowIndex].conversation.outputKeys = [];
+      }
+      if (!newRows[rowIndex].conversation.outputValues) {
+        newRows[rowIndex].conversation.outputValues = [];
+      }
+      const index = newRows[rowIndex].conversation.outputKeys.length;
+      newRows[rowIndex].conversation.outputKeys[index] = key;
+      newRows[rowIndex].conversation.outputValues[index] = value;
       return newRows;
     });
   }, []);
@@ -338,8 +345,8 @@ const RestEvaluationComponent = () => {
                           dragHandleProps={provided.dragHandleProps}
                           draggableProps={provided.draggableProps}
                           ref={provided.innerRef}
-                          setOutputValue={handleSetOutputValue}
                           handleApiResponse={handleApiResponse}  // Pass this down
+                          setOutputValue={(key, value) => handleSetOutputValue(rowIndex, key, value)}
                         />
                       )}
                     </Draggable>

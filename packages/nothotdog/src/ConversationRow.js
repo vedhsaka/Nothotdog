@@ -103,9 +103,23 @@ const ConversationRow = React.forwardRef(({
       if (!newRows[rowIndex].conversation.outputValues) {
         newRows[rowIndex].conversation.outputValues = [];
       }
-      const newIndex = newRows[rowIndex].conversation.outputKeys.length;
-      newRows[rowIndex].conversation.outputKeys[newIndex] = keyPath;
-      newRows[rowIndex].conversation.outputValues[newIndex] = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      if (!newRows[rowIndex].conversation.evaluations) {
+        newRows[rowIndex].conversation.evaluations = [];
+      }
+      if (!newRows[rowIndex].conversation.phrases) {
+        newRows[rowIndex].conversation.phrases = [];
+      }
+      
+      let index = newRows[rowIndex].conversation.outputKeys.indexOf(keyPath);
+      if (index === -1) {
+        index = newRows[rowIndex].conversation.outputKeys.length;
+        newRows[rowIndex].conversation.evaluations.push('equals');
+        newRows[rowIndex].conversation.phrases.push('');
+      }
+      
+      newRows[rowIndex].conversation.outputKeys[index] = keyPath;
+      newRows[rowIndex].conversation.outputValues[index] = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      
       return newRows;
     });
   };
