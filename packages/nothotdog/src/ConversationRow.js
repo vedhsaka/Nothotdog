@@ -7,7 +7,7 @@ const ConversationRow = React.forwardRef(({
   rowIndex,
   rowData,
   setRows,
-  handleApiResponse,  // Add this prop
+  handleApiResponse,
   handlePhraseChange,
   handleDeleteRow,
   setOutputValue,
@@ -19,7 +19,7 @@ const ConversationRow = React.forwardRef(({
   draggableProps
 }, ref) => {
   const apiDetails = rowData?.apiDetails || {};
-  const conversation = rowData?.conversation || {};
+  const conversation = rowData?.conversation || { evaluations: [], phrases: [], fields: [], outputKeys: [], outputValues: [] };
 
   const onSaveAPIConnection = (newData) => {
     handleSave(rowIndex, newData);
@@ -37,14 +37,30 @@ const ConversationRow = React.forwardRef(({
     });
   };
 
-  const handleOutputChange = (e) => {
-    const newOutput = e.target.value;
+  const handleOutputKeyChange = (conditionIndex, newValue) => {
     setRows(prev => {
       const newRows = [...prev];
       if (!newRows[rowIndex].conversation) {
-        newRows[rowIndex].conversation = {};
+        newRows[rowIndex].conversation = { outputKeys: [] };
       }
-      newRows[rowIndex].conversation.output = newOutput;
+      if (!newRows[rowIndex].conversation.outputKeys) {
+        newRows[rowIndex].conversation.outputKeys = [];
+      }
+      newRows[rowIndex].conversation.outputKeys[conditionIndex] = newValue;
+      return newRows;
+    });
+  };
+
+  const handleOutputValueChange = (conditionIndex, newValue) => {
+    setRows(prev => {
+      const newRows = [...prev];
+      if (!newRows[rowIndex].conversation) {
+        newRows[rowIndex].conversation = { outputValues: [] };
+      }
+      if (!newRows[rowIndex].conversation.outputValues) {
+        newRows[rowIndex].conversation.outputValues = [];
+      }
+      newRows[rowIndex].conversation.outputValues[conditionIndex] = newValue;
       return newRows;
     });
   };
@@ -81,44 +97,31 @@ const ConversationRow = React.forwardRef(({
       if (!newRows[rowIndex].conversation) {
         newRows[rowIndex].conversation = {};
       }
-      newRows[rowIndex].conversation.outputKey = keyPath;
-      newRows[rowIndex].conversation.output = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      if (!newRows[rowIndex].conversation.outputKeys) {
+        newRows[rowIndex].conversation.outputKeys = [];
+      }
+      if (!newRows[rowIndex].conversation.outputValues) {
+        newRows[rowIndex].conversation.outputValues = [];
+      }
+      const newIndex = newRows[rowIndex].conversation.outputKeys.length;
+      newRows[rowIndex].conversation.outputKeys[newIndex] = keyPath;
+      newRows[rowIndex].conversation.outputValues[newIndex] = typeof value === 'object' ? JSON.stringify(value) : String(value);
       return newRows;
     });
   };
 
-  const handleOutputKeyChange = (e) => {
-    const newOutputKey = e.target.value;
+  const handleFieldChange = (conditionIndex, newValue) => {
     setRows(prev => {
       const newRows = [...prev];
       if (!newRows[rowIndex].conversation) {
-        newRows[rowIndex].conversation = {};
+        newRows[rowIndex].conversation = { fields: [] };
       }
-      newRows[rowIndex].conversation.outputKey = newOutputKey;
+      if (!newRows[rowIndex].conversation.fields) {
+        newRows[rowIndex].conversation.fields = [];
+      }
+      newRows[rowIndex].conversation.fields[conditionIndex] = newValue;
       return newRows;
     });
-  };
-
-  const getNestedKeyPath = (obj, value, path = []) => {
-    console.log("Inspecting path:", path.join('.'), "with value:", value);
-    if (typeof obj !== 'object' || obj === null) {
-      return null;
-    }
-  
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        const newPath = path.concat(key);
-        if (obj[key] === value) {
-          console.log("Found match at path:", newPath.join('.'));
-          return newPath.join('.');
-        } else if (typeof obj[key] === 'object') {
-          const result = getNestedKeyPath(obj[key], value, newPath);
-          if (result) return result;
-        }
-      }
-    }
-  
-    return path.join('.'); // Fallback to return current path
   };
 
   return (
@@ -131,28 +134,29 @@ const ConversationRow = React.forwardRef(({
           onSave={onSaveAPIConnection}
           setOutputValue={(key, value) => handleSetOutput(key, value)}
           handleApiChange={handleApiChange}
-          onApiResponse={(response) => handleApiResponse(rowIndex, response)}  // Use it here
+          onApiResponse={(response) => handleApiResponse(rowIndex, response)}
           onFullApiResponse={(fullResponse) => handleApiResponse(rowIndex, fullResponse)}
         />
       </div>
       <div className="conversation-row">
-        <div className="output-field-section">
-          <label>Output Field:</label>
-          <input 
-            type="text" 
-            value={conversation.outputKey || ''} 
-            onChange={handleOutputKeyChange}
-            placeholder="Key (set from API response or edit manually)"
-          />
-          <textarea 
-            value={conversation.output || ''} 
-            onChange={handleOutputChange}
-            placeholder="Value (set from API response or edit manually)"
-          />
-        </div>
         <div className="conditions-section">
           {conversation.evaluations && conversation.evaluations.map((evaluation, conditionIndex) => (
             <div key={conditionIndex} className="condition-row">
+              <div className="output-field-section">
+                <input 
+                  className='output-key-input'
+                  type="text" 
+                  value={conversation.outputKeys?.[conditionIndex] || ''} 
+                  onChange={(e) => handleOutputKeyChange(conditionIndex, e.target.value)}
+                  placeholder="Key (set from API response or edit manually)"
+                />
+                <textarea 
+                  className='output-value-input'
+                  value={conversation.outputValues?.[conditionIndex] || ''}
+                  onChange={(e) => handleOutputValueChange(conditionIndex, e.target.value)}
+                  placeholder="Value (set from API response or edit manually)"
+                />
+              </div>
               <select 
                 value={evaluation || 'equals'} 
                 onChange={(e) => handleEvaluationChange(conditionIndex, e.target.value)}
@@ -169,7 +173,7 @@ const ConversationRow = React.forwardRef(({
                 type="text" 
                 value={conversation.phrases?.[conditionIndex] || ''} 
                 onChange={(e) => handlePhraseChange(rowIndex, conditionIndex, e.target.value)} 
-                placeholder="Enter phrase or value"
+                placeholder="Value"
               />
               <button className="delete-condition-button" onClick={() => handleDeleteCondition(rowIndex, conditionIndex)}>X</button>
             </div>

@@ -53,7 +53,14 @@ const RestEvaluationComponent = () => {
   const handleApiResponse = (rowIndex, response) => {
     setRows(prev => {
       const newRows = [...prev];
-      newRows[rowIndex].apiResponse = response;
+      newRows[rowIndex] = {
+        ...newRows[rowIndex],
+        apiResponse: response,
+        conversation: {
+          ...newRows[rowIndex].conversation,
+          output: response && response.body ? JSON.stringify(response.body, null, 2) : ''
+        }
+      };
       return newRows;
     });
   };
@@ -62,24 +69,14 @@ const RestEvaluationComponent = () => {
     const row = rows[index];
   
     try {
-      let content = row.apiResponse ? row.apiResponse.body : row.conversation.output;
-
-      // If content is a string, try to parse it as JSON
-      if (typeof content === 'string') {
-        try {
-          content = JSON.parse(content);
-        } catch (error) {
-          // If parsing fails, use the string as is
-          console.log('Content is not valid JSON, using as string');
-        }
-      }
-
+      let content = row.apiResponse ? row.apiResponse.body : {};
+  
       const checks = row.conversation.evaluations.map((evaluation, idx) => ({
-        field: row.conversation.outputKey || '',
+        field: row.conversation.fields[idx] || '',
         rule: evaluation,
         value: row.conversation.phrases[idx]
       }));
-
+  
       const response = await authFetch('api/test-inputs', {
         method: 'POST',
         headers: {
@@ -91,7 +88,7 @@ const RestEvaluationComponent = () => {
           checks
         }),
       });
-
+  
       if (response) {
         setRows(prev => {
           const newRows = [...prev];
@@ -260,9 +257,6 @@ const RestEvaluationComponent = () => {
   const addCondition = useCallback((rowIndex) => {
     setRows(prevRows => {
       const newRows = [...prevRows];
-      if (!newRows[rowIndex]) {
-        newRows[rowIndex] = {};
-      }
       if (!newRows[rowIndex].conversation) {
         newRows[rowIndex].conversation = {};
       }
@@ -272,8 +266,20 @@ const RestEvaluationComponent = () => {
       if (!Array.isArray(newRows[rowIndex].conversation.phrases)) {
         newRows[rowIndex].conversation.phrases = [];
       }
-      newRows[rowIndex].conversation.evaluations.push('exact_match');
+      if (!Array.isArray(newRows[rowIndex].conversation.fields)) {
+        newRows[rowIndex].conversation.fields = [];
+      }
+      if (!Array.isArray(newRows[rowIndex].conversation.outputKeys)) {
+        newRows[rowIndex].conversation.outputKeys = [];
+      }
+      if (!Array.isArray(newRows[rowIndex].conversation.outputValues)) {
+        newRows[rowIndex].conversation.outputValues = [];
+      }
+      newRows[rowIndex].conversation.evaluations.push('equals');
       newRows[rowIndex].conversation.phrases.push('');
+      newRows[rowIndex].conversation.fields.push('');
+      newRows[rowIndex].conversation.outputKeys.push('');
+      newRows[rowIndex].conversation.outputValues.push('');
       return newRows;
     });
   }, []);
