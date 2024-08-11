@@ -36,7 +36,6 @@ exports.getInputs = async (req, res) => {
         const userId = req.get("userId");
         const user = await UserModel.getUser(userId);
         const projects = await ProjectModel.getProjects(user.id);
-        console.log(projects);
         const projectsWithInputs = await Promise.all(projects.map(async (project) => {
             const projectData = await InputModel.getInputs(project.id);
             return projectData;

@@ -6,7 +6,6 @@ exports.createUser = async (req, res) => {
     const result = await UserModel.createUser(uuid, createdAt, invitedProjectId);
     res.status(201).json(result);
   } catch (error) {
-    console.log(error);
     res.status(500).json({ message: 'Error creating user', error: error.message });
   }
 };

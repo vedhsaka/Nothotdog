@@ -49,10 +49,7 @@ exports.addUserToProject = async (req, res) => {
   try {
     const { projectId, userId } = req.body;
     const user = await UserModel.getUser(userId)
-    console.log(user.id)
-
     const project = await ProjectModel.getProjectById(projectId)
-    console.log(project.id)
     const result = await ProjectModel.addUserToProject(project.id, user.id);
     res.status(200).json(result);
   } catch (error) {
@@ -63,13 +60,8 @@ exports.addUserToProject = async (req, res) => {
 exports.removeUserFromProject = async (req, res) => {
   try {
     const { projectId, userId } = req.body;
-    console.log(userId);
     const user = await UserModel.getUser(userId)
-    console.log(user)
-
     const project = await ProjectModel.getProjectById(projectId)
-    console.log(project.id)
-
     const result = await ProjectModel.removeUserFromProject(project.id, user.id);
     res.status(200).json(result);
   } catch (error) {
