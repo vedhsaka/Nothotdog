@@ -8,7 +8,7 @@ exports.saveInput = async (req, res) => {
     try {
         let group_id = null;
         const { description, inputType, content, projectId, groupId, checks, sequence, url, apiType, method, headers, query_params, content_type } = req.body;
-        const userId = req.get("userId"); // Assuming you have middleware setting req.user
+        const userId = req.get("userId");
         const user = await UserModel.getUser(userId);
         let order = 1;
         if (!content) {
@@ -33,10 +33,10 @@ exports.saveInput = async (req, res) => {
 
 exports.getInputs = async (req, res) => {
     try {
-        const userId = req.get("userId"); // Assuming you have middleware setting req.user
+        const userId = req.get("userId");
         const user = await UserModel.getUser(userId);
         const projects = await ProjectModel.getProjects(user.id);
-        
+        console.log(projects);
         const projectsWithInputs = await Promise.all(projects.map(async (project) => {
             const projectData = await InputModel.getInputs(project.id);
             return projectData;
@@ -53,7 +53,8 @@ exports.updateInput = async (req, res) => {
         const { uuid } = req.params;
         const updateData = req.body;
         const userId = req.get("userId");
-        const updatedInput = await InputModel.updateInput(userId, uuid, updateData);
+        const user = await UserModel.getUser(userId);
+        const updatedInput = await InputModel.updateInput(user.id, uuid, updateData);
         res.status(200).json({ message: 'Input updated successfully', data: updatedInput });
     } catch (error) {
         res.status(500).json({ message: 'Error updating Input', error: error.message });
@@ -64,7 +65,8 @@ exports.deleteInput = async (req, res) => {
     try {
       const userId = req.get("userId");
       const { uuid } = req.params;
-      const result = await InputModel.deleteInput(userId, uuid);
+      const user = await UserModel.getUser(userId);
+      const result = await InputModel.deleteInput(user.id, uuid);
       res.status(200).json(result);
     } catch (error) {
       console.error('Error in deleteInput:', error);

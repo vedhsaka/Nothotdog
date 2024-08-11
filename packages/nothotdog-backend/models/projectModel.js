@@ -24,7 +24,7 @@ class ProjectModel {
       created_at, 
       name, 
       uuid, 
-      user_project_mapping!inner(userId)
+      user_project_mapping!inner(user_id)
     `)
     .eq('user_project_mapping.user_id', userId)
     

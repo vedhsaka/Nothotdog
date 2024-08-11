@@ -86,9 +86,7 @@ class InputModel {
         .select('*')
         .eq('id', projectId)
         .single();
-  
       if (projectError) throw projectError;
-  
       // Fetch inputs directly associated with the project
       const { data: projectInputs, error: inputsError } = await supabase
         .from('collections')
