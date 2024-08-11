@@ -833,7 +833,7 @@ const EvaluationComponent = () => {
           >
             {(provided) => (
               <div className="conversation-row" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                <button className="delete-row-button" onClick={() => handleDeleteRow(rowIndex)}>X</button>
+                <button className="audio-delete-row-button" onClick={() => handleDeleteRow(rowIndex)}>X</button>
                 <div className="audio-section input-audio">
                   <AudioPlayer audioId={audioId} />
                   <span className="audio-label">Input</span>

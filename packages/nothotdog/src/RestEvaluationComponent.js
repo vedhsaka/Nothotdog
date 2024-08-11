@@ -8,11 +8,12 @@ import TestGroupSidebar from './TestGroupSideBar';
 import APIRequestForm from './APIConnectionForm';
 import { SaveTestModal, SignInModal } from './UtilityModals';
 import ConversationRow from './ConversationRow';
-import NodeSelectionModal from './NodeSelectionModal';
+import { evaluationMapping } from './utils';  // Add this import at the top of the file
+
 
 const RestEvaluationComponent = () => {
   const { user, signIn, projectId, userId } = useAuth();
-  const authFetch = useAuthFetch();
+  const { authFetch } = useAuthFetch();
   const [rows, setRows] = useState([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState('');
@@ -21,10 +22,9 @@ const RestEvaluationComponent = () => {
   const [description, setDescription] = useState('');
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
-  const [jsonResponse, setJsonResponse] = useState(null);
-  const [selectedNodePath, setSelectedNodePath] = useState('');
-  const [selectedNodeValue, setSelectedNodeValue] = useState('');
-  const [showNodeSelectionModal, setShowNodeSelectionModal] = useState(false);
+  const [apiResponse, setApiResponse] = useState(null);
+
+
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -50,33 +50,52 @@ const RestEvaluationComponent = () => {
     group.inputs.filter(input => input.input_type === 'text').forEach(text => loadTextAsConversationRow(text));
   };
 
+  const handleApiResponse = (rowIndex, response) => {
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[rowIndex].apiResponse = response;
+      return newRows;
+    });
+  };
+
   const handleEvaluate = async (index) => {
     const row = rows[index];
   
     try {
-      const checks = {};
-  
-      row.conversation.evaluations.forEach((evalType, idx) => {
-        checks[evaluationMapping[evalType]] = row.conversation.phrases[idx];
-      });
-  
+      let content = row.apiResponse ? row.apiResponse.body : row.conversation.output;
+
+      // If content is a string, try to parse it as JSON
+      if (typeof content === 'string') {
+        try {
+          content = JSON.parse(content);
+        } catch (error) {
+          // If parsing fails, use the string as is
+          console.log('Content is not valid JSON, using as string');
+        }
+      }
+
+      const checks = row.conversation.evaluations.map((evaluation, idx) => ({
+        field: row.conversation.outputKey || '',
+        rule: evaluation,
+        value: row.conversation.phrases[idx]
+      }));
+
       const response = await authFetch('api/test-inputs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: row.conversation.output,
-          checks,
-          inputType: "text"
+          inputType: "text",
+          content,
+          checks
         }),
       });
-  
+
       if (response) {
-        const result = response;
         setRows(prev => {
           const newRows = [...prev];
-          newRows[index].conversation.result = result.test_result; // Assuming the API returns a "test_result" field with "Pass" or "Fail"
+          newRows[index].conversation.result = response.test_result;
           return newRows;
         });
       } else {
@@ -89,7 +108,6 @@ const RestEvaluationComponent = () => {
 
   const handleSave = async (index) => {
     if (!user) {
-      setSelectedIndex(index);
       setShowSignInModal(true);
       return;
     }
@@ -99,11 +117,11 @@ const RestEvaluationComponent = () => {
     const data = {
       description,
       inputType: "text",
-      content: row.conversation.input,
+      content: row.outputValue,
       projectId,
       groupId: selectedGroupId,
-      checks: row.conversation.evaluations.reduce((acc, evalType, idx) => {
-        acc[evaluationMapping[evalType]] = row.conversation.phrases[idx];
+      checks: row.conditions.reduce((acc, condition) => {
+        acc[evaluationMapping[condition.evaluationType]] = condition.phrase;
         return acc;
       }, {}),
       sequence: index + 1,
@@ -133,52 +151,38 @@ const RestEvaluationComponent = () => {
       console.error('Error saving test:', error);
     }
   };
-
-  const addConversationRow = () => {
-    setRows(prev => [
-      ...prev,
-      {
-        api: {
-          method: 'GET',
-          url: '',
-          headers: [{ key: '', value: '' }],
-          queryParams: [{ key: '', value: '' }],
-          body: '',
-        },
-        conversation: {
-          input: '',
-          output: '',
-          evaluations: [],
-          phrases: [],
-          result: null,
-          latency: { startTime: null, latency: null },
-        },
-      }
-    ]);
-  };
-
   const handleTextSelect = (text) => {
     clearConversationRows();
     loadTextAsConversationRow(text);
   };
   
   const loadTextAsConversationRow = (text) => {
-    const textId = Date.now() + Math.random(); // Generate a unique ID
     const checks = text.checks || {};
-    const evaluationTypes = Object.keys(checks).map(key => {
-      const mappedType = evaluationMapping[key];
-      return mappedType || 'exact_match'; // Default to 'exact_match' if no mapping found
-    });
-    const phraseValues = Object.values(checks);
+    const conditions = Object.entries(checks).map(([key, value]) => ({
+      evaluationType: evaluationMapping[key] || 'exact_match',
+      phrase: value,
+    }));
     
-    // Update state arrays with text content
-    updateStateArrays(textId, text.content, null, evaluationTypes, phraseValues, null);
+    setRows([{
+      api: {
+        method: 'GET',
+        url: text.url || '',
+        headers: text.headers ? Object.entries(text.headers).map(([key, value]) => ({ key, value })) : [],
+        queryParams: text.query_params ? Object.entries(text.query_params).map(([key, value]) => ({ key, value })) : [],
+        body: '',
+      },
+      conditions,
+      outputValue: text.content || '',
+      outputKey: '',
+      result: null,
+      latency: { startTime: null, latency: null },
+    }]);
   };
 
-  const handlePhraseChange = useCallback((index, conditionIndex, value) => {
+  const handleConditionChange = useCallback((rowIndex, conditionIndex, field, value) => {
     setRows(prev => {
       const newRows = [...prev];
-      newRows[index].conversation.phrases[conditionIndex] = value;
+      newRows[rowIndex].conditions[conditionIndex][field] = value;
       return newRows;
     });
   }, []);
@@ -187,26 +191,30 @@ const RestEvaluationComponent = () => {
     setRows(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleDeleteCondition = (rowIndex, conditionIndex) => {
-    setRows(prev => {
-      const newRows = [...prev];
-      newRows[rowIndex].conversation.evaluations.splice(conditionIndex, 1);
-      newRows[rowIndex].conversation.phrases.splice(conditionIndex, 1);
-      return newRows;
-    });
-  };
-
-  const addCondition = (index) => {
-    setRows(prev => {
-      const newRows = [...prev];
-      if (!Array.isArray(newRows[index].conversation.evaluations)) {
-        newRows[index].conversation.evaluations = [];
+  const handleDeleteCondition = useCallback((rowIndex, conditionIndex) => {
+    setRows(prevRows => {
+      const newRows = [...prevRows];
+      const row = {...newRows[rowIndex]};
+      if (row.conversation && Array.isArray(row.conversation.evaluations) && Array.isArray(row.conversation.phrases)) {
+        row.conversation.evaluations = row.conversation.evaluations.filter((_, index) => index !== conditionIndex);
+        row.conversation.phrases = row.conversation.phrases.filter((_, index) => index !== conditionIndex);
       }
-      newRows[index].conversation.evaluations.push('');
-      newRows[index].conversation.phrases.push('');
+      newRows[rowIndex] = row;
       return newRows;
     });
-  };
+  }, []);
+
+  const handleSetOutputValue = useCallback((rowIndex, key, value) => {
+    setRows(prevRows => {
+      const newRows = [...prevRows];
+      if (!newRows[rowIndex].conversation) {
+        newRows[rowIndex].conversation = {};
+      }
+      newRows[rowIndex].conversation.outputKey = key;
+      newRows[rowIndex].conversation.output = JSON.stringify(value);
+      return newRows;
+    });
+  }, []);
 
   const onDragEnd = (result) => {
     if (!result.destination) return;
@@ -225,23 +233,63 @@ const RestEvaluationComponent = () => {
     setRows([]);
   };
 
-  const handleApiResponse = (response) => {
-    setJsonResponse(response);
-  };
+  // const handleApiResponse = (response) => {
+  //   setApiResponse(response);
+  // };
 
-  const handleSetOutputValue = (value) => {
-    setSelectedNodeValue(value);
+  const addConversationRow = useCallback(() => {
+    setRows(prev => [
+      ...prev,
+      {
+        api: {
+          method: 'GET',
+          url: '',
+          headers: [{ key: '', value: '' }],
+          queryParams: [{ key: '', value: '' }],
+          body: '',
+        },
+        conditions: [],
+        outputKey: '',
+        outputValue: '',
+        result: null,
+        latency: { startTime: null, latency: null },
+        apiResponse: null,
+      }
+    ]);
+  }, []);
+  const addCondition = useCallback((rowIndex) => {
     setRows(prevRows => {
       const newRows = [...prevRows];
-      newRows[newRows.length - 1].conversation.output = value;
+      if (!newRows[rowIndex]) {
+        newRows[rowIndex] = {};
+      }
+      if (!newRows[rowIndex].conversation) {
+        newRows[rowIndex].conversation = {};
+      }
+      if (!Array.isArray(newRows[rowIndex].conversation.evaluations)) {
+        newRows[rowIndex].conversation.evaluations = [];
+      }
+      if (!Array.isArray(newRows[rowIndex].conversation.phrases)) {
+        newRows[rowIndex].conversation.phrases = [];
+      }
+      newRows[rowIndex].conversation.evaluations.push('exact_match');
+      newRows[rowIndex].conversation.phrases.push('');
       return newRows;
     });
-  };
+  }, []);
+
+  const handlePhraseChange = useCallback((index, conditionIndex, value) => {
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[index].conversation.phrases[conditionIndex] = value;
+      return newRows;
+    });
+  }, []);
   
   return (
     <div className="evaluation-container">
       <TestGroupSidebar 
-        testGroups={[]} // You may need to fetch and pass the actual test groups
+        testGroups={[]}
         onSelectGroup={handleGroupSelect}
         projectId={projectId}
         authFetch={authFetch} 
@@ -249,47 +297,8 @@ const RestEvaluationComponent = () => {
         onInputSelect={handleTextSelect}
         onGroupSelect={handleGroupSelect} 
       />
-      <NodeSelectionModal
-        showModal={showNodeSelectionModal}
-        setShowModal={setShowNodeSelectionModal}
-        jsonResponse={jsonResponse}
-        setSelectedNodePath={setSelectedNodePath}
-        setSelectedNodeValue={setSelectedNodeValue}
-      />
 
       <div className="evaluation-component">
-        {/* <APIRequestForm 
-          // Assume these props are passed to the last added row
-          url={rows[rows.length - 1]?.api.url || ''}
-          authToken={rows[rows.length - 1]?.api.authToken || ''}
-          queryParams={rows[rows.length - 1]?.api.queryParams || []}
-          bodyParams={rows[rows.length - 1]?.api.body || ''}
-          setUrl={(url) => setRows(prevRows => {
-            const newRows = [...prevRows];
-            newRows[newRows.length - 1].api.url = url;
-            return newRows;
-          })}
-          setAuthToken={(token) => setRows(prevRows => {
-            const newRows = [...prevRows];
-            newRows[newRows.length - 1].api.authToken = token;
-            return newRows;
-          })}
-          setQueryParams={(params) => setRows(prevRows => {
-            const newRows = [...prevRows];
-            newRows[newRows.length - 1].api.queryParams = params;
-            return newRows;
-          })}
-          setBodyParams={(body) => setRows(prevRows => {
-            const newRows = [...prevRows];
-            newRows[newRows.length - 1].api.body = body;
-            return newRows;
-          })}
-          connected={connected}
-          setConnected={setConnected}
-          error={error}
-          onApiResponse={handleApiResponse}
-          setOutputValue={handleSetOutputValue}
-        /> */}
         <hr />
         <div className="transcript-box">
           <h3>Conversations</h3>
@@ -324,6 +333,7 @@ const RestEvaluationComponent = () => {
                           draggableProps={provided.draggableProps}
                           ref={provided.innerRef}
                           setOutputValue={handleSetOutputValue}
+                          handleApiResponse={handleApiResponse}  // Pass this down
                         />
                       )}
                     </Draggable>
@@ -349,13 +359,6 @@ const RestEvaluationComponent = () => {
           setShowSignInModal={setShowSignInModal}
           signIn={signIn}
         />
-
-        {selectedNodePath && (
-          <div className="selected-node-info">
-            <p>Selected Node: {selectedNodePath}</p>
-            <p>Value: {selectedNodeValue}</p>
-          </div>
-        )}
       </div>
     </div>
   );

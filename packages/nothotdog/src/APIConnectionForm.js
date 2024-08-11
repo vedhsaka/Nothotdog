@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Send, Loader, Plus } from 'lucide-react';
 import './css/ApiConnections.css';
 
-const APIRequestForm = ({ onApiResponse, setOutputValue }) => {
+const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse }) => {
   const [method, setMethod] = useState('GET');
   const [url, setUrl] = useState('');
   const [params, setParams] = useState([{ key: '', value: '' }]);
@@ -88,12 +88,23 @@ const APIRequestForm = ({ onApiResponse, setOutputValue }) => {
         responseData = await response.text();
       }
 
-      setResponse({
+      const fullResponse = {
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries()),
         body: responseData,
-      });
+      };
+
+
+      setResponse(fullResponse);
+      
+      // Call the new prop function with the full response
+      if (onFullApiResponse) onFullApiResponse(fullResponse);
+
+      setResponse(fullResponse);
+      
+      // Call onApiResponse with the full response
+      if (onApiResponse) onApiResponse(fullResponse);
     } catch (error) {
       setResponse({
         error: error.message,
@@ -104,14 +115,27 @@ const APIRequestForm = ({ onApiResponse, setOutputValue }) => {
     }
   };
 
-  const handleSetOutputValue = (value, path) => {
-    setSelectedNodePath(path);
+  const handleSetOutputValue = (value, key) => {
+    setSelectedNodePath(key);
     const cleanedValue = cleanValue(value);
     if (typeof cleanedValue === 'object') {
-      setOutputValue(JSON.stringify(cleanedValue));
+      setOutputValue(key, JSON.stringify(cleanedValue));
     } else {
-      setOutputValue(cleanedValue);
+      setOutputValue(key, cleanedValue);
     }
+  };
+
+  const generateNestedKeyPaths = (obj, prefix = '') => {
+    let result = [];
+    for (const [key, value] of Object.entries(obj)) {
+      const newKey = prefix ? `${prefix}.${key}` : key;
+      if (typeof value === 'object' && value !== null) {
+        result = result.concat(generateNestedKeyPaths(value, newKey));
+      } else {
+        result.push({ key: newKey, value });
+      }
+    }
+    return result;
   };
   
   // Use `handleSetOutputValue` where appropriate
@@ -208,56 +232,51 @@ const APIRequestForm = ({ onApiResponse, setOutputValue }) => {
           </div>
         )}
 
-        {activeTab === 'response' && (
-          <div className="section response-section">
-            <h3>Response</h3>
-            {response ? (
-              response.error ? (
-                <p className="error">Error: {response.error}</p>
-              ) : (
-                <>
-                  <p className="status">Status: {response.status} {response.statusText}</p>
-                  <div className="response-details">
-                    <h4>Headers:</h4>
-                    <pre>{JSON.stringify(response.headers, null, 2)}</pre>
-                    <h4>Body:</h4>
-                    <pre>
-                      {typeof response.body === 'object'
-                        ? JSON.stringify(response.body, null, 2).split('\n').map((line, index) => {
-                            const match = line.match(/"(.+)":\s(.+)/);
-                            if (match) {
-                              const [_, key, value] = match;
-                              return (
-                                <div
-                                  key={index}
-                                  className="response-line"
-                                  onMouseEnter={() => (document.getElementById(`set-output-btn-${index}`).style.display = 'inline')}
-                                  onMouseLeave={() => (document.getElementById(`set-output-btn-${index}`).style.display = 'none')}
-                                >
-                                  {line}
-                                  <button
-                                    id={`set-output-btn-${index}`}
-                                    className="set-output-btn"
-                                    style={{ display: 'none', marginLeft: '2px' }}
-                                    onClick={() => handleSetOutputValue(value.trim(), key)}
-                                  >
-                                    Set as Output
-                                  </button>
-                                </div>
-                              );
-                            }
-                            return <div key={index}>{line}</div>;
-                          })
-                        : response.body}
-                    </pre>
-                  </div>
-                </>
-              )
+{activeTab === 'response' && (
+        <div className="section response-section">
+          <h3>Response</h3>
+          {response ? (
+            response.error ? (
+              <p className="error">Error: {response.error}</p>
             ) : (
-              <p>No response yet</p>
-            )}
-          </div>
-        )}
+              <>
+                <p className="status">Status: {response.status} {response.statusText}</p>
+                <div className="response-details">
+                  <h4>Headers:</h4>
+                  <pre>{JSON.stringify(response.headers, null, 2)}</pre>
+                  <h4>Body:</h4>
+                  <pre>
+                    {typeof response.body === 'object' ? (
+                      generateNestedKeyPaths(response.body).map(({ key, value }, index) => (
+                        <div
+                          key={index}
+                          className="response-line"
+                          onMouseEnter={() => (document.getElementById(`set-output-btn-${index}`).style.display = 'inline')}
+                          onMouseLeave={() => (document.getElementById(`set-output-btn-${index}`).style.display = 'none')}
+                        >
+                          {key}: {JSON.stringify(value)}
+                          <button
+                            id={`set-output-btn-${index}`}
+                            className="set-output-btn"
+                            style={{ display: 'none', marginLeft: '2px' }}
+                            onClick={() => handleSetOutputValue(key, value)}
+                          >
+                            Set as Output
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      response.body
+                    )}
+                  </pre>
+                </div>
+              </>
+            )
+          ) : (
+            <p>No response yet</p>
+          )}
+        </div>
+      )}
       </div>
     </div>
   );

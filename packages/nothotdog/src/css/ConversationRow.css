@@ -11,6 +11,9 @@
     width: 100%;
     box-sizing: border-box;
   } */
+  .parent-conversation-row .conversation-row {
+    grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr auto;
+  }
   
   .drag-handle {
     cursor: move;
@@ -185,4 +188,8 @@
     .latency-label {
       margin-bottom: 5px;
     }
+  }
+
+  .output-field {
+    display: block;
   }
