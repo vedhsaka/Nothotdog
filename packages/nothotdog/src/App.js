@@ -7,25 +7,34 @@ import EvaluationComponent from './EvaluationComponent';
 import RestEvaluationComponent from './RestEvaluationComponent';
 import Sidebar from './Sidebar';
 import { AuthProvider, useAuth } from './AuthContext';
+import { BrowserRouter as Router, Route, Routes, useNavigate, Navigate } from 'react-router-dom';
 
 function AppContent() {
-  const [activeTab, setActiveTab] = useState('API Testing');
+  const [activeTab, setActiveTab] = useState('Voice Evaluation'); // Set the default tab
   const { user, signIn, signOut } = useAuth();
+  const navigate = useNavigate();
 
-  const renderContent = () => {
-    switch (activeTab) {
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    switch (tab) {
       case 'API Testing':
-        return <WebSocketComponent />;
+        navigate('/api-testing');
+        break;
       case 'Recorded Tests':
-        return <RecordedTests />;
+        navigate('/recorded-tests');
+        break;
       case 'Configuration':
-        return <ConfigurationComponent />;
+        navigate('/configuration');
+        break;
       case 'Voice Evaluation':
-        return <EvaluationComponent />;
+        navigate('/voice-evaluation');
+        break;
       case 'Text Evaluation':
-        return <RestEvaluationComponent />;
+        navigate('/text-evaluation');
+        break;
       default:
-        return <div>Select a tab</div>;
+        navigate('/voice-evaluation');
+        break;
     }
   };
 
@@ -33,14 +42,21 @@ function AppContent() {
     <div className="app">
       <Sidebar 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+        setActiveTab={handleTabChange} 
         user={user}
         signIn={signIn}
         signOut={signOut}
       />
       <div className="main-content">
         <div className="content-wrapper">
-          {renderContent()}
+          <Routes>
+            <Route path="/api-testing" element={<WebSocketComponent />} />
+            <Route path="/recorded-tests" element={<RecordedTests />} />
+            <Route path="/configuration" element={<ConfigurationComponent />} />
+            <Route path="/voice-evaluation" element={<EvaluationComponent />} />
+            <Route path="/text-evaluation" element={<RestEvaluationComponent />} />
+            <Route path="/" element={<Navigate to="/voice-evaluation" />} /> {/* Default route */}
+          </Routes>
         </div>
       </div>
     </div>
@@ -50,7 +66,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <Router>
+        <AppContent />
+      </Router>
     </AuthProvider>
   );
 }

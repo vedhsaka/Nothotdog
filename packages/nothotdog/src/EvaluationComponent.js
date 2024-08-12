@@ -9,7 +9,9 @@ import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import AudioPlayer from './AudioPlayer';
 import fetchTests from './fetchTests'; // Import fetchTests
 import TestGroupSidebar from './TestGroupSideBar';
-import { SignInModal } from './UtilityModals'; // Ensure SignInModal is correctly imported
+import { SignInModal } from './UtilityModals';
+import { useLocation } from 'react-router-dom';
+
 
 import { 
   b64toBlob, 
@@ -56,7 +58,7 @@ const EvaluationComponent = () => {
   const [results, setResults] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const { authFetch } = useAuthFetch(); // Use the custom hook
-
+  const location = useLocation();
 
   const [tests, setTests] = useState([]);
   const [selectedTest, setSelectedTest] = useState(null);
@@ -118,6 +120,13 @@ const EvaluationComponent = () => {
       .filter(input => input.input_type === 'voice')
       .forEach(voice => loadVoiceAsConversationRow(voice));
   };
+
+  useEffect(() => {
+    if (location.state && location.state.selectedGroup) {
+      handleGroupSelect(location.state.selectedGroup);
+    }
+    // Only run this effect once when the component mounts
+  }, []);
 
   const evaluateAllTests = async () => {
     if (!selectedGroup) {

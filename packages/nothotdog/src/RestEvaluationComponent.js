@@ -10,6 +10,8 @@ import { SaveTestModal, SignInModal } from './UtilityModals';
 import ConversationRow from './ConversationRow';
 import { evaluationMapping } from './utils';  // Add this import at the top of the file
 import StrictModeDroppable from './StrictModeDroppable';
+import { useLocation } from 'react-router-dom';
+
 
 const RestEvaluationComponent = () => {
   const { user, signIn, projectId, userId } = useAuth();
@@ -24,6 +26,9 @@ const RestEvaluationComponent = () => {
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [apiResponse, setApiResponse] = useState(null);
   const [currentSavingIndex, setCurrentSavingIndex] = useState(null);
+  const location = useLocation();
+
+
 
 
 
@@ -50,6 +55,13 @@ const RestEvaluationComponent = () => {
     clearConversationRows();
     group.inputs.filter(input => input.input_type === 'text').forEach(text => loadTextAsConversationRow(text));
   };
+
+  useEffect(() => {
+    if (location.state && location.state.selectedGroup) {
+      handleGroupSelect(location.state.selectedGroup);
+    }
+    // Only run this effect once when the component mounts
+  }, []);
 
   // const handleApiResponse = (rowIndex, response) => {
   //   setRows(prev => {
