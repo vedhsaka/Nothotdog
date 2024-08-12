@@ -77,6 +77,10 @@ const EvaluationComponent = () => {
   const [checkResults, setCheckResults] = useState([]); // Array of objects
 
   const [groupPassStatus, setGroupPassStatus] = useState(true);
+  const [isEditCase, setIsEditCase] = useState(false);  // Track if updating or creating new
+  const [savedTests, setSavedTests] = useState([]); // store loaded tests
+
+
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -165,6 +169,7 @@ const EvaluationComponent = () => {
     setLatencies([]);
   };
   const loadVoiceAsConversationRow = (voice) => {
+    setIsEditCase(true);
     const audioId = Date.now() + Math.random(); // Generate a unique ID
     
     // Map checks to the new format
@@ -192,6 +197,10 @@ const EvaluationComponent = () => {
     storeAudio(audioId, audioBlob);
     setAudioData((prevAudioData) => [...prevAudioData, audioId]);
     setOutputAudioData((prevOutputAudioData) => [...prevOutputAudioData, null]);
+
+    // Set up the test for editing by saving it
+    setSavedTests((prev) => [...prev, voice]); 
+    setIsEditCase(true); // Set edit mode
   };
   
   
@@ -540,6 +549,69 @@ const EvaluationComponent = () => {
     };
     reader.readAsDataURL(audioBlob);
   };  
+
+  const handleUpdate = (index) => {
+    const testToUpdate = savedTests[index];
+    setDescription(testToUpdate.description || '');
+    setSelectedGroupId(testToUpdate.groupId || '');
+    setSelectedIndex(index);
+    setShowSaveModal(true);
+  };
+
+  const updateTest = async () => {
+    if (description.trim() === '') {
+      alert('Please provide a description.');
+      setShowSaveModal(false);
+      return;
+    }
+
+    if (selectedIndex === null) {
+      alert('No test selected for updating.');
+      setShowSaveModal(false);
+      return;
+    }
+
+    const audioBlob = await getAudio(audioData[selectedIndex]);
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Audio = reader.result.split(',')[1];
+      const checks = evaluations[selectedIndex].map((evalType, idx) => ({
+        field: audioData[selectedIndex] ? `audio_${audioData[selectedIndex]}` : '',
+        rule: evalType,
+        value: phrases[selectedIndex][idx],
+      }));
+
+      const data = {
+        description: description,
+        content: base64Audio,
+        projectId: projectId,
+        checks: checks,
+        inputType: "voice",
+        sequence: Number(selectedIndex + 1),
+        groupId: selectedGroupId  
+      };
+
+      const response = await authFetch(`api/inputs/${savedTests[selectedIndex].uuid}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response) {
+        console.log('Test updated successfully');
+        setDescription(''); 
+        setShowSaveModal(false); 
+        setIsEditCase(false);
+      } else {
+        console.error('Failed to update the test');
+      }
+    };
+    reader.readAsDataURL(audioBlob);
+  };
+
   
   const handleEvaluate = async (index) => {
     return new Promise(async (resolve, reject) => {
@@ -901,7 +973,12 @@ const EvaluationComponent = () => {
                 </div>
                 <div className="evaluate-section">
                   <button className="button primary" onClick={() => handleEvaluate(rowIndex)}>Evaluate</button>
+
+                  {isEditCase ? (
+                    <button className="button semi-primary" onClick={() => handleUpdate(rowIndex)}>Update</button>
+                  ) : ( 
                   <button className="button semi-primary" onClick={() => handleSave(rowIndex)}>Save</button>
+                  )}
                 </div>
                 {results[rowIndex] !== null && (
                   <div className={`result-section result-section-${rowIndex}`}>
@@ -950,21 +1027,21 @@ const EvaluationComponent = () => {
         />
       )}
 
-      <ModalComponent
-        showModal={showSaveModal}
-        onClose={() => setShowSaveModal(false)}
-        headerContent="Enter Description for the Test"
-      >
-        <label htmlFor="description">Description:</label>
-        <input
-          type="text"
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Enter description"
-        />
+<ModalComponent
+          showModal={showSaveModal}
+          onClose={() => setShowSaveModal(false)}
+          headerContent={isEditCase ? "Update Test" : "Save Test"}
+        >
+          <label htmlFor="description">Description:</label>
+          <input
+            type="text"
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter description"
+          />
         
-        <label htmlFor="group">Select Group:</label>
+          <label htmlFor="group">Select Group:</label>
           <select
             id="group"
             value={selectedGroupId}
@@ -977,15 +1054,21 @@ const EvaluationComponent = () => {
               </option>
             ))}
           </select>
-        <div className="button-group">
-          <button className="button primary" onClick={saveTest}>
-            Save
-          </button>
-          <button className="button" onClick={() => setShowSaveModal(false)}>
-            Cancel
-          </button>
-        </div>
-      </ModalComponent>
+          <div className="button-group">
+            {isEditCase ? (
+              <button className="button primary" onClick={updateTest}>
+                Update
+              </button>
+            ) : (
+              <button className="button primary" onClick={saveTest}>
+                Save
+              </button>
+            )}
+            <button className="button" onClick={() => setShowSaveModal(false)}>
+              Cancel
+            </button>
+          </div>
+        </ModalComponent>
 
     </div>
     </div>
