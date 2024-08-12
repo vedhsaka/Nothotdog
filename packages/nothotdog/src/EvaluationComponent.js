@@ -160,23 +160,21 @@ const EvaluationComponent = () => {
     
     // Map checks to the new format
     const checks = voice.checks || {};
+    
+    // Only map the values of checks to phrases
+    const phraseValues = Object.values(checks).map(value => 
+      typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)
+    );
+  
+    // Only the evaluation types are needed for evaluations
     const evaluationTypes = Object.keys(checks).map(key => {
       const mappedType = evaluationMapping[key];
       return mappedType || 'exact_match'; // Default to 'exact_match' if no mapping found
     });
   
-    const phraseValues = Object.values(checks);
-  
-    // Create the checks array with field, rule, and value
-    const mappedChecks = evaluationTypes.map((rule, idx) => ({
-      field: `audio_${audioId}`, // Assuming each check is associated with this audio ID
-      rule,
-      value: phraseValues[idx],
-    }));
-  
     // Update the state with the mapped checks
-    setEvaluations((prevEvaluations) => [...prevEvaluations, mappedChecks.map(check => check.rule)]);
-    setPhrases((prevPhrases) => [...prevPhrases, mappedChecks.map(check => check.value)]);
+    setEvaluations((prevEvaluations) => [...prevEvaluations, evaluationTypes]);
+    setPhrases((prevPhrases) => [...prevPhrases, phraseValues]);
     setResults((prevResults) => [...prevResults, null]);
     setLatencies((prevLatencies) => [...prevLatencies, { startTime: null, latency: null }]);
   
@@ -186,6 +184,7 @@ const EvaluationComponent = () => {
     setAudioData((prevAudioData) => [...prevAudioData, audioId]);
     setOutputAudioData((prevOutputAudioData) => [...prevOutputAudioData, null]);
   };
+  
   
 
   const handleSelectGroup = (groupId) => {

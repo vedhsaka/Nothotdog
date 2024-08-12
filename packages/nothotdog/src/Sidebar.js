@@ -8,11 +8,10 @@ import flameIcon from './icons/flame.svg'; // Make sure to import the flame icon
 
 const Sidebar = ({ setActiveTab, activeTab, user, signIn, signOut }) => {
   const tabs = [
-    { name: 'API Testing', icon: apiSettings },
     { name: 'Recorded Tests', icon: voiceTests },
     { name: 'Configuration', icon: settings },
-    { name: 'Evaluation', icon: flame },
-    { name: 'Rest Evaluation', icon: flame },
+    { name: 'Voice Evaluation', icon: flame },
+    { name: 'Text Evaluation', icon: apiSettings },
 
   ];
 

@@ -20,9 +20,9 @@ function AppContent() {
         return <RecordedTests />;
       case 'Configuration':
         return <ConfigurationComponent />;
-      case 'Evaluation':
+      case 'Voice Evaluation':
         return <EvaluationComponent />;
-      case 'Rest Evaluation':
+      case 'Text Evaluation':
         return <RestEvaluationComponent />;
       default:
         return <div>Select a tab</div>;
