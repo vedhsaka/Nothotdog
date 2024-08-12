@@ -17,7 +17,6 @@
   
   .drag-handle {
     cursor: move;
-    position: absolute;
     left: 10px;
     top: 10px;
     color: #6c757d;

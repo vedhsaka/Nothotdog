@@ -9,7 +9,7 @@ import APIRequestForm from './APIConnectionForm';
 import { SaveTestModal, SignInModal } from './UtilityModals';
 import ConversationRow from './ConversationRow';
 import { evaluationMapping } from './utils';  // Add this import at the top of the file
-
+import StrictModeDroppable from './StrictModeDroppable';
 
 const RestEvaluationComponent = () => {
   const { user, signIn, projectId, userId } = useAuth();
@@ -294,16 +294,15 @@ const RestEvaluationComponent = () => {
   }, []);
 
   const onDragEnd = (result) => {
-    if (!result.destination) return;
+    if (!result.destination) {
+      return;
+    }
 
-    const reorder = (list, startIndex, endIndex) => {
-      const result = Array.from(list);
-      const [removed] = result.splice(startIndex, 1);
-      result.splice(endIndex, 0, removed);
-      return result;
-    };
+    const items = Array.from(rows);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
 
-    setRows(prev => reorder(prev, result.source.index, result.destination.index));
+    setRows(items);
   };
 
   const clearConversationRows = () => {
@@ -391,22 +390,21 @@ const RestEvaluationComponent = () => {
           <button className="add-row-button" onClick={addConversationRow}>+</button>
 
           <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="droppable-conversations">
+            <StrictModeDroppable droppableId="droppable-conversations">
               {(provided) => (
                 <div
-                  className="conversations"
                   {...provided.droppableProps}
                   ref={provided.innerRef}
+                  className="conversations"
                 >
-                  {rows.map((rowData, rowIndex) => (
-                    <Draggable
-                      key={rowIndex}
-                      draggableId={`input-${rowIndex}`}
-                      index={rowIndex}
-                    >
+                  {rows.map((rowData, index) => (
+                    <Draggable key={`row-${index}`} draggableId={`row-${index}`} index={index}>
                       {(provided) => (
                         <ConversationRow
-                          rowIndex={rowIndex}
+                          ref={provided.innerRef}
+                          draggableProps={provided.draggableProps}
+                          dragHandleProps={provided.dragHandleProps}
+                          rowIndex={index}
                           rowData={rowData}
                           setRows={setRows}
                           handlePhraseChange={handlePhraseChange}
@@ -415,11 +413,8 @@ const RestEvaluationComponent = () => {
                           addCondition={addCondition}
                           handleEvaluate={handleEvaluate}
                           handleSave={handleSave}
-                          dragHandleProps={provided.dragHandleProps}
-                          draggableProps={provided.draggableProps}
-                          ref={provided.innerRef}
-                          handleApiResponse={handleApiResponse}  // Pass this down
-                          setOutputValue={(key, value) => handleSetOutputValue(rowIndex, key, value)}
+                          setOutputValue={handleSetOutputValue}
+                          handleApiResponse={handleApiResponse}
                         />
                       )}
                     </Draggable>
@@ -427,7 +422,7 @@ const RestEvaluationComponent = () => {
                   {provided.placeholder}
                 </div>
               )}
-            </Droppable>
+            </StrictModeDroppable>
           </DragDropContext>
         </div>
         <SaveTestModal

@@ -140,7 +140,7 @@ const ConversationRow = React.forwardRef(({
 
   return (
     <div className="parent-conversation-row" ref={ref} {...draggableProps}>
-      <div className="drag-handle" {...dragHandleProps}>⋮</div>
+    <div className="drag-handle" {...dragHandleProps}>⋮</div>
       <button className="delete-row-button" onClick={() => handleDeleteRow(rowIndex)}>X</button>
       <div className="api-connection-form">
         <APIConnectionForm 

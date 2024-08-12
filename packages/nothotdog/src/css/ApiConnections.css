@@ -337,6 +337,9 @@
 .response-line:hover .set-output-btn {
   display: inline;
 }
+.response-line:hover {
+  background-color: #e4e4f5;
+}
 
 .set-output-btn {
   display: none;
