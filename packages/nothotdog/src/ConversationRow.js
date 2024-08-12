@@ -180,7 +180,7 @@ const ConversationRow = React.forwardRef(({
                 <option value="begins_with">Begins With</option>
                 <option value="ends_with">Ends With</option>
                 <option value="word_count">Word Count</option>
-                <option value="greater_than">Greater Than</option>
+                <option value="contextually_contains">Contextually Contains</option>
                 <option value="less_than">Less Than</option>
               </select>
               <input 

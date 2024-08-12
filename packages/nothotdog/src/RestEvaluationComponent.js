@@ -423,6 +423,7 @@ const createConversationRowFromInput = (input) => {
         onInputSelect={handleTextSelect}
         onGroupSelect={handleGroupSelect}
         onTextGroupSelect={handleTextGroupSelect} // Pass the new handler 
+        componentType={'text'}
       />
 
       <div className="evaluation-component">

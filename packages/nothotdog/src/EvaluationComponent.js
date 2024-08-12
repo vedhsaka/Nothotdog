@@ -162,8 +162,8 @@ const EvaluationComponent = () => {
     const checks = voice.checks || {};
     
     // Only map the values of checks to phrases
-    const phraseValues = Object.values(checks).map(value => 
-      typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)
+    const phraseValues = checks.map(check => 
+      typeof check.value === 'object' && check.value !== null ? JSON.stringify(check.value) : String(check.value)
     );
   
     // Only the evaluation types are needed for evaluations
@@ -700,11 +700,13 @@ const EvaluationComponent = () => {
         testGroups={testGroups} 
         onSelectGroup={handleGroupSelect} 
         onGroupSelect={handleGroupSelect} 
+        onTextGroupSelect={handleGroupSelect}
         onSaveGroup={handleSaveGroup}
         projectId={projectId}
         authFetch={authFetch} 
         userId={userId}
         onInputSelect={handleVoiceSelect}
+        componentType={'voice'}
       />
 
     <div className="evaluation-component">
