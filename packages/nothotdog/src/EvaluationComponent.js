@@ -55,7 +55,7 @@ const EvaluationComponent = () => {
   const [phrases, setPhrases] = useState([]); // Array of arrays
   const [results, setResults] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
-  const authFetch = useAuthFetch(); // Use the custom hook
+  const { authFetch } = useAuthFetch(); // Use the custom hook
 
 
   const [tests, setTests] = useState([]);
@@ -157,18 +157,36 @@ const EvaluationComponent = () => {
   };
   const loadVoiceAsConversationRow = (voice) => {
     const audioId = Date.now() + Math.random(); // Generate a unique ID
+    
+    // Map checks to the new format
     const checks = voice.checks || {};
     const evaluationTypes = Object.keys(checks).map(key => {
       const mappedType = evaluationMapping[key];
       return mappedType || 'exact_match'; // Default to 'exact_match' if no mapping found
     });
+  
     const phraseValues = Object.values(checks);
-    updateStateArrays(audioId, null, evaluationTypes, phraseValues, null);
+  
+    // Create the checks array with field, rule, and value
+    const mappedChecks = evaluationTypes.map((rule, idx) => ({
+      field: `audio_${audioId}`, // Assuming each check is associated with this audio ID
+      rule,
+      value: phraseValues[idx],
+    }));
+  
+    // Update the state with the mapped checks
+    setEvaluations((prevEvaluations) => [...prevEvaluations, mappedChecks.map(check => check.rule)]);
+    setPhrases((prevPhrases) => [...prevPhrases, mappedChecks.map(check => check.value)]);
+    setResults((prevResults) => [...prevResults, null]);
+    setLatencies((prevLatencies) => [...prevLatencies, { startTime: null, latency: null }]);
+  
     // Store the audio data
     const audioBlob = b64toBlob(voice.content, 'audio/webm');
     storeAudio(audioId, audioBlob);
-    setAudioToSend(audioBlob);
-  };  
+    setAudioData((prevAudioData) => [...prevAudioData, audioId]);
+    setOutputAudioData((prevOutputAudioData) => [...prevOutputAudioData, null]);
+  };
+  
 
   const handleSelectGroup = (groupId) => {
     console.log('Selected group ID:', groupId);
@@ -480,12 +498,11 @@ const EvaluationComponent = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64Audio = reader.result.split(',')[1];
-      const checks = {};
-  
-      // Dynamically generate checks based on evaluations and phrases
-      evaluations[selectedIndex].forEach((evalType, idx) => {
-        checks[evaluationMapping[evalType]] = phrases[selectedIndex][idx];
-      });
+      const checks = evaluations[selectedIndex].map((evalType, idx) => ({
+        field: audioData[selectedIndex] ? `audio_${audioData[selectedIndex]}` : '', // You can customize this field name if needed
+        rule: evalType,
+        value: phrases[selectedIndex][idx],
+      }));
   
       const data = {
         description: description,
@@ -514,7 +531,7 @@ const EvaluationComponent = () => {
       }
     };
     reader.readAsDataURL(audioBlob);
-  };
+  };  
   
   const handleEvaluate = async (index) => {
     return new Promise(async (resolve, reject) => {
@@ -527,11 +544,11 @@ const EvaluationComponent = () => {
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64Audio = reader.result.split(',')[1];
-        const checks = {};
-  
-        evaluation.forEach((evalType, idx) => {
-          checks[evaluationMapping[evalType]] = phrase[idx];
-        });
+        const checks = evaluation.map((evalType, idx) => ({
+          field: outputAudioId ? `audio_${outputAudioId}` : '', // You can customize this field name if needed
+          rule: evalType,
+          value: phrase[idx],
+        }));
   
         const response = await authFetch('api/test-inputs', {
           method: 'POST',
@@ -545,28 +562,28 @@ const EvaluationComponent = () => {
           }),
         });
   
-      if (response) {
-        const result = await response;
-        setResults((prevResults) => {
-          const newResults = [...prevResults];
-          newResults[index] = result.test_result;
-          return newResults;
-        });
-
-        setCheckResults((prevCheckResults) => {
-          const newCheckResults = [...prevCheckResults];
-          newCheckResults[index] = result.checks;
-          return newCheckResults;
-        });
-        resolve(result.test_result); // Resolve with the test result
-      } else {
-        console.error('Failed to evaluate the test');
-        reject('FAIL'); // Reject with 'FAIL' if the evaluation fails
-      }
-    };
+        if (response) {
+          const result = await response;
+          setResults((prevResults) => {
+            const newResults = [...prevResults];
+            newResults[index] = result.test_result;
+            return newResults;
+          });
+  
+          setCheckResults((prevCheckResults) => {
+            const newCheckResults = [...prevCheckResults];
+            newCheckResults[index] = result.checks;
+            return newCheckResults;
+          });
+          resolve(result.test_result); // Resolve with the test result
+        } else {
+          console.error('Failed to evaluate the test');
+          reject('FAIL'); // Reject with 'FAIL' if the evaluation fails
+        }
+      };
       reader.readAsDataURL(outputAudioBlob);
     });
-  };
+  };  
   
 
   const handlePhraseChange = useCallback((index, conditionIndex, value) => {
