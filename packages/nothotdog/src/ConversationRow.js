@@ -144,7 +144,7 @@ const ConversationRow = React.forwardRef(({
       <button className="delete-row-button" onClick={() => handleDeleteRow(rowIndex)}>X</button>
       <div className="api-connection-form">
         <APIConnectionForm 
-          initialValues={rowData.api}
+          initialValues={rowData.api}  // Ensure this prop is correctly set
           onApiResponse={onSaveAPIConnection}
           onSave={onSaveAPIConnection}
           setOutputValue={(key, value) => handleSetOutput(key, value)}

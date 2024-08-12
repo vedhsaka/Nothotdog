@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Send, Loader, Plus } from 'lucide-react';
 import './css/ApiConnections.css';
 
-const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse }) => {
-  const [method, setMethod] = useState('GET');
-  const [url, setUrl] = useState('');
-  const [params, setParams] = useState([{ key: '', value: '' }]);
-  const [headers, setHeaders] = useState([{ key: '', value: '' }]);
-  const [body, setBody] = useState('');
+const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues }) => {
+  const [method, setMethod] = useState(initialValues?.method || 'GET');
+  const [url, setUrl] = useState(initialValues?.url || '');
+  const [params, setParams] = useState(
+    Array.isArray(initialValues?.queryParams) ? initialValues.queryParams.map(param => ({ key: param.key, value: param.value })) : [{ key: '', value: '' }]
+  );
+  const [headers, setHeaders] = useState(
+    Array.isArray(initialValues?.headers) ? initialValues.headers.map(header => ({ key: header.key, value: header.value })) : [{ key: '', value: '' }]
+  );
+  const [body, setBody] = useState(initialValues?.body || '');
   const [response, setResponse] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedNodePath, setSelectedNodePath] = useState('');

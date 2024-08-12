@@ -184,7 +184,7 @@ const RestEvaluationComponent = () => {
     const data = {
       description: description, // From the modal
       inputType: "text",
-      content: JSON.stringify(row.apiResponse?.body || {}),
+      content: JSON.stringify(row.api?.body || {}),
       projectId,
       groupId: selectedGroupId, // From the modal dropdown
       checks: row.conversation.evaluations.map((evaluation, idx) => ({
@@ -370,6 +370,47 @@ const RestEvaluationComponent = () => {
       return newRows;
     });
   }, []);
+
+  const handleTextGroupSelect = (inputs) => {
+    clearConversationRows(); // Clear any existing rows
+
+    inputs.forEach(input => {
+        const newRow = createConversationRowFromInput(input);
+        setRows(prevRows => [...prevRows, ...newRow]);
+    });
+};
+
+const createConversationRowFromInput = (input) => {
+  const apiDetails = {
+      method: input.method || 'GET',
+      url: input.url || '',
+      headers: Object.entries(input.headers || {}).map(([key, value]) => ({ key, value })),
+      queryParams: Object.entries(input.query_params || {}).map(([key, value]) => ({ key, value })),
+      body: input.content || '',  // This maps to the request body
+      contentType: input.content_type,
+  };
+
+  const newRow = {
+      api: apiDetails,
+      conversation: {
+          evaluations: [],
+          phrases: [],
+          outputValues: [],
+          result: null,
+          latency: { startTime: null, latency: null },
+      },
+  };
+
+  input.checks.forEach(check => {
+      newRow.conversation.evaluations.push(check.rule);
+      newRow.conversation.phrases.push(check.value);
+      newRow.conversation.outputValues.push(check.field);
+  });
+
+  return [newRow];
+};
+
+
   
   return (
     <div className="evaluation-container">
@@ -380,7 +421,8 @@ const RestEvaluationComponent = () => {
         authFetch={authFetch} 
         userId={userId}
         onInputSelect={handleTextSelect}
-        onGroupSelect={handleGroupSelect} 
+        onGroupSelect={handleGroupSelect}
+        onTextGroupSelect={handleTextGroupSelect} // Pass the new handler 
       />
 
       <div className="evaluation-component">

@@ -4,7 +4,7 @@ import { SignInModal } from './UtilityModals'; // Ensure SignInModal is correctl
 import useAuthFetch from './AuthFetch';
 import { useAuth } from './AuthContext';
 
-const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect }) => {
+const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroupSelect }) => {
   const { signIn, userId } = useAuth(); // Access signIn and userId function
   const { authFetch, showSignInModal, setShowSignInModal } = useAuthFetch(); // Destructure showSignInModal and setShowSignInModal
   const [voiceData, setVoiceData] = useState([]);
@@ -47,6 +47,11 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect }) => {
       [groupId]: !prev[groupId]
     }));
   };
+  const handleTextGroupClick = (group) => {
+    if (group.inputs && group.inputs.length > 0) {
+        onTextGroupSelect(group.inputs);
+    }
+};
 
   const handleGroupClick = (group) => {
     toggleGroup(group.uuid);
@@ -104,22 +109,30 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect }) => {
 
   const renderGroups = (project) => {
     return project.groups.map(group => {
-      const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
-      return (
-        <li key={group.uuid} className="group-item">
-          <div className="group-header" onClick={() => handleGroupClick(group)}>
-            <span className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>▶</span>
-            {group.name} ({groupType})
-          </div>
-          {expandedGroups[group.uuid] && (
-            <ul className={`voice-list ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>
-              {renderInputs(group.inputs)}
-            </ul>
-          )}
-        </li>
-      );
+        const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
+        return (
+            <li key={group.uuid} className="group-item">
+                <div className="group-header" onClick={() => {
+                    if (groupType === 'text') {
+                        handleTextGroupClick(group); // Handles text groups specifically
+                    } else {
+                        handleGroupClick(group); // Handles other group types
+                    }
+                    toggleGroup(group.uuid); // Ensure the group expands/collapses on click
+                }}>
+                    <span className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>▶</span>
+                    {group.name} ({groupType})
+                </div>
+                {expandedGroups[group.uuid] && (
+                    <ul className={`voice-list ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>
+                        {renderInputs(group.inputs)}
+                    </ul>
+                )}
+            </li>
+        );
     });
-  };
+};
+
 
   const renderIndividualInputs = (project) => {
     return project.inputs.map(input => (
