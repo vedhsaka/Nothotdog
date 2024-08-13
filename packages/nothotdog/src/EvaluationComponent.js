@@ -527,7 +527,7 @@ const EvaluationComponent = () => {
         projectId: projectId, // Static or dynamic project ID
         checks: checks,
         inputType: "voice",
-        sequence: Number(selectedIndex + 1),
+        // sequence: Number(selectedIndex + 1),
         groupId: selectedGroupId  // Include selected groupId
       };
   
@@ -678,14 +678,22 @@ const EvaluationComponent = () => {
     const audioId = audioData[index];
     const outputAudioId = outputAudioData[index];
 
-    deleteAudio(audioId);
-    deleteAudio(outputAudioId);
+    if (audioId) {
+        deleteAudio(audioId).catch(error => console.error('Error deleting audio:', error));
+    }
+    if (outputAudioId) {
+        deleteAudio(outputAudioId).catch(error => console.error('Error deleting output audio:', error));
+    }
+
+    // Remove the row data even if there's no audio associated with it
     setAudioData((prev) => prev.filter((_, i) => i !== index));
     setOutputAudioData((prev) => prev.filter((_, i) => i !== index));
     setEvaluations((prev) => prev.filter((_, i) => i !== index));
     setPhrases((prev) => prev.filter((_, i) => i !== index));
     setResults((prev) => prev.filter((_, i) => i !== index));
-  };
+};
+
+
 
   const handleDeleteCondition = (rowIndex, conditionIndex) => {
     setEvaluations((prevEvaluations) => {
@@ -957,9 +965,14 @@ const EvaluationComponent = () => {
                           <option value="exact_match">Exact Match</option>
                           <option value="word_count">Word Count</option>
                           <option value="contains">Contains</option>
-                          <option value="ends">Ends With</option>
-                          <option value="contextually">Contextually Contains</option>
-                          <option value="begins_with">Begins With</option>
+                          <option value="starts_with">Begins With</option>
+                          <option value="ends_with">Ends With</option>
+                          <option value="context_match">Contextually Contains</option>
+                          <option value="greater_than">Greater Than</option>
+                          <option value="less_than">Less Than</option>
+                          <option value="equals">Equals</option>
+
+
                         </select>
                         <input type="text" value={phrases[rowIndex][conditionIndex] || ''} onChange={(e) => handlePhraseChange(rowIndex, conditionIndex, e.target.value)} placeholder="Enter phrase" />
                         <button className="delete-condition-button" onClick={() => handleDeleteCondition(rowIndex, conditionIndex)}>X</button>

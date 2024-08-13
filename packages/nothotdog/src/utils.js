@@ -28,14 +28,24 @@ export const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
 
 
   export const evaluationMapping = {
-    "begins": "begins_with",
-    "begins_with": "begins_with",
+    "starts_with": "starts_with",
     "contains": "contains",
-    "ends": "ends_with",
     "ends_with": "ends_with",
-    "contextually": "contextually_contains",
-    "contextually_contains": "contextually_contains",
+    "context_match": "context_match",
     "exact_match": "exact_match",
-    "word_count": "word_count"
+    "less_than": "less_than",
+    "greater_than": "greater_than",
+    "equals": "equals"
   };
+
+  // exports.VALID_CHECKS = [
+  //   'contains', yes
+  //   'exact_match', yes
+  //   'starts_with', yes 
+  //   'ends_with', yes
+  //   'greater_than', yes
+  //   'less_than', yes
+  //   'equals', yes 
+  //   'context_match' yes
+  // ];
   

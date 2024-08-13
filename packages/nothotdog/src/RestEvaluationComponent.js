@@ -141,7 +141,7 @@ const RestEvaluationComponent = () => {
         rule: evaluation,
         value: row.conversation.phrases[idx]
       })),
-      sequence: currentSavingIndex + 1,
+      // sequence: currentSavingIndex + 1,
       url: row.api?.url || '',
       apiType: "REST",
       method: row.api?.method || 'GET',
