@@ -10,7 +10,23 @@ class InputModel {
       logger.info('Saving new input', { userId, inputType, projectId: project_id, groupId: group_id });
       try {
           if (group_id !== null) {
-              await this.validateSequence(group_id, sequence);
+              if (sequence === undefined) {
+                  // Fetch the current maximum sequence number for the group
+                  const { data: maxSequenceData, error: maxSequenceError } = await supabase
+                      .from('collections')
+                      .select('sequence')
+                      .eq('group_id', group_id)
+                      .order('sequence', { ascending: false })
+                      .limit(1);
+
+                  if (maxSequenceError) throw maxSequenceError;
+
+                  // Assign the next sequence number
+                  sequence = maxSequenceData.length > 0 ? maxSequenceData[0].sequence + 1 : 1;
+              } else {
+                  await this.validateSequence(group_id, sequence);
+              }
+
               const { data: existingInputs, error: fetchError } = await supabase
                   .from('collections')
                   .select('input_type')
@@ -84,7 +100,7 @@ class InputModel {
           logger.error('Error saving input', { userId, inputType, projectId: project_id, groupId: group_id, error: error.message, stack: error.stack });
           throw error;
       }
-  }
+}
 
   static async getInputs(projectId) {
       logger.info('Fetching inputs for project', { projectId });
