@@ -10,7 +10,7 @@ class InputModel {
       logger.info('Saving new input', { userId, inputType, projectId: project_id, groupId: group_id });
       try {
           if (group_id !== null) {
-              if (sequence === undefined) {
+              if (sequence === undefined || sequence == null) {
                   // Fetch the current maximum sequence number for the group
                   const { data: maxSequenceData, error: maxSequenceError } = await supabase
                       .from('collections')
