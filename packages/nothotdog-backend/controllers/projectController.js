@@ -20,7 +20,7 @@ exports.getProjects = async (req, res) => {
   try {
     const userId = req.header("userId");
     const user = await UserModel.getUser(userId)
-    logger.info('Fetch project attempt', { userId: user.id, projectName });
+    logger.info('Fetch project attempt', { userId: user.id });
     const projects = await ProjectModel.getProjects(user.id);
     logger.info('Project fetched successfully', { userId, projectCount: projects.length})
     res.status(200).json(projects);
