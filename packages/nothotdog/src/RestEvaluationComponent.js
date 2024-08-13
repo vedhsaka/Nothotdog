@@ -11,8 +11,6 @@ import ConversationRow from './ConversationRow';
 import { evaluationMapping } from './utils';  // Add this import at the top of the file
 import StrictModeDroppable from './StrictModeDroppable';
 import { useLocation } from 'react-router-dom';
-
-
 const RestEvaluationComponent = () => {
   const { user, signIn, projectId, userId } = useAuth();
   const { authFetch } = useAuthFetch();
@@ -27,9 +25,8 @@ const RestEvaluationComponent = () => {
   const [apiResponse, setApiResponse] = useState(null);
   const [currentSavingIndex, setCurrentSavingIndex] = useState(null);
   const location = useLocation();
-
-
-
+  const [isUpdate, setIsUpdate] = useState(false); // New state to track if we're updating
+  const [savedTests, setSavedTests] = useState([]); // Array to hold loaded saved tests
 
 
   useEffect(() => {
@@ -54,6 +51,8 @@ const RestEvaluationComponent = () => {
     setSelectedGroupId(group.id);
     clearConversationRows();
     group.inputs.filter(input => input.input_type === 'text').forEach(text => loadTextAsConversationRow(text));
+    setIsUpdate(true);
+    // setIsUpdate(group.inputs.length > 0);
   };
 
   useEffect(() => {
@@ -62,21 +61,6 @@ const RestEvaluationComponent = () => {
     }
     // Only run this effect once when the component mounts
   }, []);
-
-  // const handleApiResponse = (rowIndex, response) => {
-  //   setRows(prev => {
-  //     const newRows = [...prev];
-  //     newRows[rowIndex] = {
-  //       ...newRows[rowIndex],
-  //       apiResponse: response,
-  //       conversation: {
-  //         ...newRows[rowIndex].conversation,
-  //         output: response && response.body ? JSON.stringify(response.body, null, 2) : ''
-  //       }
-  //     };
-  //     return newRows;
-  //   });
-  // };
 
   const handleEvaluate = async (index) => {
     const row = rows[index];
@@ -115,53 +99,6 @@ const RestEvaluationComponent = () => {
       console.error('Error during evaluation:', error);
     }
   };
-
-  // const handleSave = async (index) => {
-  //   if (!user) {
-  //     setShowSignInModal(true);
-  //     return;
-  //   }
-
-  //   const row = rows[index];
-
-  //   const data = {
-  //     description,
-  //     inputType: "text",
-  //     content: row.outputValue,
-  //     projectId,
-  //     groupId: selectedGroupId,
-  //     checks: row.conditions.reduce((acc, condition) => {
-  //       acc[evaluationMapping[condition.evaluationType]] = condition.phrase;
-  //       return acc;
-  //     }, {}),
-  //     sequence: index + 1,
-  //     url: row.api.url,
-  //     apiType: "REST",
-  //     method: row.api.method,
-  //     headers: row.api.headers.reduce((acc, header) => ({ ...acc, [header.key]: header.value }), {}),
-  //     query_params: row.api.queryParams.reduce((acc, param) => ({ ...acc, [param.key]: param.value }), {}),
-  //     content_type: "application/json",
-  //   };
-
-  //   try {
-  //     const response = await authFetch('api/inputs', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify(data),
-  //     });
-
-  //     if (response) {
-  //       console.log('Test saved successfully');
-  //       setDescription('');
-  //       setShowSaveModal(false);
-  //     } else {
-  //       console.error('Failed to save the test');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error saving test:', error);
-  //   }
-  // };
-
   const handleApiResponse = useCallback((rowIndex, apiData) => {
     setRows(prev => {
       const newRows = [...prev];
@@ -233,12 +170,71 @@ const RestEvaluationComponent = () => {
     }
   };
 
+  const handleUpdate = (index) => {
+    if (!user) {
+      setShowSignInModal(true);
+      return;
+    }
+    const row = rows[index];
+    setCurrentSavingIndex(index);
+    setDescription(row.description || ''); // Set the description from the existing test
+    setSelectedGroupId(row.groupId || ''); // Set the group ID from the existing test
+    setShowSaveModal(true);
+    setIsUpdate(true); // Indicate this is an update
+  };
+
+  const handleUpdateConfirm = async () => {
+    if (currentSavingIndex === null) return;
+
+    const row = rows[currentSavingIndex];
+
+    const data = {
+        description: description || '', // Use a fallback if description is undefined
+        inputType: "text",
+        content: JSON.stringify(row.api?.body || {}),
+        projectId,
+        groupId: selectedGroupId || '', // Use a fallback if selectedGroupId is undefined
+        checks: (row.conversation.evaluations || []).map((evaluation, idx) => ({
+            field: row.conversation.outputKeys?.[idx] || '',  // Use optional chaining to prevent undefined errors
+            rule: evaluation || 'exact_match',  // Default to 'exact_match' if evaluation is undefined
+            value: row.conversation.phrases?.[idx] || '',  // Use optional chaining to prevent undefined errors
+        })),
+        sequence: currentSavingIndex + 1,
+        url: row.api?.url || '',
+        apiType: "REST",
+        method: row.api?.method || 'GET',
+        headers: row.api?.headers || {},
+        query_params: row.api?.queryParams || {},
+        content_type: "json"
+    };
+
+    try {
+        const response = await authFetch(`api/inputs/${row.uuid}`, {
+            method: 'PUT', // PUT for update
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if (response) {
+            console.log('Test updated successfully');
+            setDescription('');
+            setShowSaveModal(false);
+            setCurrentSavingIndex(null);
+        } else {
+            console.error('Failed to update the test');
+        }
+    } catch (error) {
+        console.error('Error updating test:', error);
+    }
+};
+
   const handleTextSelect = (text) => {
     clearConversationRows();
     loadTextAsConversationRow(text);
   };
   
   const loadTextAsConversationRow = (text) => {
+    setIsUpdate(true); // Set isUpdate to true when loading a test
     const checks = text.checks || {};
     const conditions = Object.entries(checks).map(([key, value]) => ({
       evaluationType: evaluationMapping[key] || 'exact_match',
@@ -253,6 +249,9 @@ const RestEvaluationComponent = () => {
         queryParams: text.query_params ? Object.entries(text.query_params).map(([key, value]) => ({ key, value })) : [],
         body: '',
       },
+      uuid: text.uuid,
+      description: text.description || '',
+      groupId: text.groupId || '',
       conditions,
       outputValue: text.content || '',
       outputKey: '',
@@ -383,16 +382,18 @@ const RestEvaluationComponent = () => {
     });
   }, []);
 
-  const handleTextGroupSelect = (inputs) => {
+  const handleTextGroupSelect = (group) => {
     clearConversationRows(); // Clear any existing rows
-
-    inputs.forEach(input => {
-        const newRow = createConversationRowFromInput(input);
-        setRows(prevRows => [...prevRows, ...newRow]);
+    group.inputs.forEach(input => {
+      const newRow = createConversationRowFromInput(input);
+      setRows(prevRows => [...prevRows, ...newRow]);
     });
+    setIsUpdate(true); // Set isUpdate to true when loading a group
 };
 
+
 const createConversationRowFromInput = (input) => {
+  setIsUpdate(true); // Set isUpdate to true when creating a new row
   const apiDetails = {
       method: input.method || 'GET',
       url: input.url || '',
@@ -411,6 +412,9 @@ const createConversationRowFromInput = (input) => {
           result: null,
           latency: { startTime: null, latency: null },
       },
+      uuid: input.uuid,
+      description: input.description || '',
+      groupId: input.groupId || '',
   };
 
   input.checks.forEach(check => {
@@ -422,8 +426,6 @@ const createConversationRowFromInput = (input) => {
   return [newRow];
 };
 
-
-  
   return (
     <div className="evaluation-container">
       <TestGroupSidebar 
@@ -470,6 +472,8 @@ const createConversationRowFromInput = (input) => {
                           handleSave={handleSave}
                           setOutputValue={handleSetOutputValue}
                           handleApiResponse={handleApiResponse}
+                          handleUpdate={handleUpdate} // Pass the handleUpdate function
+                          isUpdate={isUpdate} // Pass the isUpdate state
                         />
                       )}
                     </Draggable>
@@ -485,10 +489,12 @@ const createConversationRowFromInput = (input) => {
           setShowModal={setShowSaveModal}
           description={description}
           setDescription={setDescription}
-          saveTest={handleSaveConfirm}
+          isUpdate={isUpdate} // Pass the isUpdate state
           groupOptions={groupOptions}
           selectedGroupId={selectedGroupId}
           setSelectedGroupId={setSelectedGroupId}
+          saveTest={handleSaveConfirm}
+          updateTest={handleUpdateConfirm}
         />
         <SignInModal
           showSignInModal={showSignInModal}

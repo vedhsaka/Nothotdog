@@ -61,7 +61,7 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
       return; // Do nothing if the group type should be disabled
     }
     if (group.inputs && group.inputs.length > 0) {
-        onTextGroupSelect(group.inputs);
+        onTextGroupSelect(group);
     }
 };
 

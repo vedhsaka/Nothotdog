@@ -16,7 +16,9 @@ const ConversationRow = React.forwardRef(({
   handleEvaluate,
   handleSave,
   dragHandleProps,
-  draggableProps
+  draggableProps,
+  isUpdate,
+  handleUpdate
 }, ref) => {
   const apiDetails = rowData?.apiDetails || {};
   const conversation = rowData?.conversation || { evaluations: [], phrases: [], fields: [], outputKeys: [], outputValues: [] };
@@ -197,7 +199,21 @@ const ConversationRow = React.forwardRef(({
 
         <div className="evaluate-section">
           <button className="button primary" onClick={() => handleEvaluate(rowIndex)}>Evaluate</button>
-          <button className="button semi-primary" onClick={() => handleSave(rowIndex)}>Save</button>
+          {console.log('isUpdate:', isUpdate)}
+
+          {isUpdate ? (
+          <button 
+            className="button semi-primary" 
+            onClick={() => handleUpdate(rowIndex)}>
+            Update
+          </button>
+        ) : (
+          <button 
+            className="button semi-primary" 
+            onClick={() => handleSave(rowIndex)}>
+            Save
+          </button>
+        )}
         </div>
 
         {conversation.result !== null && (
