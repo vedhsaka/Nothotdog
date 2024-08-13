@@ -48,7 +48,6 @@ class UserModel {
   static async deleteUser(userId) {
     // Get all projects associated with the user
     const projects = await ProjectModel.getProjects(userId);
-    console.log(projects);
 
     // Remove the user from all associated projects
     for (const project of projects) {

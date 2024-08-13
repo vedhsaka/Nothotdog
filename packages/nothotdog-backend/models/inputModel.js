@@ -326,90 +326,94 @@ class InputModel {
   }
 
   static async testInput(inputType, content, checks) {
-      logger.info('Starting input test', { inputType, checksCount: checks.length });
-      try {
-          let processedContent;
+    logger.info('Starting input test', { inputType, checksCount: checks.length });
+    try {
+      let processedContent;
 
-          if (inputType === "voice") {
-              logger.info('Processing voice input');
-              processedContent = await this.processVoiceInput(content);
-          } else {
-              logger.info('Processing non-voice input');
-              processedContent = this.processNonVoiceInput(content);
-          }
-
-          const checkResults = [];
-          let allChecksPassed = true;
-
-          for (const check of checks) {
-              const { field, rule, value } = check;
-              logger.info('Performing check', { field, rule, value });
-              let passed = false;
-              let details = '';
-              let actualValue;
-
-              try {
-                  actualValue = this.getNestedValue(processedContent, field);
-              } catch (error) {
-                  logger.warn('Error accessing field for check', { field, error: error.message });
-                  checkResults.push({ ...check, passed: false, details: `Error accessing field: ${error.message}`, actualValue: undefined });
-                  allChecksPassed = false;
-                  continue;
-              }
-
-              switch (rule) {
-                  case 'contains':
-                      passed = String(actualValue).includes(String(value));
-                      details = `Checked if ${field} contains: "${value}"`;
-                      break;
-                  case 'exact_match':
-                      passed = actualValue === value;
-                      details = `Checked if ${field} exactly matches: "${value}"`;
-                      break;
-                  case 'greater_than':
-                      passed = Number(actualValue) > Number(value);
-                      details = `Checked if ${field} is greater than: ${value}`;
-                      break;
-                  case 'less_than':
-                      passed = Number(actualValue) < Number(value);
-                      details = `Checked if ${field} is less than: ${value}`;
-                      break;
-                  case 'equals':
-                      passed = actualValue == value;
-                      details = `Checked if ${field} equals: "${value}"`;
-                      break;
-                  case 'word_count':
-                      const wordCount = String(actualValue).split(/\s+/).length;
-                      passed = wordCount === parseInt(value, 10);
-                      details = `Expected word count: ${value}, Actual: ${wordCount}`;
-                      break;
-                  case 'context_match':
-                      logger.info('Performing context match check');
-                      passed = await this.checkContextMatch(String(actualValue), String(value));
-                      details = `Checked for context match: "${value}"`;
-                      break;
-                  default:
-                      logger.warn('Unimplemented check rule', { rule });
-                      passed = false;
-                      details = 'Check rule not implemented';
-              }
-
-              logger.info('Check result', { field, rule, passed, details });
-              checkResults.push({ ...check, passed, details, actualValue });
-              if (!passed) allChecksPassed = false;
-          }
-
-          const testResult = allChecksPassed ? "pass" : "fail";
-          logger.info('Input test completed', { testResult, checksPerformed: checks.length });
-          return {
-              test_result: testResult,
-              checks: checkResults,
-              processedContent: inputType === "voice" ? processedContent.transcript : undefined
-          };
-      } catch (error) {
-          logger.error('Error during input test', { inputType, error: error.message, stack: error.stack });
-          throw error;
+      if (inputType === "voice") {
+        logger.info('Processing voice input');
+        processedContent = await this.processVoiceInput(content);
+      } else {
+        logger.info('Processing non-voice input');
+        processedContent = this.processNonVoiceInput(content);
       }
+
+      const checkResults = [];
+      let allChecksPassed = true;
+
+      for (const check of checks) {
+        const { field, rule, value } = check;
+        logger.info('Performing check', { field, rule, value });
+        let passed = false;
+        let details = '';
+        let actualValue;
+
+        try {
+          actualValue = this.getNestedValue(processedContent, field);
+        } catch (error) {
+          logger.warn('Error accessing field for check', { field, error: error.message });
+          checkResults.push({ ...check, passed: false, details: `Error accessing field: ${error.message}`, actualValue: undefined });
+          allChecksPassed = false;
+          continue;
+        }
+
+        switch (rule) {
+          case 'contains':
+            passed = String(actualValue).includes(String(value));
+            details = `Checked if ${field} contains: "${value}"`;
+            break;
+          case 'exact_match':
+            passed = actualValue === value;
+            details = `Checked if ${field} exactly matches: "${value}"`;
+            break;
+          case 'starts_with':
+            passed = String(actualValue).startsWith(String(value));
+            details = `Checked if ${field} starts with: "${value}"`;
+            break;
+          case 'ends_with':
+            passed = String(actualValue).endsWith(String(value));
+            details = `Checked if ${field} ends with: "${value}"`;
+            break;
+          case 'greater_than':
+            passed = Number(actualValue) > Number(value);
+            details = `Checked if ${field} is greater than: ${value}`;
+            break;
+          case 'less_than':
+            passed = Number(actualValue) < Number(value);
+            details = `Checked if ${field} is less than: ${value}`;
+            break;
+          case 'equals':
+            passed = actualValue == value;
+            details = `Checked if ${field} equals: "${value}"`;
+            break;
+          case 'context_match':
+            logger.info('Performing context match check');
+            const contextMatchScore = await this.checkContextMatch(String(actualValue), String(value));
+            passed = contextMatchScore >= 0.6;
+            details = `Context match score: ${contextMatchScore.toFixed(2)}. Threshold: 0.6`;
+            break;
+          default:
+            logger.warn('Unimplemented check rule', { rule });
+            passed = false;
+            details = 'Check rule not implemented';
+        }
+
+        logger.info('Check result', { field, rule, passed, details });
+        checkResults.push({ ...check, passed, details, actualValue });
+        if (!passed) allChecksPassed = false;
+      }
+
+      const testResult = allChecksPassed ? "pass" : "fail";
+      logger.info('Input test completed', { testResult, checksPerformed: checks.length });
+      return {
+        test_result: testResult,
+        checks: checkResults,
+        processedContent: inputType === "voice" ? processedContent.transcript : undefined
+      };
+    } catch (error) {
+      logger.error('Error during input test', { inputType, error: error.message, stack: error.stack });
+      throw error;
+    }
   }
 
   static async processVoiceInput(content) {
@@ -467,65 +471,71 @@ class InputModel {
   }
 
   static async checkContextMatch(transcription, expectedContext) {
-      logger.info('Checking context match', { transcription: transcription.substring(0, 50) + '...', expectedContext: expectedContext.substring(0, 50) + '...' });
-      return new Promise((resolve, reject) => {
-          const prompt = `Compare these two statements and respond with only 'yes' or 'no':
-          1. "${transcription}"
-          2. "${expectedContext}"
-          Do these statements convey the same meaning or context?`;
+    logger.info('Checking context match', { transcription: transcription.substring(0, 50) + '...', expectedContext: expectedContext.substring(0, 50) + '...' });
+    return new Promise((resolve, reject) => {
+      const prompt = `Compare these two statements and respond with a similarity score between 0 and 1, where 0 means completely different and 1 means identical in meaning:
+        1. "${transcription}"
+        2. "${expectedContext}"
+        Provide only the numeric score as your response.`;
 
-          const data = JSON.stringify({
-              model: "claude-3-haiku-20240307",
-              max_tokens: 1024,
-              messages: [{ role: "user", content: prompt }]
-          });
-      
-          const options = {
-              hostname: 'api.anthropic.com',
-              path: '/v1/messages',
-              method: 'POST',
-              headers: {
-                  'x-api-key': process.env.CLUDE_API_KEYS,
-                  'anthropic-version': '2023-06-01',
-                  'Content-Type': 'application/json',
-                  'Content-Length': data.length
-              }
-          };
-      
-          const req = https.request(options, (res) => {
-              let responseBody = '';
-      
-              res.on('data', (chunk) => {
-                  responseBody += chunk;
-              });
-      
-              res.on('end', () => {
-                  try {
-                      const response = JSON.parse(responseBody);
-                      if (response.content && response.content.length > 0) {
-                          const answer = response.content[0].text.trim().toLowerCase();
-                          logger.info('Context match check completed', { result: answer });
-                          resolve(answer === 'yes');
-                      } else {
-                          logger.error('Unexpected response structure from Claude API');
-                          reject(new Error('Unexpected response structure from Claude API'));
-                      }      
-                  } catch (error) {
-                      logger.error('Failed to parse Claude API response', { error: error.message });
-                      reject(new Error('Failed to parse Claude API response'));
-                  }
-              });
-          });
-      
-          req.on('error', (error) => {
-              logger.error('Error in Claude API request', { error: error.message });
-              reject(error);
-          });
-      
-          req.write(data);
-          req.end();
+      const data = JSON.stringify({
+        model: "claude-3-haiku-20240307",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }]
       });
+
+      const options = {
+        hostname: 'api.anthropic.com',
+        path: '/v1/messages',
+        method: 'POST',
+        headers: {
+          'x-api-key': process.env.CLUDE_API_KEYS,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+          'Content-Length': data.length
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let responseBody = '';
+
+        res.on('data', (chunk) => {
+          responseBody += chunk;
+        });
+
+        res.on('end', () => {
+          try {
+            const response = JSON.parse(responseBody);
+            if (response.content && response.content.length > 0) {
+              const score = parseFloat(response.content[0].text.trim());
+              if (isNaN(score) || score < 0 || score > 1) {
+                logger.error('Invalid score returned from Claude API', { score });
+                reject(new Error('Invalid score returned from Claude API'));
+              } else {
+                logger.info('Context match check completed', { score });
+                resolve(score);
+              }
+            } else {
+              logger.error('Unexpected response structure from Claude API');
+              reject(new Error('Unexpected response structure from Claude API'));
+            }
+          } catch (error) {
+            logger.error('Failed to parse Claude API response', { error: error.message });
+            reject(new Error('Failed to parse Claude API response'));
+          }
+        });
+      });
+
+      req.on('error', (error) => {
+        logger.error('Error in Claude API request', { error: error.message });
+        reject(error);
+      });
+
+      req.write(data);
+      req.end();
+    });
   }
+
 
 }
     
