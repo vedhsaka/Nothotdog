@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import './css/App.css';
 import WebSocketComponent from './WebSocketComponent';
 import RecordedTests from './RecordedTestsComponent';
@@ -16,7 +17,7 @@ function PrivateRoute({ children }) {
 
 function SignInComponent() {
   const { signIn } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Initialize useNavigate
 
   useEffect(() => {
     const handleSignIn = async () => {

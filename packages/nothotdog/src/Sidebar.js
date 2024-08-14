@@ -1,25 +1,30 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import './css/Sidebar.css';
 import apiSettings from './icons/api-testing.svg';
 import voiceTests from './icons/voice-cases.svg';
 import settings from './icons/settings.svg';
 import flame from './icons/flame.svg';
-import flameIcon from './icons/flame.svg'; // Make sure to import the flame icon
 
 const Sidebar = ({ setActiveTab, activeTab, user, signIn, signOut }) => {
-  const tabs = [
-    { name: 'Recorded Tests', icon: voiceTests },
-    { name: 'Configuration', icon: settings },
-    { name: 'Voice Evaluation', icon: flame },
-    { name: 'Text Evaluation', icon: apiSettings },
+  const navigate = useNavigate(); // Initialize useNavigate hook
 
+  const tabs = [
+    { name: 'Recorded Tests', icon: voiceTests, path: '/recorded-tests' },
+    { name: 'Configuration', icon: settings, path: '/configuration' },
+    { name: 'Voice Evaluation', icon: flame, path: '/voice-evaluation' },
+    { name: 'Text Evaluation', icon: apiSettings, path: '/text-evaluation' },
   ];
+
+  const handleTabClick = (tab) => {
+    setActiveTab(tab.name);
+    navigate(tab.path); // Navigate to the tab's path
+  };
 
   return (
     <nav className="horizontal-sidebar">
       <div className="sidebar-left">
         <div className="flame-header">
-          {/* <img src={flameIcon} alt="Flame" className="flame-icon" /> */}
           <h1>NotHotDog</h1>
         </div>
       </div>
@@ -29,7 +34,7 @@ const Sidebar = ({ setActiveTab, activeTab, user, signIn, signOut }) => {
           <button
             key={tab.name}
             className={`tab-button ${activeTab === tab.name ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.name)}
+            onClick={() => handleTabClick(tab)} // Handle tab click
           >
             <img src={tab.icon} alt={tab.name} className="tab-icon" />
             <span>{tab.name}</span>

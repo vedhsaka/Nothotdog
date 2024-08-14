@@ -5,7 +5,7 @@ import useAuthFetch from './AuthFetch';
 const RecordedTests = () => {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState('');
-  const authFetch = useAuthFetch(); // Use the custom hook
+  const { authFetch } = useAuthFetch(); // Use the custom hook
 
   useEffect(() => {
     const fetchTests = async () => {

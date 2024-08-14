@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@axiomhq/axiom-node": "^0.12.0",
+    "@axiomhq/js": "^1.1.0",
     "@deepgram/sdk": "^3.5.0",
     "@supabase/supabase-js": "^2.44.4",
     "cors": "^2.8.5",
