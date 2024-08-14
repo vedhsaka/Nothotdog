@@ -215,3 +215,19 @@
   color: red;
   font-weight: bold;
 }
+.login-warning-message {
+  background-color: black; /* Dark background */
+  color: #f5c518; /* Light yellow/gold text color */
+  padding: 15px;
+  border: 1px solid #444; /* Slightly lighter border */
+  border-radius: 5px;
+  font-weight: bold;
+  height: 100vh;
+  width: 260px;
+  margin: 10px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+
+  margin: 0;
+  font-size: 14px;
+  }
