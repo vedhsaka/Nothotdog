@@ -191,16 +191,16 @@
 
   .output-field-section {
     display: flex;
-    width: 302px;
+    width: 320px;
     vertical-align: revert-layer;
     gap: 10px;
 }
   .output-key-input {
     display: inline-block;
-    width: 30%;
+    width: 50%;
   }
   .output-value-input {
     display: inline-block;
-    width: 52%;
+    width: 32%;
     border: 1px solid #ccc;
   }

@@ -25,7 +25,7 @@ exports.getProjects = async (req, res) => {
     logger.info('Project fetched successfully', { userId, projectCount: projects.length})
     res.status(200).json(projects);
   } catch (error) {
-    logger.error("Error fetching project", { userId, error: error.message, stack: error.stack});
+    logger.error("Error fetching project", { error: error.message, stack: error.stack});
     res.status(500).json({ message: 'Error fetching projects', error: error.message });
   }
 };

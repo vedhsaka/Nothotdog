@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [projectId, setProjectId] = useState(null);
   const [loading, setLoading] = useState(true);
 
+
   const createUserInAPI = async (userId) => {
     try {
       const response = await apiFetch('api/users', {
@@ -58,15 +59,36 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const fetchUser = async () => {
       setLoading(true);
+      
+      // Check local storage first
+      const storedUser = localStorage.getItem('user');
+      const storedUserId = localStorage.getItem('userId');
+      const storedProjectId = localStorage.getItem('projectId');
+      
+      if (storedUser && storedUserId) {
+        setUser(JSON.parse(storedUser));
+        setUserId(storedUserId);
+        setProjectId(storedProjectId);
+        setLoading(false);
+        return;
+      }
+
+      // If not in local storage, fetch from Supabase
       const { data } = await supabase.auth.getSession();
       if (data.session?.user) {
         setUser(data.session.user);
         setUserId(data.session.user.id);
+        localStorage.setItem('user', JSON.stringify(data.session.user));
+        localStorage.setItem('userId', data.session.user.id);
+        
         await createUserInAPI(data.session.user.id);
         await fetchProjects(data.session.user.id);
       } else {
         setUser(null);
         setUserId(null);
+        localStorage.removeItem('user');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('projectId');
       }
       setLoading(false);
     };
@@ -78,11 +100,21 @@ export const AuthProvider = ({ children }) => {
       if (session?.user) {
         setUser(session.user);
         setUserId(session.user.id);
+        localStorage.setItem('user', JSON.stringify(session.user));
+        localStorage.setItem('userId', session.user.id);
+        
         await createUserInAPI(session.user.id);
-        await fetchProjects(session.user.id);
+        const projects = await fetchProjects(session.user.id);
+        if (projects && projects.length > 0) {
+          setProjectId(projects[0].uuid);
+          localStorage.setItem('projectId', projects[0].uuid);
+        }
       } else {
         setUser(null);
         setUserId(null);
+        localStorage.removeItem('user');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('projectId');
       }
       setLoading(false);
     });
@@ -94,9 +126,9 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async () => {
     try {
-      await supabase.auth.signInWithOAuth({ provider: 'google' });
-      navigate('/voice-evaluation'); 
-      // Optionally, handle redirection after sign-in here if needed
+      const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+      if (error) throw error;
+      // Note: Redirection is handled by Supabase OAuth flow
     } catch (error) {
       console.error('Error during sign-in:', error);
     }
@@ -105,6 +137,9 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      localStorage.removeItem('user');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('projectId');
     } catch (error) {
       console.error('Error during sign-out:', error);
     }

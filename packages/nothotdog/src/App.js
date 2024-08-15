@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import './css/App.css';
 import WebSocketComponent from './WebSocketComponent';
 import RecordedTests from './RecordedTestsComponent';
@@ -10,14 +10,9 @@ import Sidebar from './Sidebar';
 import { AuthProvider, useAuth } from './AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 
-function PrivateRoute({ children }) {
-  const { user } = useAuth();
-  return user ? children : <Navigate to="/sign-in" />;
-}
-
 function SignInComponent() {
   const { signIn } = useAuth();
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleSignIn = async () => {
@@ -26,14 +21,13 @@ function SignInComponent() {
       } catch (error) {
         console.error('Sign-in failed:', error);
       } finally {
-        navigate('/voice-evaluation'); // Redirect to /voice-evaluation regardless
+        navigate('/voice-evaluation');
       }
     };
 
     handleSignIn();
   }, [signIn, navigate]);
 
-  // Return nothing, as we don't want to render any sign-in UI
   return null;
 }
 
@@ -58,26 +52,12 @@ function AppContent() {
         <div className="content-wrapper">
           <Routes>
             <Route path="/sign-in" element={<SignInComponent />} />
-            <Route
-              path="/api-testing"
-              element={<PrivateRoute><WebSocketComponent /></PrivateRoute>}
-            />
-            <Route
-              path="/recorded-tests"
-              element={<PrivateRoute><RecordedTests /></PrivateRoute>}
-            />
-            <Route
-              path="/configuration"
-              element={<PrivateRoute><ConfigurationComponent /></PrivateRoute>}
-            />
-            <Route
-              path="/voice-evaluation"
-              element={<EvaluationComponent />} /> {/* Always accessible */}
-            <Route
-              path="/text-evaluation"
-              element={<PrivateRoute><RestEvaluationComponent /></PrivateRoute>}
-            />
-            <Route path="/" element={<Navigate to="/voice-evaluation" />} /> {/* Default route */}
+            <Route path="/api-testing" element={<WebSocketComponent />} />
+            <Route path="/recorded-tests" element={<RecordedTests />} />
+            <Route path="/configuration" element={<ConfigurationComponent />} />
+            <Route path="/voice-evaluation" element={<EvaluationComponent />} />
+            <Route path="/text-evaluation" element={<RestEvaluationComponent />} />
+            <Route path="/" element={<Navigate to="/voice-evaluation" />} />
           </Routes>
         </div>
       </div>
