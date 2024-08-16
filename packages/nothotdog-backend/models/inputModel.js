@@ -345,7 +345,7 @@ class InputModel {
     logger.info('Starting input test', { inputType, checksCount: checks.length });
     try {
       let processedContent;
-
+  
       if (inputType === "voice") {
         logger.info('Processing voice input');
         processedContent = await this.processVoiceInput(content);
@@ -353,17 +353,17 @@ class InputModel {
         logger.info('Processing non-voice input');
         processedContent = this.processNonVoiceInput(content);
       }
-
+  
       const checkResults = [];
       let allChecksPassed = true;
-
+  
       for (const check of checks) {
         const { field, rule, value } = check;
         logger.info('Performing check', { field, rule, value });
         let passed = false;
         let details = '';
         let actualValue;
-
+  
         try {
           actualValue = this.getNestedValue(processedContent, field);
         } catch (error) {
@@ -372,22 +372,27 @@ class InputModel {
           allChecksPassed = false;
           continue;
         }
-
+  
+        // Normalize values for comparison if input type is voice and the rule is applicable
+        const shouldNormalize = inputType === "voice" && ['contains', 'exact_match', 'starts_with', 'ends_with'].includes(rule);
+        const normalizedActualValue = shouldNormalize ? this.normalizeForVoiceComparison(actualValue) : actualValue;
+        const normalizedExpectedValue = shouldNormalize ? this.normalizeForVoiceComparison(value) : value;
+  
         switch (rule) {
           case 'contains':
-            passed = String(actualValue).includes(String(value));
+            passed = String(normalizedActualValue).includes(String(normalizedExpectedValue));
             details = `Checked if ${field} contains: "${value}"`;
             break;
           case 'exact_match':
-            passed = actualValue === value;
+            passed = normalizedActualValue === normalizedExpectedValue;
             details = `Checked if ${field} exactly matches: "${value}"`;
             break;
           case 'starts_with':
-            passed = String(actualValue).startsWith(String(value));
+            passed = String(normalizedActualValue).startsWith(String(normalizedExpectedValue));
             details = `Checked if ${field} starts with: "${value}"`;
             break;
           case 'ends_with':
-            passed = String(actualValue).endsWith(String(value));
+            passed = String(normalizedActualValue).endsWith(String(normalizedExpectedValue));
             details = `Checked if ${field} ends with: "${value}"`;
             break;
           case 'greater_than':
@@ -399,7 +404,11 @@ class InputModel {
             details = `Checked if ${field} is less than: ${value}`;
             break;
           case 'equals':
-            passed = actualValue == value;
+            if (inputType === "voice" && typeof actualValue === 'string' && typeof value === 'string') {
+              passed = this.normalizeForVoiceComparison(actualValue) === this.normalizeForVoiceComparison(value);
+            } else {
+              passed = actualValue == value;
+            }
             details = `Checked if ${field} equals: "${value}"`;
             break;
           case 'context_match':
@@ -413,12 +422,12 @@ class InputModel {
             passed = false;
             details = 'Check rule not implemented';
         }
-
+  
         logger.info('Check result', { field, rule, passed, details });
         checkResults.push({ ...check, passed, details, actualValue });
         if (!passed) allChecksPassed = false;
       }
-
+  
       const testResult = allChecksPassed ? "pass" : "fail";
       logger.info('Input test completed', { testResult, checksPerformed: checks.length });
       return {
@@ -430,6 +439,21 @@ class InputModel {
       logger.error('Error during input test', { inputType, error: error.message, stack: error.stack });
       throw error;
     }
+  }
+  
+  static normalizeForVoiceComparison(value) {
+    if (typeof value !== 'string') {
+      return value;
+    }
+    // Convert to lowercase
+    let normalized = value.toLowerCase();
+    // Remove all punctuation and special characters
+    normalized = normalized.replace(/[^\w\s]|_/g, "");
+    // Replace multiple spaces with a single space
+    normalized = normalized.replace(/\s+/g, " ");
+    // Trim leading and trailing whitespace
+    normalized = normalized.trim();
+    return normalized;
   }
 
   static async processVoiceInput(content) {
