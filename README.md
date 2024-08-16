@@ -24,13 +24,13 @@ To get started with NotHotDog, please refer to our [User Guide](docs/user-guide.
 
 ## Documentation
 
-- [User Guide](docs/user-guide.md)
+- [User Guide](docs/USER_GUIDE.md)
 - [Developer Guide](docs/developer-guide.md)
-- [API Documentation](docs/api-documentation.md)
+
 
 ## Contributing
 
-We welcome contributions to NotHotDog! Please read our [Contributing Guidelines](CONTRIBUTING.md) for more information on how to get started.
+We welcome contributions to NotHotDog! 
 
 ## License
 
