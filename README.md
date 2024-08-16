@@ -27,7 +27,6 @@ To get started with NotHotDog, please refer to our [User Guide](docs/user-guide.
 - [User Guide](docs/USER_GUIDE.md)
 - [Developer Guide](docs/developer-guide.md)
 
-
 ## Contributing
 
 We welcome contributions to NotHotDog! 
