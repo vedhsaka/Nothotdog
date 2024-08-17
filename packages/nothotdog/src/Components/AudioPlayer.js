@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAudio } from './IndexedDBUtils';
+import { getAudio } from '../utils/IndexedDBUtils';
 
 const AudioPlayer = ({ audioId }) => {
   const [url, setUrl] = useState(null);

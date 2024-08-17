@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import './css/EvaluationComponent.css';
-import './Components/Modal.css';
-import ModalComponent from './Components/ModalComponent';
-import { useAuth } from './AuthContext';
-import useAuthFetch from './AuthFetch';
-import { openDB, storeAudio, getAudio, deleteAudio } from './IndexedDBUtils';
+import '../styles/EvaluationComponent.css';
+import '../styles/Modal.css';
+import ModalComponent from '../components/ModalComponent';
+import { useAuth } from '../contexts/AuthContext';
+import useAuthFetch from '../hooks/AuthFetch';
+import { openDB, storeAudio, getAudio, deleteAudio } from '../utils/IndexedDBUtils';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import AudioPlayer from './AudioPlayer';
-import fetchTests from './fetchTests'; // Import fetchTests
-import TestGroupSidebar from './TestGroupSideBar';
+import fetchTests from '../utils/fetchTests'; // Import fetchTests
+import TestGroupSidebar from '../components/TestGroupSideBar';
 import { SignInModal } from './UtilityModals';
 import { useLocation } from 'react-router-dom';
 
@@ -17,7 +17,7 @@ import {
   b64toBlob, 
   capitalizeFirstLetter,
   evaluationMapping
-} from './utils';
+} from '../utils/utils';
 
 const StrictModeDroppable = ({ children, ...props }) => {
   const [enabled, setEnabled] = useState(false);

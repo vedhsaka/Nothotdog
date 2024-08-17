@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import './css/App.css';
-import WebSocketComponent from './WebSocketComponent';
-import RecordedTests from './RecordedTestsComponent';
-import ConfigurationComponent from './ConfigurationComponent';
-import EvaluationComponent from './EvaluationComponent';
-import RestEvaluationComponent from './RestEvaluationComponent';
-import Sidebar from './Sidebar';
-import { AuthProvider, useAuth } from './AuthContext';
+import './styles/App.css';
+import WebSocketComponent from './components/WebSocketComponent';
+import RecordedTests from './components/RecordedTestsComponent';
+import ConfigurationComponent from './components/ConfigurationComponent';
+import EvaluationComponent from './components/EvaluationComponent';
+import RestEvaluationComponent from './components/RestEvaluationComponent';
+import Sidebar from './components/Sidebar';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 
 function PrivateRoute({ children }) {

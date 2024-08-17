@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './css/ConfigurationComponent.css';
+import './../styles/ConfigurationComponent.css';
 
 const ConfigurationComponent = () => {
   const [transcriptionEnabled, setTranscriptionEnabled] = useState(false);

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './css/WebSocketComponent.css';
-import './Components/Modal.css';
-import ModalComponent from './Components/ModalComponent';
-import { useAuth } from './AuthContext';
-import useAuthFetch from './AuthFetch';
+import '../styles/WebSocketComponent.css';
+import '../styles/Modal.css';
+import ModalComponent from './ModalComponent';
+import { useAuth } from '../contexts/AuthContext';
+import useAuthFetch from '../hooks/AuthFetch';
 
 const WebSocketComponent = () => {
   const { user, signIn } = useAuth(); // Correctly get user and signIn from useAuth

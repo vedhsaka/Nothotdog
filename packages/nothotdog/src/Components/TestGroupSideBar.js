@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import './css/TestGroupSideBar.css';
+import '../styles/TestGroupSideBar.css';
 import { SignInModal } from './UtilityModals'; // Ensure SignInModal is correctly imported
-import useAuthFetch from './AuthFetch';
-import { useAuth } from './AuthContext';
+import useAuthFetch from '../hooks/AuthFetch';
+import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 

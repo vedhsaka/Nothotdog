@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './css/EvaluationComponent.css';
-import './Components/Modal.css';
-import { useAuth } from './AuthContext';
-import useAuthFetch from './AuthFetch';
+import '../components/EvaluationComponent';
+import '../styles/Modal.css';
+import { useAuth } from '../contexts/AuthContext';
+import useAuthFetch from '../hooks/AuthFetch';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
-import TestGroupSidebar from './TestGroupSideBar';
+import TestGroupSidebar from '../components/TestGroupSideBar';
 import APIRequestForm from './APIConnectionForm';
 import { SaveTestModal, SignInModal } from './UtilityModals';
 import ConversationRow from './ConversationRow';
-import { evaluationMapping } from './utils';  // Add this import at the top of the file
+import { evaluationMapping } from '../utils/utils';  // Add this import at the top of the file
 import StrictModeDroppable from './StrictModeDroppable';
 import { useLocation } from 'react-router-dom';
 const RestEvaluationComponent = () => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Loader, Plus } from 'lucide-react';
-import './css/ApiConnections.css';
+import './../styles/ApiConnections.css';
 
 const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues }) => {
   const [method, setMethod] = useState(initialValues?.method || 'GET');

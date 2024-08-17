@@ -1,7 +1,7 @@
 import React from 'react';
-import { capitalizeFirstLetter } from './utils';
-import './css/ConversationRow.css';
-import APIConnectionForm from './APIConnectionForm';
+import { capitalizeFirstLetter } from '../utils/utils';
+import '../styles/ConversationRow.css';
+import APIConnectionForm from '../components/APIConnectionForm';
 
 const ConversationRow = React.forwardRef(({
   rowIndex,

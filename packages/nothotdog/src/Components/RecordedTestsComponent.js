@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import './css/RecordedTests.css';
-import useAuthFetch from './AuthFetch';
+import '../styles/RecordedTests.css';
+import useAuthFetch from '../hooks/AuthFetch';
 
 const RecordedTests = () => {
   const [projects, setProjects] = useState([]);

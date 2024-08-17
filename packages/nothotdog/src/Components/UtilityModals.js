@@ -1,6 +1,6 @@
 // Modals.js
 import React from 'react';
-import ModalComponent from './Components/ModalComponent';
+import ModalComponent from './ModalComponent';
 
 export const SaveTestModal = ({ showModal, setShowModal, description, setDescription, groupOptions, setSelectedGroupId, selectedGroupId, saveTest, updateTest, isUpdate }) => (
   <ModalComponent

@@ -1,7 +1,7 @@
-import { useAuth } from './AuthContext';
-import apiFetch from './api';  // Adjust the path as needed
+import { useAuth } from '../contexts/AuthContext';
+import apiFetch from '../utils/api';  // Adjust the path as needed
 import { useState } from 'react';
-import SignInModal from './UtilityModals';  // Import the SignInModal component
+import SignInModal from '../components/UtilityModals';  // Import the SignInModal component
 
 const useAuthFetch = () => {
   const { userId } = useAuth();
