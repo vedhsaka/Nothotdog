@@ -179,7 +179,7 @@ const ConversationRow = React.forwardRef(({
               >
                 <option value="equals">Exact Match</option>
                 <option value="contains">Contains</option>
-                <option value="begins_with">Begins With</option>
+                <option value="starts_with">Begins With</option>
                 <option value="ends_with">Ends With</option>
                 <option value="word_count">Word Count</option>
                 <option value="context_match">Contextually Contains</option>

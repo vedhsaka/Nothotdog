@@ -131,14 +131,14 @@
   background-color: #4a90e2;
   color: white;
   border: none;
-  border-radius: 10px;
-  font-size: 18px;
-  padding: 10px;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
   transition: background-color 0.3s ease;
+  border-radius: 2px;
+  font-size: 15px;
+  padding: 10px 16px;
 }
 
 .add-group-btn:hover {
