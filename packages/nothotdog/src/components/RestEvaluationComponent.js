@@ -137,7 +137,7 @@ const RestEvaluationComponent = () => {
       projectId,
       groupId: selectedGroupId, // From the modal dropdown
       checks: row.conversation.evaluations.map((evaluation, idx) => ({
-        field: row.conversation.outputKeys[idx] || '',
+        field: row.conversation.outputValues[idx] || '',
         rule: evaluation,
         value: row.conversation.phrases[idx]
       })),
@@ -195,7 +195,7 @@ const RestEvaluationComponent = () => {
         projectId,
         groupId: selectedGroupId || '', // Use a fallback if selectedGroupId is undefined
         checks: (row.conversation.evaluations || []).map((evaluation, idx) => ({
-            field: row.conversation.outputKeys?.[idx] || '',  // Use optional chaining to prevent undefined errors
+            field: row.conversation.outputValues?.[idx] || '',  // Use optional chaining to prevent undefined errors
             rule: evaluation || 'exact_match',  // Default to 'exact_match' if evaluation is undefined
             value: row.conversation.phrases?.[idx] || '',  // Use optional chaining to prevent undefined errors
         })),
