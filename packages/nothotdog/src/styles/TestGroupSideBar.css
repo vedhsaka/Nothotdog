@@ -131,9 +131,9 @@
   background-color: #4a90e2;
   color: white;
   border: none;
-  border-radius: 10px;
-  font-size: 18px;
-  padding: 10px;
+  border-radius: 2px;
+  font-size: 15px;
+  padding: 10px 16px;
   cursor: pointer;
   display: flex;
   justify-content: center;

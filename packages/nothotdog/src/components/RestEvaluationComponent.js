@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import useAuthFetch from '../hooks/AuthFetch';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import TestGroupSidebar from '../components/TestGroupSideBar';
-import APIRequestForm from './APIConnectionForm';
+// import APIRequestForm from './APIConnectionForm';
 import { SaveTestModal, SignInModal } from './UtilityModals';
 import ConversationRow from './ConversationRow';
 import { evaluationMapping } from '../utils/utils';  // Add this import at the top of the file
@@ -286,6 +286,7 @@ const RestEvaluationComponent = () => {
   }, []);
 
   const handleSetOutputValue = useCallback((rowIndex, key, value) => {
+    console.log ('Setting output inside handleSetOutputValue:', key, value);
     setRows(prevRows => {
       const newRows = [...prevRows];
       if (!newRows[rowIndex].conversation) {
@@ -344,35 +345,41 @@ const RestEvaluationComponent = () => {
       }
     ]);
   }, []);
+  
   const addCondition = useCallback((rowIndex) => {
     setRows(prevRows => {
       const newRows = [...prevRows];
+  
+      // Ensure the conversation object is initialized
       if (!newRows[rowIndex].conversation) {
-        newRows[rowIndex].conversation = {};
+        newRows[rowIndex].conversation = {
+          evaluations: [],
+          phrases: [],
+          fields: [],
+          outputKeys: [],
+          outputValues: []
+        };
+      } else {
+        // Ensure each array property is initialized
+        newRows[rowIndex].conversation.evaluations = newRows[rowIndex].conversation.evaluations || [];
+        newRows[rowIndex].conversation.phrases = newRows[rowIndex].conversation.phrases || [];
+        newRows[rowIndex].conversation.fields = newRows[rowIndex].conversation.fields || [];
+        newRows[rowIndex].conversation.outputKeys = newRows[rowIndex].conversation.outputKeys || [];
+        newRows[rowIndex].conversation.outputValues = newRows[rowIndex].conversation.outputValues || [];
       }
-      if (!Array.isArray(newRows[rowIndex].conversation.evaluations)) {
-        newRows[rowIndex].conversation.evaluations = [];
-      }
-      if (!Array.isArray(newRows[rowIndex].conversation.phrases)) {
-        newRows[rowIndex].conversation.phrases = [];
-      }
-      if (!Array.isArray(newRows[rowIndex].conversation.fields)) {
-        newRows[rowIndex].conversation.fields = [];
-      }
-      if (!Array.isArray(newRows[rowIndex].conversation.outputKeys)) {
-        newRows[rowIndex].conversation.outputKeys = [];
-      }
-      if (!Array.isArray(newRows[rowIndex].conversation.outputValues)) {
-        newRows[rowIndex].conversation.outputValues = [];
-      }
-      newRows[rowIndex].conversation.evaluations.push('equals');
+  
+      // Add a single new condition
+      newRows[rowIndex].conversation.evaluations.push('exact_match');
       newRows[rowIndex].conversation.phrases.push('');
       newRows[rowIndex].conversation.fields.push('');
       newRows[rowIndex].conversation.outputKeys.push('');
       newRows[rowIndex].conversation.outputValues.push('');
+  
       return newRows;
     });
   }, []);
+  
+  
 
   const handlePhraseChange = useCallback((index, conditionIndex, value) => {
     setRows(prev => {

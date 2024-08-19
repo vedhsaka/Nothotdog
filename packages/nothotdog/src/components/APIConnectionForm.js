@@ -122,14 +122,16 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
   };
 
   const handleSetOutputValue = (value, key) => {
+    console.log('Enters here', key, value);
     setSelectedNodePath(key);
-    const cleanedValue = cleanValue(value);
-    if (typeof cleanedValue === 'object') {
-      setOutputValue(key, JSON.stringify(cleanedValue));
+    const cleanedKey = cleanValue(key);
+    if (typeof cleanedKey === 'object') {
+        setOutputValue(JSON.stringify(cleanedKey), value);
     } else {
-      setOutputValue(key, cleanedValue);
+        setOutputValue(cleanedKey, value);
     }
-  };
+};
+
 
   const generateNestedKeyPaths = (obj, prefix = '') => {
     let result = [];
@@ -265,7 +267,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
                             id={`set-output-btn-${index}`}
                             className="set-output-btn"
                             style={{ display: 'none', marginLeft: '2px' }}
-                            onClick={() => handleSetOutputValue(key, value)}
+                            onClick={() => handleSetOutputValue(value, key)}
                           >
                             Set as Output
                           </button>
