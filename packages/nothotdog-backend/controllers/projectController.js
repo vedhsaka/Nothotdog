@@ -6,12 +6,13 @@ exports.createProject = async (req, res) => {
   try {
     const { projectName } = req.body;
     const userId = req.header("userId");
+    const user = await UserModel.getUser(userId)
     logger.info('Create project attempt', { userId, projectName });
-    const project = await ProjectModel.createProject(userId, projectName);
-    logger.info('Project created successfully', { userId, projectName, projectId: project.id})
+    const project = await ProjectModel.createProject(user.id, projectName);
+    logger.info('Project created successfully', { userId: user.id, projectName, projectId: project.id})
     res.status(201).json(project);
   } catch (error) {
-    logger.error("Error creating project", { userId, projectName, error: error.message, stack: error.stack});
+    logger.error("Error creating project", { userId: user.id, projectName, error: error.message, stack: error.stack});
     res.status(500).json({ message: 'Error creating project', error: error.message });
   }
 };
