@@ -40,32 +40,37 @@ const ConversationRow = React.forwardRef(({
   };
 
   const handleOutputKeyChange = (conditionIndex, newValue) => {
+    console.log('Setting output key:', conditionIndex, newValue);
+
     setRows(prev => {
       const newRows = [...prev];
       if (!newRows[rowIndex].conversation) {
-        newRows[rowIndex].conversation = { outputKeys: [] };
+          newRows[rowIndex].conversation = { outputKeys: [] };
       }
       if (!newRows[rowIndex].conversation.outputKeys) {
-        newRows[rowIndex].conversation.outputKeys = [];
+          newRows[rowIndex].conversation.outputKeys = [];
       }
       newRows[rowIndex].conversation.outputKeys[conditionIndex] = newValue;
       return newRows;
     });
-  };
+};
+
 
   const handleOutputValueChange = (conditionIndex, newValue) => {
+    console.log('Setting output value:', conditionIndex, newValue);
     setRows(prev => {
-      const newRows = [...prev];
-      if (!newRows[rowIndex].conversation) {
-        newRows[rowIndex].conversation = { outputValues: [] };
-      }
-      if (!newRows[rowIndex].conversation.outputValues) {
-        newRows[rowIndex].conversation.outputValues = [];
-      }
-      newRows[rowIndex].conversation.outputValues[conditionIndex] = newValue;
-      return newRows;
+        const newRows = [...prev];
+        if (!newRows[rowIndex].conversation) {
+            newRows[rowIndex].conversation = { outputValues: [] };
+        }
+        if (!newRows[rowIndex].conversation.outputValues) {
+            newRows[rowIndex].conversation.outputValues = [];
+        }
+        newRows[rowIndex].conversation.outputValues[conditionIndex] = newValue;
+        return newRows;
     });
-  };
+};
+
 
   const handleEvaluationChange = (conditionIndex, newValue) => {
     setRows(prev => {
@@ -95,36 +100,35 @@ const ConversationRow = React.forwardRef(({
   const handleSetOutput = (keyPath, value) => {
     console.log('Setting output:', keyPath, value);
     setRows(prev => {
-      const newRows = [...prev];
-      if (!newRows[rowIndex].conversation) {
-        newRows[rowIndex].conversation = {};
-      }
-      if (!newRows[rowIndex].conversation.outputKeys) {
-        newRows[rowIndex].conversation.outputKeys = [];
-      }
-      if (!newRows[rowIndex].conversation.outputValues) {
-        newRows[rowIndex].conversation.outputValues = [];
-      }
-      if (!newRows[rowIndex].conversation.evaluations) {
-        newRows[rowIndex].conversation.evaluations = [];
-      }
-      if (!newRows[rowIndex].conversation.phrases) {
-        newRows[rowIndex].conversation.phrases = [];
-      }
-      
-      let index = newRows[rowIndex].conversation.outputKeys.indexOf(keyPath);
-      if (index === -1) {
-        index = newRows[rowIndex].conversation.outputKeys.length;
-        newRows[rowIndex].conversation.evaluations.push('equals');
-        newRows[rowIndex].conversation.phrases.push('');
-      }
-      
-      newRows[rowIndex].conversation.outputKeys[index] = keyPath;
-      newRows[rowIndex].conversation.outputValues[index] = typeof value === 'object' ? JSON.stringify(value) : String(value);
-      
-      return newRows;
+        const newRows = [...prev];
+
+        // Ensure the conversation object exists
+        if (!newRows[rowIndex].conversation) {
+            newRows[rowIndex].conversation = {
+                outputKeys: [],
+                outputValues: [],
+                evaluations: [],
+                phrases: [],
+            };
+        }
+
+        // Ensure outputKeys and outputValues arrays exist
+        if (!Array.isArray(newRows[rowIndex].conversation.outputKeys)) {
+            newRows[rowIndex].conversation.outputKeys = [];
+        }
+        if (!Array.isArray(newRows[rowIndex].conversation.outputValues)) {
+            newRows[rowIndex].conversation.outputValues = [];
+        }
+
+        // Add the new output key and value
+        const index = newRows[rowIndex].conversation.outputKeys.length;
+        newRows[rowIndex].conversation.outputKeys[index] = typeof key === 'object' ? JSON.stringify(keyPath) : String(keyPath);
+        newRows[rowIndex].conversation.outputValues[index] = value;
+
+        return newRows;
     });
-  };
+};
+
 
   const handleFieldChange = (conditionIndex, newValue) => {
     setRows(prev => {
@@ -160,11 +164,12 @@ const ConversationRow = React.forwardRef(({
             <div key={conditionIndex} className="condition-row">
               <div className="output-field-section">
                 <input 
-                  className='output-key-input'
-                  type="text" 
-                  value={conversation.outputKeys?.[conditionIndex] || ''} 
-                  onChange={(e) => handleOutputKeyChange(conditionIndex, e.target.value)}
-                  placeholder="Key (set from API response or edit manually)"
+                 className='output-key-input'
+                 type="text" 
+                 value={conversation.outputKeys?.[conditionIndex] || ''} 
+                 onChange={(e) => handleOutputKeyChange(conditionIndex, e.target.value)}
+                 placeholder="Key (set from API response or edit manually)"
+                 
                 />
                 <textarea 
                   className='output-value-input'
@@ -172,17 +177,19 @@ const ConversationRow = React.forwardRef(({
                   onChange={(e) => handleOutputValueChange(conditionIndex, e.target.value)}
                   placeholder="Value (set from API response or edit manually)"
                 />
+                
               </div>
               <select 
-                value={evaluation || 'equals'} 
+                value={evaluation || 'exact_match'} 
                 onChange={(e) => handleEvaluationChange(conditionIndex, e.target.value)}
               >
-                <option value="equals">Exact Match</option>
+                <option value="exact_match">Exact Match</option>
                 <option value="contains">Contains</option>
-                <option value="begins_with">Begins With</option>
+                <option value="starts_with">Begins With</option>
                 <option value="ends_with">Ends With</option>
                 <option value="word_count">Word Count</option>
                 <option value="context_match">Contextually Contains</option>
+                <option value="greater_than">Greater Than</option>
                 <option value="less_than">Less Than</option>
               </select>
               <input 
