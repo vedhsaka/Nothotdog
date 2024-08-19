@@ -135,7 +135,7 @@ const RestEvaluationComponent = () => {
       inputType: "text",
       content: JSON.stringify(row.api?.body || {}),
       projectId,
-      groupId: selectedGroupId, // From the modal dropdown
+      groupId: selectedGroupI || null, // From the modal dropdown
       checks: row.conversation.evaluations.map((evaluation, idx) => ({
         field: row.conversation.outputValues[idx] || '',
         rule: evaluation,
@@ -178,7 +178,7 @@ const RestEvaluationComponent = () => {
     const row = rows[index];
     setCurrentSavingIndex(index);
     setDescription(row.description || ''); // Set the description from the existing test
-    setSelectedGroupId(row.groupId || ''); // Set the group ID from the existing test
+    setSelectedGroupId(row.groupId || null); // Set the group ID from the existing test
     setShowSaveModal(true);
     setIsUpdate(true); // Indicate this is an update
   };
@@ -193,7 +193,7 @@ const RestEvaluationComponent = () => {
         inputType: "text",
         content: JSON.stringify(row.api?.body || {}),
         projectId,
-        groupId: selectedGroupId || '', // Use a fallback if selectedGroupId is undefined
+        groupId: selectedGroupId || null, // Use a fallback if selectedGroupId is undefined
         checks: (row.conversation.evaluations || []).map((evaluation, idx) => ({
             field: row.conversation.outputValues?.[idx] || '',  // Use optional chaining to prevent undefined errors
             rule: evaluation || 'exact_match',  // Default to 'exact_match' if evaluation is undefined
@@ -251,7 +251,7 @@ const RestEvaluationComponent = () => {
       },
       uuid: text.uuid,
       description: text.description || '',
-      groupId: text.groupId || '',
+      groupId: text.groupId || null,
       conditions,
       outputValue: text.content || '',
       outputKey: '',
