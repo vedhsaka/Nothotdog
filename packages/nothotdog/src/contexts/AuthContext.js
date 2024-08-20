@@ -5,10 +5,10 @@ import apiFetch from '../utils/api';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [userId, setUserId] = useState(null);
+  const [user, setUser] = useState(() => JSON.parse(sessionStorage.getItem('user')) || null);
+  const [userId, setUserId] = useState(() => sessionStorage.getItem('userId') || null);
   const [projectId, setProjectId] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!user);
 
   const createUserInAPI = async (userId) => {
     try {
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Failed to fetch projects');
       }
 
-      const data = await response; // Parse the JSON response
+      const data = await response.json(); // Parse the JSON response
       if (data.length > 0) {
         setProjectId(data[0].uuid); // Save the project ID
         console.log('Project ID:', data[0].uuid);
@@ -57,40 +57,57 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      setLoading(true);
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.user) {
-        setUser(data.session.user);
-        setUserId(data.session.user.id);
-        await createUserInAPI(data.session.user.id);
-        await fetchProjects(data.session.user.id);
-      } else {
-        setUser(null);
-        setUserId(null);
+      const storedUser = sessionStorage.getItem('user');
+      if (!storedUser) {
+        setLoading(true);
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.user) {
+          const currentUser = data.session.user;
+          setUser(currentUser);
+          setUserId(currentUser.id);
+          sessionStorage.setItem('user', JSON.stringify(currentUser));
+          sessionStorage.setItem('userId', currentUser.id);
+          await createUserInAPI(currentUser.id);
+          await fetchProjects(currentUser.id);
+        } else {
+          setUser(null);
+          setUserId(null);
+        }
+        setLoading(false);
       }
-      setLoading(false);
     };
-
+  
     fetchUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setLoading(true);
-      if (session?.user) {
-        setUser(session.user);
-        setUserId(session.user.id);
-        await createUserInAPI(session.user.id);
-        await fetchProjects(session.user.id);
-      } else {
-        setUser(null);
-        setUserId(null);
-      }
-      setLoading(false);
-    });
-
-    return () => {
-      authListener?.subscription?.unsubscribe();
+  
+    const setupAuthListener = () => {
+      const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (session?.user) {
+          const currentUser = session.user;
+          setUser(currentUser);
+          setUserId(currentUser.id);
+          sessionStorage.setItem('user', JSON.stringify(currentUser));
+          sessionStorage.setItem('userId', currentUser.id);
+          await createUserInAPI(currentUser.id);
+          await fetchProjects(currentUser.id);
+        } else {
+          setUser(null);
+          setUserId(null);
+          sessionStorage.removeItem('user');
+          sessionStorage.removeItem('userId');
+        }
+        setLoading(false);
+      });
+  
+      return () => {
+        authListener?.subscription?.unsubscribe();
+      };
     };
+  
+    // Set up the listener only if it's not already set up
+    setupAuthListener();
   }, []);
+  
+  
 
   const signIn = async () => {
     try {
@@ -105,6 +122,10 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      setUser(null);
+      setUserId(null);
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('userId');
     } catch (error) {
       console.error('Error during sign-out:', error);
     }

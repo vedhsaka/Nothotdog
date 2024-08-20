@@ -40,10 +40,6 @@ function AppContent() {
               element={<PrivateRoute><RecordedTests /></PrivateRoute>}
             />
             <Route
-              path="/configuration"
-              element={<PrivateRoute><ConfigurationComponent /></PrivateRoute>}
-            />
-            <Route
               path="/voice-evaluation"
               element={<PrivateRoute><EvaluationComponent /></PrivateRoute>}
             />
@@ -51,7 +47,7 @@ function AppContent() {
               path="/text-evaluation"
               element={<PrivateRoute><RestEvaluationComponent /></PrivateRoute>}
             />
-            <Route path="/" element={<Navigate to="/voice-evaluation" />} /> {/* Default route */}
+            <Route path="/" element={<Navigate to="/voice-evaluation" />} />
           </Routes>
         </div>
       </div>
