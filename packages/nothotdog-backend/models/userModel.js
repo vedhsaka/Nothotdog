@@ -2,7 +2,7 @@ const supabase = require('../supabaseClient.js');
 const ProjectModel = require('./projectModel.js');
 
 class UserModel {
-  static async createUser(uuid, createdAt, invitedProjectId = null) {
+  static async createUser(uuid, createdAt) {
     let project = null;
 
     const { data, error } = await supabase
@@ -11,16 +11,7 @@ class UserModel {
     .select();
     if (error) throw error;
 
-    if (invitedProjectId) {
-        project = await ProjectModel.getProjectById(invitedProjectId);
-        if(project == null) return "Project doesnt exist";
-
-        ProjectModel.addUserToProject(invitedProjectId, uuid);
-      } else {
-        project = await ProjectModel.createProject(uuid, 'Test Project');
-      }
-
-    return { user: data[0], project };
+    return { user: data[0] };
   }
 
   static async getUser(userId) {
