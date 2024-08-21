@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Failed to fetch projects');
       }
 
-      const data = await response.json(); // Parse the JSON response
+      const data = await response; // Parse the JSON response
       if (data.length > 0) {
         setProjectId(data[0].uuid); // Save the project ID
         console.log('Project ID:', data[0].uuid);

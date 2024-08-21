@@ -11,7 +11,6 @@ const Sidebar = ({ setActiveTab, activeTab, user, signIn, signOut }) => {
 
   const tabs = [
     { name: 'Recorded Tests', icon: voiceTests, path: '/recorded-tests' },
-    { name: 'Configuration', icon: settings, path: '/configuration' },
     { name: 'Voice Evaluation', icon: flame, path: '/voice-evaluation' },
     { name: 'Text Evaluation', icon: apiSettings, path: '/text-evaluation' },
   ];
