@@ -135,7 +135,7 @@ const RestEvaluationComponent = () => {
       inputType: "text",
       content: JSON.stringify(row.api?.body || {}),
       projectId,
-      groupId: selectedGroupI || null, // From the modal dropdown
+      groupId: selectedGroupId || null, // From the modal dropdown
       checks: row.conversation.evaluations.map((evaluation, idx) => ({
         field: row.conversation.outputValues[idx] || '',
         rule: evaluation,
@@ -157,7 +157,7 @@ const RestEvaluationComponent = () => {
         body: JSON.stringify(data),
       });
 
-      if (response.ok) {
+      if (response) {
         console.log('Test saved successfully');
         setDescription('');
         setShowSaveModal(false);

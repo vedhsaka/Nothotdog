@@ -26,11 +26,11 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ uuid: userId }),
       });
 
-      if (!response.ok) {
+      if (!response) {
         throw new Error('Failed to create user');
       }
 
-      const data = await response.json();
+      const data = await response;
       console.log('User created in API:', data);
     } catch (error) {
       console.error('Error creating user in API:', error);
@@ -47,11 +47,11 @@ export const AuthProvider = ({ children }) => {
         },
       });
 
-      if (!response.ok) {
+      if (!response) {
         throw new Error('Failed to fetch projects');
       }
 
-      const data = await response.json();
+      const data = await response;
       if (data.length > 0) {
         setProjectId(data[0].uuid);
         console.log('Project ID:', data[0].uuid);
