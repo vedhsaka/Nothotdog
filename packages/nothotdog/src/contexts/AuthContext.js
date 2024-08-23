@@ -17,6 +17,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const createUserInAPI = async (userId) => {
+    if (sessionStorage.getItem('user')) {
+      return;
+    }
     try {
       const response = await apiFetch('api/users', {
         method: 'POST',
@@ -47,7 +50,7 @@ export const AuthProvider = ({ children }) => {
         },
       });
 
-      if (!response.ok) {
+      if (!response) {
         throw new Error('Failed to fetch projects');
       }
 

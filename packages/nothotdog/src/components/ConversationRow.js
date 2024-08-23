@@ -10,7 +10,6 @@ const ConversationRow = React.forwardRef(({
   handleApiResponse,
   handlePhraseChange,
   handleDeleteRow,
-  setOutputValue,
   handleDeleteCondition,
   addCondition,
   handleEvaluate,
@@ -96,36 +95,38 @@ const ConversationRow = React.forwardRef(({
     console.log('Setting output:', keyPath, value);
     setRows(prev => {
       const newRows = [...prev];
+      
+      // Ensure the conversation object and nested arrays are initialized
       if (!newRows[rowIndex].conversation) {
         newRows[rowIndex].conversation = {};
       }
-      if (!newRows[rowIndex].conversation.outputKeys) {
+      if (!Array.isArray(newRows[rowIndex].conversation.outputKeys)) {
         newRows[rowIndex].conversation.outputKeys = [];
       }
-      if (!newRows[rowIndex].conversation.outputValues) {
+      if (!Array.isArray(newRows[rowIndex].conversation.outputValues)) {
         newRows[rowIndex].conversation.outputValues = [];
       }
-      if (!newRows[rowIndex].conversation.evaluations) {
+      if (!Array.isArray(newRows[rowIndex].conversation.evaluations)) {
         newRows[rowIndex].conversation.evaluations = [];
       }
-      if (!newRows[rowIndex].conversation.phrases) {
+      if (!Array.isArray(newRows[rowIndex].conversation.phrases)) {
         newRows[rowIndex].conversation.phrases = [];
       }
+  
+      // Append new entries for keyPath and value
+      const newIndex = newRows[rowIndex].conversation.outputKeys.length;
+  
+      newRows[rowIndex].conversation.outputKeys.push(keyPath);
+      newRows[rowIndex].conversation.outputValues.push(typeof value === 'object' ? JSON.stringify(value) : String(value));
       
-      let index = newRows[rowIndex].conversation.outputKeys.indexOf(keyPath);
-      if (index === -1) {
-        index = newRows[rowIndex].conversation.outputKeys.length;
-        newRows[rowIndex].conversation.evaluations.push('equals');
-        newRows[rowIndex].conversation.phrases.push('');
-      }
-      
-      newRows[rowIndex].conversation.outputKeys[index] = keyPath;
-      newRows[rowIndex].conversation.outputValues[index] = typeof value === 'object' ? JSON.stringify(value) : String(value);
-      
+      // Add default values for evaluations and phrases
+      newRows[rowIndex].conversation.evaluations.push('equals');
+      newRows[rowIndex].conversation.phrases.push('');
+  
       return newRows;
     });
   };
-
+  
   const handleFieldChange = (conditionIndex, newValue) => {
     setRows(prev => {
       const newRows = [...prev];
