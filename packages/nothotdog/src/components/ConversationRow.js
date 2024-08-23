@@ -201,11 +201,13 @@ const ConversationRow = React.forwardRef(({
              {evaluation === 'context_match_greater_than' && (
 
               <input 
-               className='percentage-score-input'
-                type="number" 
-                value={conversation.phrases?.[conditionIndex] || ''} 
+               className="percentage-score-input"
+                type="number"
+                value={conversation.scores?.[conditionIndex] || ''} 
                 onChange={(e) => handleScoreChange(rowIndex, conditionIndex, e.target.value)} 
                 placeholder="Percentage Score"
+                minValue="0"
+                maxValue="100"
               />
              )}
               <button className="delete-condition-button" onClick={() => handleDeleteCondition(rowIndex, conditionIndex)}>X</button>
