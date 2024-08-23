@@ -674,6 +674,14 @@ const EvaluationComponent = () => {
     });
   }, []);
 
+  const handleScoreChange = useCallback((index, conditionIndex, value) => {
+    setPhrases((prevScores) => {
+      const newPhrases = [...prevScores];
+      newScores[index][conditionIndex] = value;
+      return newScores;
+    });
+  }, []);
+
   const handleDeleteRow = (index) => {
     const audioId = audioData[index];
     const outputAudioId = outputAudioData[index];
@@ -962,15 +970,15 @@ const EvaluationComponent = () => {
                           newEvaluations[rowIndex][conditionIndex] = e.target.value;
                           setEvaluations(newEvaluations);
                         }}>
-                          <option value="exact_match">Exact Match</option>
-                          <option value="word_count">Word Count</option>
+                          <option value="equals">Exact Match</option>
                           <option value="contains">Contains</option>
+                          <option value="not_contains">Does Not Contain</option>
                           <option value="starts_with">Begins With</option>
                           <option value="ends_with">Ends With</option>
-                          <option value="context_match">Contextually Contains</option>
-                          <option value="greater_than">Greater Than</option>
+                          <option value="word_count">Word Count</option>
+                          <option value="context_match_greater_than">Context Match Greater Than</option>
                           <option value="less_than">Less Than</option>
-                          <option value="equals">Equals</option>
+                          <option value="greater_than">Greater Than</option>
 
 
                         </select>

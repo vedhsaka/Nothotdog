@@ -31,21 +31,10 @@ export const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
     "starts_with": "starts_with",
     "contains": "contains",
     "ends_with": "ends_with",
-    "context_match": "context_match",
+    "context_match_greater_than": "context_match_greater_than",
     "exact_match": "exact_match",
     "less_than": "less_than",
     "greater_than": "greater_than",
-    "equals": "equals"
+    "equals": "equals",
+    "not_contains": "not_contains",
   };
-
-  // exports.VALID_CHECKS = [
-  //   'contains', yes
-  //   'exact_match', yes
-  //   'starts_with', yes 
-  //   'ends_with', yes
-  //   'greater_than', yes
-  //   'less_than', yes
-  //   'equals', yes 
-  //   'context_match' yes
-  // ];
-  

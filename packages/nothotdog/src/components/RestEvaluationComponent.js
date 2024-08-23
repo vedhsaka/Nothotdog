@@ -71,7 +71,8 @@ const RestEvaluationComponent = () => {
       const checks = row.conversation.evaluations.map((evaluation, idx) => ({
         field: row.conversation.outputValues[idx] || '',
         rule: evaluation,
-        value: row.conversation.phrases[idx]
+        value: row.conversation.phrases[idx],
+        score: row.conversation.scores[idx] || null,
       }));
   
       const response = await authFetch('api/test-inputs', {
@@ -139,7 +140,8 @@ const RestEvaluationComponent = () => {
       checks: row.conversation.evaluations.map((evaluation, idx) => ({
         field: row.conversation.outputValues[idx] || '',
         rule: evaluation,
-        value: row.conversation.phrases[idx]
+        value: row.conversation.phrases[idx],
+        score: row.conversation.scores[idx] || null,
       })),
       // sequence: currentSavingIndex + 1,
       url: row.api?.url || '',
@@ -198,6 +200,7 @@ const RestEvaluationComponent = () => {
             field: row.conversation.outputValues?.[idx] || '',  // Use optional chaining to prevent undefined errors
             rule: evaluation || 'exact_match',  // Default to 'exact_match' if evaluation is undefined
             value: row.conversation.phrases?.[idx] || '',  // Use optional chaining to prevent undefined errors
+            score: row.conversation.scores?.[idx] || null,  // Use optional chaining to prevent undefined errors
         })),
         sequence: currentSavingIndex + 1,
         url: row.api?.url || '',
@@ -279,6 +282,7 @@ const RestEvaluationComponent = () => {
       if (row.conversation && Array.isArray(row.conversation.evaluations) && Array.isArray(row.conversation.phrases)) {
         row.conversation.evaluations = row.conversation.evaluations.filter((_, index) => index !== conditionIndex);
         row.conversation.phrases = row.conversation.phrases.filter((_, index) => index !== conditionIndex);
+        row.conversation.scores = row.conversation.scores.filter((_, index) => index !== conditionIndex);
       }
       newRows[rowIndex] = row;
       return newRows;
@@ -356,6 +360,9 @@ const RestEvaluationComponent = () => {
       if (!Array.isArray(newRows[rowIndex].conversation.phrases)) {
         newRows[rowIndex].conversation.phrases = [];
       }
+      if (!Array.isArray(newRows[rowIndex].conversation.scores)) {
+        newRows[rowIndex].conversation.scores = [];
+      }
       if (!Array.isArray(newRows[rowIndex].conversation.fields)) {
         newRows[rowIndex].conversation.fields = [];
       }
@@ -367,6 +374,7 @@ const RestEvaluationComponent = () => {
       }
       newRows[rowIndex].conversation.evaluations.push('equals');
       newRows[rowIndex].conversation.phrases.push('');
+      newRows[rowIndex].conversation.scores.push(null);
       newRows[rowIndex].conversation.fields.push('');
       newRows[rowIndex].conversation.outputKeys.push('');
       newRows[rowIndex].conversation.outputValues.push('');
@@ -378,6 +386,13 @@ const RestEvaluationComponent = () => {
     setRows(prev => {
       const newRows = [...prev];
       newRows[index].conversation.phrases[conditionIndex] = value;
+      return newRows;
+    });
+  }, []);
+  const handleScoreChange = useCallback((index, conditionIndex, value) => {
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[index].conversation.scores[conditionIndex] = value;
       return newRows;
     });
   }, []);
@@ -408,6 +423,7 @@ const createConversationRowFromInput = (input) => {
       conversation: {
           evaluations: [],
           phrases: [],
+          scores: [],
           outputValues: [],
           result: null,
           latency: { startTime: null, latency: null },
@@ -420,6 +436,7 @@ const createConversationRowFromInput = (input) => {
   input.checks.forEach(check => {
       newRow.conversation.evaluations.push(check.rule);
       newRow.conversation.phrases.push(check.value);
+      newRow.conversation.scores.push(check.score);
       newRow.conversation.outputValues.push(check.field);
   });
 
@@ -465,6 +482,7 @@ const createConversationRowFromInput = (input) => {
                           rowData={rowData}
                           setRows={setRows}
                           handlePhraseChange={handlePhraseChange}
+                          handleScoreChange={handleScoreChange}
                           handleDeleteRow={handleDeleteRow}
                           handleDeleteCondition={handleDeleteCondition}
                           addCondition={addCondition}

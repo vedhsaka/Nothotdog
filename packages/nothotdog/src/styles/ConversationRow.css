@@ -1,16 +1,4 @@
-/* .conversation-row {
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    padding: 20px;
-    position: relative;
-    display: flex;
-    flex-direction: row;
-    gap: 20px;
-    width: 100%;
-    box-sizing: border-box;
-  } */
+
   .parent-conversation-row .conversation-row {
     grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr auto;
   }
@@ -203,4 +191,8 @@
     display: inline-block;
     width: 52%;
     border: 1px solid #ccc;
+  }
+
+  .percentage-score-input {
+    width: 40px;
   }

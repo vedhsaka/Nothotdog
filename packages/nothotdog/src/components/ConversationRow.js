@@ -9,6 +9,7 @@ const ConversationRow = React.forwardRef(({
   setRows,
   handleApiResponse,
   handlePhraseChange,
+  handleScoreChange,
   handleDeleteRow,
   setOutputValue,
   handleDeleteCondition,
@@ -77,6 +78,10 @@ const ConversationRow = React.forwardRef(({
         newRows[rowIndex].conversation.evaluations = [];
       }
       newRows[rowIndex].conversation.evaluations[conditionIndex] = newValue;
+      // Reset the score if evaluation type changes
+      if (newValue !== 'context_match_greater_than') {
+        newRows[rowIndex].conversation.scores[conditionIndex] = undefined;
+      }
       return newRows;
     });
   };
@@ -179,11 +184,13 @@ const ConversationRow = React.forwardRef(({
               >
                 <option value="equals">Exact Match</option>
                 <option value="contains">Contains</option>
+                <option value="not_contains">Does Not Contain</option>
                 <option value="starts_with">Begins With</option>
                 <option value="ends_with">Ends With</option>
                 <option value="word_count">Word Count</option>
-                <option value="context_match">Contextually Contains</option>
+                <option value="context_match_greater_than">Context Match Greater Than</option>
                 <option value="less_than">Less Than</option>
+                <option value="greater_than">Greater Than</option>
               </select>
               <input 
                 type="text" 
@@ -191,6 +198,16 @@ const ConversationRow = React.forwardRef(({
                 onChange={(e) => handlePhraseChange(rowIndex, conditionIndex, e.target.value)} 
                 placeholder="Value"
               />
+             {evaluation === 'context_match_greater_than' && (
+
+              <input 
+               className='percentage-score-input'
+                type="number" 
+                value={conversation.phrases?.[conditionIndex] || ''} 
+                onChange={(e) => handleScoreChange(rowIndex, conditionIndex, e.target.value)} 
+                placeholder="Percentage Score"
+              />
+             )}
               <button className="delete-condition-button" onClick={() => handleDeleteCondition(rowIndex, conditionIndex)}>X</button>
             </div>
           ))}
