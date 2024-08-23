@@ -22,7 +22,7 @@ const ConversationRow = React.forwardRef(({
   handleUpdate
 }, ref) => {
   const apiDetails = rowData?.apiDetails || {};
-  const conversation = rowData?.conversation || { evaluations: [], phrases: [], fields: [], outputKeys: [], outputValues: [] };
+  const conversation = rowData?.conversation || { evaluations: [], phrases: [], fields: [], outputKeys: [], outputValues: [], scores: [] };
 
   const onSaveAPIConnection = (apiData) => {
     handleApiResponse(rowIndex, apiData);
@@ -116,12 +116,16 @@ const ConversationRow = React.forwardRef(({
       if (!newRows[rowIndex].conversation.phrases) {
         newRows[rowIndex].conversation.phrases = [];
       }
+      if (!newRows[rowIndex].conversation.scores) {
+        newRows[rowIndex].conversation.scores = [];
+      }
       
       let index = newRows[rowIndex].conversation.outputKeys.indexOf(keyPath);
       if (index === -1) {
         index = newRows[rowIndex].conversation.outputKeys.length;
         newRows[rowIndex].conversation.evaluations.push('equals');
         newRows[rowIndex].conversation.phrases.push('');
+        newRows[rowIndex].conversation.scores.push(null);
       }
       
       newRows[rowIndex].conversation.outputKeys[index] = keyPath;
