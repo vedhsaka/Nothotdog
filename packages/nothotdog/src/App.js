@@ -32,20 +32,16 @@ function AppContent() {
         <div className="content-wrapper">
           <Routes>
             <Route
-              path="/api-testing"
-              element={<PrivateRoute><WebSocketComponent /></PrivateRoute>}
-            />
-            <Route
-              path="/recorded-tests"
-              element={<PrivateRoute><RecordedTests /></PrivateRoute>}
-            />
-            <Route
               path="/voice-evaluation"
               element={<PrivateRoute><EvaluationComponent /></PrivateRoute>}
             />
             <Route
               path="/text-evaluation"
               element={<PrivateRoute><RestEvaluationComponent /></PrivateRoute>}
+            />
+            <Route
+              path="/recorded-tests"
+              element={<PrivateRoute><RecordedTests /></PrivateRoute>}
             />
             <Route path="/" element={<Navigate to="/voice-evaluation" />} />
           </Routes>

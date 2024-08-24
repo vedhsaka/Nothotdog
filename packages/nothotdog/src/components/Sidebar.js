@@ -3,16 +3,15 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import '../styles/Sidebar.css';
 import apiSettings from '../icons/api-testing.svg';
 import voiceTests from '../icons/voice-cases.svg';
-import settings from '../icons/settings.svg';
 import flame from '../icons/flame.svg';
 
 const Sidebar = ({ setActiveTab, activeTab, user, signIn, signOut }) => {
   const navigate = useNavigate(); // Initialize useNavigate hook
 
   const tabs = [
-    { name: 'Recorded Tests', icon: voiceTests, path: '/recorded-tests' },
-    { name: 'Voice Evaluation', icon: flame, path: '/voice-evaluation' },
-    { name: 'Text Evaluation', icon: apiSettings, path: '/text-evaluation' },
+    { name: 'Voice APIs', icon: flame, path: '/voice-evaluation' },
+    { name: 'Rest APIs', icon: apiSettings, path: '/text-evaluation' },
+    { name: 'Recorded Tests', icon: voiceTests, path: '/recorded-tests' }
   ];
 
   const handleTabClick = (tab) => {

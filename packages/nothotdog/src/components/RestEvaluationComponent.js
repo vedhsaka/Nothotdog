@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import useAuthFetch from '../hooks/AuthFetch';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import TestGroupSidebar from '../components/TestGroupSideBar';
-import APIRequestForm from './APIConnectionForm';
 import { SaveTestModal, SignInModal } from './UtilityModals';
 import ConversationRow from './ConversationRow';
 import { evaluationMapping } from '../utils/utils';  // Add this import at the top of the file
@@ -15,18 +14,14 @@ const RestEvaluationComponent = () => {
   const { user, signIn, projectId, userId } = useAuth();
   const { authFetch } = useAuthFetch();
   const [rows, setRows] = useState([]);
-  const [connected, setConnected] = useState(false);
-  const [error, setError] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [description, setDescription] = useState('');
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
-  const [apiResponse, setApiResponse] = useState(null);
   const [currentSavingIndex, setCurrentSavingIndex] = useState(null);
   const location = useLocation();
   const [isUpdate, setIsUpdate] = useState(false); // New state to track if we're updating
-  const [savedTests, setSavedTests] = useState([]); // Array to hold loaded saved tests
 
 
   useEffect(() => {
@@ -56,11 +51,15 @@ const RestEvaluationComponent = () => {
   };
 
   useEffect(() => {
+    if (rows.length === 0) {
+      addConversationRow();  // Add a default conversation row when the component first loads
+    }
+  
     if (location.state && location.state.selectedGroup) {
       handleGroupSelect(location.state.selectedGroup);
     }
-    // Only run this effect once when the component mounts
-  }, []);
+  }, []);  // Add rows.length as a dependency
+  
 
   const handleEvaluate = async (index) => {
     const row = rows[index];
@@ -325,6 +324,8 @@ const RestEvaluationComponent = () => {
   // };
 
   const addConversationRow = useCallback(() => {
+
+    console.log('Adding new row');
     setRows(prev => [
       ...prev,
       {
@@ -344,6 +345,7 @@ const RestEvaluationComponent = () => {
       }
     ]);
   }, []);
+
   const addCondition = useCallback((rowIndex) => {
     setRows(prevRows => {
       const newRows = [...prevRows];
@@ -443,8 +445,7 @@ const createConversationRowFromInput = (input) => {
       <div className="evaluation-component">
         <hr />
         <div className="transcript-box">
-          <h3>Conversations</h3>
-          <button className="add-row-button" onClick={addConversationRow}>+</button>
+          <button className="add-row-button" onClick={addConversationRow}>+ New API</button>
 
           <DragDropContext onDragEnd={onDragEnd}>
             <StrictModeDroppable droppableId="droppable-conversations">

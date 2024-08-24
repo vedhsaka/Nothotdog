@@ -24,7 +24,6 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
     } else {
       setIsLoading(false);
       setError('Please login to view recorded tests and use additional features.');
-      // setShowSignInModal(true);
     }
   }, [userId]);
 
@@ -39,8 +38,8 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
       setVoiceData(data.data);
       setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching voice data:', error);
-      setError('Failed to fetch voice data.');
+      console.error('Error fetching inputs:', error);
+      setError('Failed to fetch inputs.');
       setIsLoading(false);
     }
   };
