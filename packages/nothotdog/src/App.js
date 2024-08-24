@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import './styles/App.css';
-import WebSocketComponent from './components/WebSocketComponent';
 import RecordedTests from './components/RecordedTestsComponent';
-import ConfigurationComponent from './components/ConfigurationComponent';
 import EvaluationComponent from './components/EvaluationComponent';
 import RestEvaluationComponent from './components/RestEvaluationComponent';
 import Sidebar from './components/Sidebar';
