@@ -358,8 +358,8 @@ class InputModel {
       let allChecksPassed = true;
   
       for (const check of checks) {
-        const { field, rule, value } = check;
-        logger.info('Performing check', { field, rule, value });
+        const { field, rule, value, threshold } = check;
+        logger.info('Performing check', { field, rule, value, threshold });
         let passed = false;
         let details = '';
         let actualValue;
@@ -414,8 +414,9 @@ class InputModel {
           case 'context_match':
             logger.info('Performing context match check');
             const contextMatchScore = await this.checkContextMatch(String(actualValue), String(value));
-            passed = contextMatchScore >= 0.6;
-            details = `Context match score: ${contextMatchScore.toFixed(2)}. Threshold: 0.6`;
+            const contextMatchThreshold = threshold !== undefined ? parseFloat(threshold) : 0.6;
+            passed = contextMatchScore >= contextMatchThreshold;
+            details = `Context match score: ${contextMatchScore.toFixed(2)}, Threshold: ${contextMatchThreshold}`;
             break;
           default:
             logger.warn('Unimplemented check rule', { rule });
