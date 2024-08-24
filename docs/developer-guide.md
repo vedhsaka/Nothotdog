@@ -130,8 +130,6 @@ The backend API provides the following main endpoints:
 - `/api/groups`: Test group management
 - `/api/inputs`: Test input management
 
-For detailed API documentation, please refer to the [API Documentation](api-documentation.md) file.
-
 ## Deployment
 
 Deployment instructions will vary based on your hosting provider. Generally, you'll need to:
