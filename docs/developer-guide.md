@@ -150,7 +150,5 @@ Deployment instructions will vary based on your hosting provider. Generally, you
 
 1. Fork the repository and create your branch from `main`.
 2. If you've changed APIs, update the documentation.
-3. Ensure the test suite passes.
+3. Test the changes and all APIs.
 4. Issue that pull request!
-
-For more detailed contributing guidelines, please refer to the [CONTRIBUTING.md](../CONTRIBUTING.md) file.
