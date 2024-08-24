@@ -22,7 +22,7 @@ NotHotDog is a powerful platform for testing and evaluating AI agents, particula
 
 ## Getting Started
 
-1. Sign up for an account at [nothotdog.com](https://nothotdog.com)
+1. Sign up for an account at [nothotdog.com](https://app.nothotdog.com)
 2. Log in to your account
 3. You'll be presented with the main dashboard
 
