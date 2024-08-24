@@ -40,6 +40,21 @@ const WebSocketComponent = () => {
     return url ? <audio controls src={url} /> : <div></div>;
   };
 
+
+  useEffect(() => {
+    const storedAudioBlob = localStorage.getItem('audioBlob');
+    if (storedAudioBlob) {
+      setCurrentAudioBlob(new Blob([JSON.parse(storedAudioBlob)], { type: 'audio/webm' }));
+      localStorage.removeItem('audioBlob');
+    }
+    
+    return () => {
+      disconnectWebSocket();
+    };
+  }, []);
+
+
+  // Web Socket Connection Functions
   const connectWebSocket = () => {
     if (wsRef.current || !url) return;
 
@@ -99,6 +114,8 @@ const WebSocketComponent = () => {
 
     setMode('');
   };
+
+  // Start & Stop Recording Functions
 
   const startRecording = async () => {
     setMode('speak');
@@ -200,7 +217,7 @@ const WebSocketComponent = () => {
         }),
       });
 
-      if (response.ok) {
+      if (response) {
         console.log('Test saved successfully');
         setShowModal(false);
         setDescription('');
@@ -212,17 +229,7 @@ const WebSocketComponent = () => {
     reader.readAsDataURL(currentAudioBlob);
   };
 
-  useEffect(() => {
-    const storedAudioBlob = localStorage.getItem('audioBlob');
-    if (storedAudioBlob) {
-      setCurrentAudioBlob(new Blob([JSON.parse(storedAudioBlob)], { type: 'audio/webm' }));
-      localStorage.removeItem('audioBlob');
-    }
-    
-    return () => {
-      disconnectWebSocket();
-    };
-  }, []);
+
 
   return (
     <div className="websocket-component">

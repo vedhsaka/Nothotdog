@@ -345,6 +345,7 @@ const RestEvaluationComponent = () => {
     ]);
   }, []);
   const addCondition = useCallback((rowIndex) => {
+    console.log('Comes here for condition udpate too');
     setRows(prevRows => {
       const newRows = [...prevRows];
       if (!newRows[rowIndex].conversation) {
