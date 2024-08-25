@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import '../styles/EvaluationComponent.css';
+import '../styles/WebSocket.css';
 import '../styles/Modal.css';
 import ModalComponent from '../components/ModalComponent';
 import { useAuth } from '../contexts/AuthContext';
