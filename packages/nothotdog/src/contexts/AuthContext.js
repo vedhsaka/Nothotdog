@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
         },
       });
 
-      if (!response.ok) {
+      if (!response) {
         throw new Error('Failed to fetch projects');
       }
 
