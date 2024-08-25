@@ -32,15 +32,6 @@
     gap: 1rem;
   }
   
-  .button {
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 14px;
-    border: none;
-    transition: background-color 0.3s;
-  }
-  
   .button.primary {
     background-color: #3c82f6; /* Blue color */
     color: white;
