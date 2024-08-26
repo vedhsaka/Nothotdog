@@ -46,8 +46,6 @@ const RestEvaluationComponent = () => {
     setSelectedGroupId(group.id);
     clearConversationRows();
     group.inputs.filter(input => input.input_type === 'text').forEach(text => loadTextAsConversationRow(text));
-    // setIsUpdate(true);
-    // setIsUpdate(group.inputs.length > 0);
   };
 
   useEffect(() => {
@@ -180,7 +178,6 @@ const RestEvaluationComponent = () => {
     setDescription(row.description || ''); // Set the description from the existing test
     setSelectedGroupId(row.groupId || null); // Set the group ID from the existing test
     setShowSaveModal(true);
-    // setIsUpdate(true); // Indicate this is an update
   };
 
   const handleUpdateConfirm = async () => {
@@ -234,7 +231,6 @@ const RestEvaluationComponent = () => {
   };
   
   const loadTextAsConversationRow = (text) => {
-    // setIsUpdate(true); // Set isUpdate to true when loading a test
     const checks = text.checks || {};
     const conditions = Object.entries(checks).map(([key, value]) => ({
       evaluationType: evaluationMapping[key] || 'exact_match',
@@ -415,7 +411,6 @@ const RestEvaluationComponent = () => {
       const newRow = createConversationRowFromInput(input);
       setRows(prevRows => [...prevRows, ...newRow]);
     });
-    // setIsUpdate(true); // Set isUpdate to true when loading a group
 };
 
 
