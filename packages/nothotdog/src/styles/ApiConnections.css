@@ -351,3 +351,16 @@
   color: white;
   cursor: pointer;
 }
+
+.remove-button {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 5px;
+  margin-left: 5px;
+}
+
+.remove-button:hover {
+  color: #bd2130;
+}

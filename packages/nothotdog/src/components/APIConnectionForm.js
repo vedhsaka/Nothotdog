@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Loader, Plus } from 'lucide-react';
+import { Send, Loader, Plus, X } from 'lucide-react';
 import './../styles/ApiConnections.css';
 
 const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues }) => {
@@ -40,6 +40,16 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
 
   const addParam = () => setParams([...params, { key: '', value: '' }]);
   const addHeader = () => setHeaders([...headers, { key: '', value: '' }]);
+
+  const removeParam = (index) => {
+    const newParams = params.filter((_, i) => i !== index);
+    setParams(newParams);
+  };
+
+  const removeHeader = (index) => {
+    const newHeaders = headers.filter((_, i) => i !== index);
+    setHeaders(newHeaders);
+  };
 
   const updateParam = (index, field, value) => {
     const newParams = [...params];
@@ -193,6 +203,9 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
                   onChange={(e) => updateParam(index, 'value', e.target.value)}
                   placeholder="Value"
                 />
+                <button className="remove-button" onClick={() => removeParam(index)}>
+                  <X size={14} />
+                </button>
               </div>
             ))}
             <button className="add-button" onClick={addParam}>
@@ -218,6 +231,9 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
                   onChange={(e) => updateHeader(index, 'value', e.target.value)}
                   placeholder="Value"
                 />
+                <button className="remove-button" onClick={() => removeHeader(index)}>
+                  <X size={14} />
+                </button>
               </div>
             ))}
             <button className="add-button" onClick={addHeader}>
