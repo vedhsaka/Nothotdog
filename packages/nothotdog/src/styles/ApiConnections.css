@@ -62,9 +62,8 @@
   
   .section {
     background-color: #ffffff;
-    padding: 15px;
+    padding: 5px;
     border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
   
   .section h3 {
@@ -178,6 +177,7 @@
   }
   .api-form .input-group {
     flex-direction: row;
+    width: 80%;
   }
 
   
@@ -276,7 +276,7 @@
 }
 
 .tab-content {
-  padding: 20px;
+  padding: 10px;
   border: 1px solid #ccc;
   border-radius: 0 0 4px 4px;
   background-color: white;

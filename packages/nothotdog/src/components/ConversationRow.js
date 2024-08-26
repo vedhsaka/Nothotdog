@@ -158,41 +158,41 @@ const ConversationRow = React.forwardRef(({
         <div className="conditions-section">
           {conversation.evaluations && conversation.evaluations.map((evaluation, conditionIndex) => (
             <div key={conditionIndex} className="condition-row">
-              <div className="output-field-section">
-                <input 
-                  className='output-key-input'
-                  type="text" 
-                  value={conversation.outputKeys?.[conditionIndex] || ''} 
-                  onChange={(e) => handleOutputKeyChange(conditionIndex, e.target.value)}
-                  placeholder="Key (set from API response or edit manually)"
-                />
-                <textarea 
-                  className='output-value-input'
-                  value={conversation.outputValues?.[conditionIndex] || ''}
-                  onChange={(e) => handleOutputValueChange(conditionIndex, e.target.value)}
-                  placeholder="Value (set from API response or edit manually)"
-                />
-              </div>
-              <select 
-                value={evaluation || 'equals'} 
-                onChange={(e) => handleEvaluationChange(conditionIndex, e.target.value)}
-              >
-                <option value="equals">Exact Match</option>
-                <option value="contains">Contains</option>
-                <option value="starts_with">Begins With</option>
-                <option value="ends_with">Ends With</option>
-                <option value="word_count">Word Count</option>
-                <option value="context_match">Contextually Contains</option>
-                <option value="less_than">Less Than</option>
-              </select>
+            <div className="output-field-section">
               <input 
+                className='output-key-input'
                 type="text" 
-                value={conversation.phrases?.[conditionIndex] || ''} 
-                onChange={(e) => handlePhraseChange(rowIndex, conditionIndex, e.target.value)} 
-                placeholder="Value"
+                value={conversation.outputKeys?.[conditionIndex] || ''} 
+                onChange={(e) => handleOutputKeyChange(conditionIndex, e.target.value)}
+                placeholder="Key (set from API response or edit manually)"
               />
-              <button className="delete-condition-button" onClick={() => handleDeleteCondition(rowIndex, conditionIndex)}>X</button>
+              <textarea 
+                className='output-value-input'
+                value={conversation.outputValues?.[conditionIndex] || ''}
+                onChange={(e) => handleOutputValueChange(conditionIndex, e.target.value)}
+                placeholder="Value (set from API response or edit manually)"
+              />
             </div>
+            <select 
+              value={evaluation || 'equals'} 
+              onChange={(e) => handleEvaluationChange(conditionIndex, e.target.value)}
+            >
+              <option value="equals">Exact Match</option>
+              <option value="contains">Contains</option>
+              <option value="starts_with">Begins With</option>
+              <option value="ends_with">Ends With</option>
+              <option value="word_count">Word Count</option>
+              <option value="context_match">Contextually Contains</option>
+              <option value="less_than">Less Than</option>
+            </select>
+            <input 
+              type="text" 
+              value={conversation.phrases?.[conditionIndex] || ''} 
+              onChange={(e) => handlePhraseChange(rowIndex, conditionIndex, e.target.value)} 
+              placeholder="Expected Value"
+            />
+            <button className="delete-condition-button" onClick={() => handleDeleteCondition(rowIndex, conditionIndex)}>X</button>
+          </div>          
           ))}
           <button className="add-condition-button" onClick={() => addCondition(rowIndex)}>Add Condition</button>
         </div>

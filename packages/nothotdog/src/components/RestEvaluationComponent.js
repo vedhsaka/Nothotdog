@@ -46,7 +46,7 @@ const RestEvaluationComponent = () => {
     setSelectedGroupId(group.id);
     clearConversationRows();
     group.inputs.filter(input => input.input_type === 'text').forEach(text => loadTextAsConversationRow(text));
-    setIsUpdate(true);
+    // setIsUpdate(true);
     // setIsUpdate(group.inputs.length > 0);
   };
 
@@ -179,7 +179,7 @@ const RestEvaluationComponent = () => {
     setDescription(row.description || ''); // Set the description from the existing test
     setSelectedGroupId(row.groupId || null); // Set the group ID from the existing test
     setShowSaveModal(true);
-    setIsUpdate(true); // Indicate this is an update
+    // setIsUpdate(true); // Indicate this is an update
   };
 
   const handleUpdateConfirm = async () => {
@@ -233,7 +233,7 @@ const RestEvaluationComponent = () => {
   };
   
   const loadTextAsConversationRow = (text) => {
-    setIsUpdate(true); // Set isUpdate to true when loading a test
+    // setIsUpdate(true); // Set isUpdate to true when loading a test
     const checks = text.checks || {};
     const conditions = Object.entries(checks).map(([key, value]) => ({
       evaluationType: evaluationMapping[key] || 'exact_match',
@@ -271,18 +271,30 @@ const RestEvaluationComponent = () => {
     setRows(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleDeleteCondition = useCallback((rowIndex, conditionIndex) => {
-    setRows(prevRows => {
-      const newRows = [...prevRows];
-      const row = {...newRows[rowIndex]};
-      if (row.conversation && Array.isArray(row.conversation.evaluations) && Array.isArray(row.conversation.phrases)) {
-        row.conversation.evaluations = row.conversation.evaluations.filter((_, index) => index !== conditionIndex);
-        row.conversation.phrases = row.conversation.phrases.filter((_, index) => index !== conditionIndex);
+  const handleDeleteCondition = (rowIndex, conditionIndex) => {
+    setRows(prev => {
+      const newRows = [...prev];
+      const conversation = newRows[rowIndex].conversation;
+  
+      if (conversation && conversation.outputKeys && conversation.outputValues && conversation.evaluations) {
+        // Remove the condition at the specific index
+        conversation.outputKeys.splice(conditionIndex, 1);
+        conversation.outputValues.splice(conditionIndex, 1);
+        conversation.evaluations.splice(conditionIndex, 1);
+        
+        // Remove the phrase associated with the condition, if it exists
+        if (conversation.phrases) {
+          conversation.phrases.splice(conditionIndex, 1);
+        }
+  
+        // Update the conversation in the row
+        newRows[rowIndex].conversation = conversation;
       }
-      newRows[rowIndex] = row;
+  
       return newRows;
     });
-  }, []);
+  };
+  
 
   const handleSetOutputValue = useCallback((rowIndex, key, value) => {
     setRows(prevRows => {
@@ -390,12 +402,17 @@ const RestEvaluationComponent = () => {
       const newRow = createConversationRowFromInput(input);
       setRows(prevRows => [...prevRows, ...newRow]);
     });
-    setIsUpdate(true); // Set isUpdate to true when loading a group
+    // setIsUpdate(true); // Set isUpdate to true when loading a group
 };
 
 
 const createConversationRowFromInput = (input) => {
-  setIsUpdate(true); // Set isUpdate to true when creating a new row
+
+  if (input.uuid) {
+    setIsUpdate(true); // Set isUpdate to true when creating a new row
+  } else {
+    setIsUpdate(false); // Set isUpdate to false when creating a new row
+  }
   const apiDetails = {
       method: input.method || 'GET',
       url: input.url || '',
@@ -422,7 +439,7 @@ const createConversationRowFromInput = (input) => {
   input.checks.forEach(check => {
       newRow.conversation.evaluations.push(check.rule);
       newRow.conversation.phrases.push(check.value);
-      newRow.conversation.outputValues.push(check.field);
+      newRow.conversation.outputKeys.push(check.field);
   });
 
   return [newRow];
