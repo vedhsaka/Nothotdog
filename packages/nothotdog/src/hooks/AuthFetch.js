@@ -10,7 +10,6 @@ const useAuthFetch = () => {
   const authFetch = async (url, options = {}) => {
     // Check if user is logged in
     if (!userId) {
-      console.log('User not logged in');
       // setShowSignInModal(true);  // Show the sign-in modal
       return;  // Exit the function early
     }

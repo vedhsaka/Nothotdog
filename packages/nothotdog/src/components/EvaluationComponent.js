@@ -254,9 +254,6 @@ const EvaluationComponent = () => {
             const lastIndex = newLatencies.length - 1;
             if (lastIndex >= 0 && newLatencies[lastIndex].startTime) {
               const latency = endTime - newLatencies[lastIndex].startTime;
-              console.log('Start time:', newLatencies[lastIndex].startTime);
-              console.log('End time:', endTime);
-              console.log('Calculated latency:', latency);
               newLatencies[lastIndex] = { ...newLatencies[lastIndex], latency };
             }
             return newLatencies;
@@ -311,9 +308,6 @@ const EvaluationComponent = () => {
           const lastIndex = newLatencies.length - 1;
           if (lastIndex >= 0 && newLatencies[lastIndex].startTime) {
             const latency = endTime - newLatencies[lastIndex].startTime;
-            console.log('Start time:', newLatencies[lastIndex].startTime);
-            console.log('End time:', endTime);
-            console.log('Calculated latency:', latency);
             newLatencies[lastIndex] = { ...newLatencies[lastIndex], latency };
           }
           return newLatencies;
@@ -326,7 +320,6 @@ const EvaluationComponent = () => {
       wsRef.current.onclose = () => {
         setConnected(false);
         setMode('');
-        console.log('WebSocket disconnected');
       };
 
       wsRef.current.onerror = (error) => {
@@ -410,7 +403,6 @@ const EvaluationComponent = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
       const startTime = new Date().getTime(); // Capture start time
-      console.log('Request sent at:', startTime);
       audioBufferRef.current.push(startTime); // Store start time in buffer
       setLatencies((prev) => [...prev, { startTime, latency: null }]);
     }
@@ -429,7 +421,6 @@ const EvaluationComponent = () => {
         wsRef.current.send(reader.result);
   
         const startTime = new Date().getTime(); // Capture start time
-        console.log('Request sent at:', startTime);
         const id = Date.now();
         await storeAudio(id, audioBlob);
         updateStateArrays(id, startTime, [], [], null);
@@ -528,7 +519,6 @@ const EvaluationComponent = () => {
       });
   
       if (response) {
-        console.log('Test saved successfully');
         setDescription(''); // Clear description after saving
         setShowSaveModal(false); // Close modal
         alert('Test saved successfully');
@@ -591,7 +581,6 @@ const EvaluationComponent = () => {
       });
 
       if (response) {
-        console.log('Test updated successfully');
         setDescription(''); 
         setShowSaveModal(false); 
         setIsEditCase(false);
