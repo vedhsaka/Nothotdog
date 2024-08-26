@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Loader, Plus, X } from 'lucide-react';
 import './../styles/ApiConnections.css';
+import axios from 'axios';
 
-const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues }) => {
+const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues, handleApiChange }) => {
   const [method, setMethod] = useState(initialValues?.method || 'GET');
   const [url, setUrl] = useState(initialValues?.url || '');
   const [params, setParams] = useState(
@@ -22,6 +23,28 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
     cleanedValue = cleanedValue.replace(/,$/, '');
     return cleanedValue;
   };
+
+
+  useEffect(() => {
+    handleApiChange('method', method);
+  }, [method]);
+
+  useEffect(() => {
+    handleApiChange('url', url);
+  }, [url]);
+
+  useEffect(() => {
+    handleApiChange('queryParams', params);
+  }, [params]);
+
+  useEffect(() => {
+    handleApiChange('headers', headers);
+  }, [headers]);
+
+  useEffect(() => {
+    handleApiChange('body', body);
+  }, [body]);
+
 
   useEffect(() => {
     if (method === 'POST' || method === 'PUT') {
@@ -66,7 +89,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
   const sendRequest = async () => {
     setIsLoading(true);
     setResponse(null);
-
+  
     try {
       const urlWithParams = new URL(url);
       params.forEach((param) => {
@@ -74,62 +97,63 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
           urlWithParams.searchParams.append(param.key, param.value);
         }
       });
-
-      const requestHeaders = new Headers();
-      headers.forEach((header) => {
-        if (header.key && header.value) {
-          requestHeaders.append(header.key, header.value);
-        }
-      });
-
-      const requestOptions = {
+  
+      const requestConfig = {
         method: method,
-        headers: requestHeaders,
+        url: urlWithParams.toString(),
+        headers: headers.reduce((acc, header) => {
+          if (header.key && header.value) {
+            acc[header.key] = header.value;
+          }
+          return acc;
+        }, {}),
       };
-
+  
       if (method === 'POST' || method === 'PUT') {
-        requestOptions.body = body;
+        requestConfig.data = body;
       }
-
-      const response = await fetch(urlWithParams.toString(), requestOptions);
-
-      const contentType = response.headers.get('content-type');
-      let responseData;
-      if (contentType && contentType.indexOf('application/json') !== -1) {
-        responseData = await response.json();
-      } else {
-        responseData = await response.text();
-      }
-
+  
+      const axiosResponse = await axios(requestConfig);
+  
       const fullResponse = {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
-        body: responseData,
+        status: axiosResponse.status,
+        statusText: axiosResponse.statusText,
+        headers: axiosResponse.headers,
+        body: axiosResponse.data,
       };
-
+  
       setResponse(fullResponse);
       
-      // Call onApiResponse with the full API details
       if (onApiResponse) {
         onApiResponse({
           method,
           url: urlWithParams.toString(),
-          headers: Object.fromEntries(requestHeaders.entries()),
+          headers: requestConfig.headers,
           queryParams: Object.fromEntries(urlWithParams.searchParams.entries()),
-          body: requestOptions.body,
+          body: requestConfig.data,
+          response: fullResponse
+        });
+      }
+
+      if (onFullApiResponse) {
+        onFullApiResponse({
+          method,
+          url: urlWithParams.toString(),
+          headers: requestConfig.headers,
+          queryParams: Object.fromEntries(urlWithParams.searchParams.entries()),
+          body: requestConfig.data,
           response: fullResponse
         });
       }
     } catch (error) {
-      setResponse({
-        error: error.message,
-      });
+        setResponse({
+          error: error.message,
+        })
     } finally {
       setIsLoading(false);
       setActiveTab('response');
     }
-  };
+  }
 
   const handleSetOutputValue = (key, value) => {
     setSelectedNodePath(key);
@@ -254,51 +278,51 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
           </div>
         )}
 
-{activeTab === 'response' && (
-        <div className="section response-section">
-          <h3>Response</h3>
-          {response ? (
-            response.error ? (
-              <p className="error">Error: {response.error}</p>
-            ) : (
-              <>
-                <p className="status">Status: {response.status} {response.statusText}</p>
-                <div className="response-details">
-                  <h4>Headers:</h4>
-                  <pre>{JSON.stringify(response.headers, null, 2)}</pre>
-                  <h4>Body:</h4>
-                  <pre>
-                    {typeof response.body === 'object' ? (
-                      generateNestedKeyPaths(response.body).map(({ key, value }, index) => (
-                        <div
-                          key={index}
-                          className="response-line"
-                          onMouseEnter={() => (document.getElementById(`set-output-btn-${index}`).style.display = 'inline')}
-                          onMouseLeave={() => (document.getElementById(`set-output-btn-${index}`).style.display = 'none')}
-                        >
-                          {key}: {JSON.stringify(value)}
-                          <button
-                            id={`set-output-btn-${index}`}
-                            className="set-output-btn"
-                            style={{ display: 'none', marginLeft: '2px' }}
-                            onClick={() => handleSetOutputValue(key, value)}
+        {activeTab === 'response' && (
+          <div className="section response-section">
+            <h3>Response</h3>
+            {response ? (
+              response.error ? (
+                <p className="error">Error: {response.error}</p>
+              ) : (
+                <>
+                  <p className="status">Status: {response.status} {response.statusText}</p>
+                  <div className="response-details">
+                    <h4>Headers:</h4>
+                    <pre>{JSON.stringify(response.headers, null, 2)}</pre>
+                    <h4>Body:</h4>
+                    <pre>
+                      {typeof response.body === 'object' ? (
+                        generateNestedKeyPaths(response.body).map(({ key, value }, index) => (
+                          <div
+                            key={index}
+                            className="response-line"
+                            onMouseEnter={() => (document.getElementById(`set-output-btn-${index}`).style.display = 'inline')}
+                            onMouseLeave={() => (document.getElementById(`set-output-btn-${index}`).style.display = 'none')}
                           >
-                            Set as Output
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      response.body
-                    )}
-                  </pre>
-                </div>
-              </>
-            )
-          ) : (
-            <p>No response yet</p>
-          )}
-        </div>
-      )}
+                            {key}: {JSON.stringify(value)}
+                            <button
+                              id={`set-output-btn-${index}`}
+                              className="set-output-btn"
+                              style={{ display: 'none', marginLeft: '2px' }}
+                              onClick={() => handleSetOutputValue(key, value)}
+                            >
+                              Set as Output
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        response.body
+                      )}
+                    </pre>
+                  </div>
+                </>
+              )
+            ) : (
+              <p>No response yet</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

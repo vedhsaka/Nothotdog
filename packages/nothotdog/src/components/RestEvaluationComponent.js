@@ -453,6 +453,33 @@ const createConversationRowFromInput = (input) => {
   return [newRow];
 };
 
+useEffect(() => {
+  if (rows.length === 0) {
+    setRows([{
+      api: {
+        method: 'GET',
+        url: '',
+        headers: [{ key: '', value: '' }],
+        queryParams: [{ key: '', value: '' }],
+        body: '',
+      },
+      conversation: {
+        evaluations: [],
+        phrases: [],
+        outputValues: [],
+        result: null,
+        latency: { startTime: null, latency: null },
+      },
+      apiResponse: null,
+    }]);
+  }
+
+  if (location.state && location.state.selectedGroup) {
+    handleGroupSelect(location.state.selectedGroup);
+  }
+}, []);
+
+
   return (
     <div className="evaluation-container">
       <TestGroupSidebar 
