@@ -132,6 +132,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
   };
 
   const handleSetOutputValue = (value, key) => {
+    console.log('Setting handleSetOutput');
     setSelectedNodePath(key);
     const cleanedKey = cleanValue(key);
     if (typeof cleanedKey === 'object') {

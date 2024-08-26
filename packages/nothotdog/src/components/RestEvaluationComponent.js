@@ -157,12 +157,13 @@ const RestEvaluationComponent = () => {
       });
 
       if (response) {
-        console.log('Test saved successfully');
         setDescription('');
         setShowSaveModal(false);
         setCurrentSavingIndex(null);
+        alert('Test saved successfully');
       } else {
         console.error('Failed to save the test');
+        alert('Failed to save the test', error);
       }
     } catch (error) {
       console.error('Error saving test:', error);
@@ -215,12 +216,12 @@ const RestEvaluationComponent = () => {
         });
 
         if (response) {
-            console.log('Test updated successfully');
             setDescription('');
             setShowSaveModal(false);
             setCurrentSavingIndex(null);
+            alert('Test updated successfully');
         } else {
-            console.error('Failed to update the test');
+            alert('Failed to update the test', error);
         }
     } catch (error) {
         console.error('Error updating test:', error);
@@ -299,22 +300,35 @@ const RestEvaluationComponent = () => {
   const handleSetOutputValue = useCallback((rowIndex, key, value) => {
     setRows(prevRows => {
       const newRows = [...prevRows];
+      
+      // Ensure the conversation object and relevant arrays are initialized
       if (!newRows[rowIndex].conversation) {
         newRows[rowIndex].conversation = {};
       }
-      if (!newRows[rowIndex].conversation.outputKeys) {
+      if (!Array.isArray(newRows[rowIndex].conversation.outputKeys)) {
         newRows[rowIndex].conversation.outputKeys = [];
       }
-      if (!newRows[rowIndex].conversation.outputValues) {
+      if (!Array.isArray(newRows[rowIndex].conversation.outputValues)) {
         newRows[rowIndex].conversation.outputValues = [];
       }
-      const index = newRows[rowIndex].conversation.outputKeys.length;
-      newRows[rowIndex].conversation.outputKeys[index] = key;
-      newRows[rowIndex].conversation.outputValues[index] = value;
+      if (!Array.isArray(newRows[rowIndex].conversation.evaluations)) {
+        newRows[rowIndex].conversation.evaluations = [];
+      }
+      if (!Array.isArray(newRows[rowIndex].conversation.phrases)) {
+        newRows[rowIndex].conversation.phrases = [];
+      }
+  
+      // Always create a new entry
+      const newIndex = newRows[rowIndex].conversation.outputKeys.length;
+      newRows[rowIndex].conversation.outputKeys[newIndex] = key;
+      newRows[rowIndex].conversation.outputValues[newIndex] = value;
+      newRows[rowIndex].conversation.evaluations[newIndex] = 'exact_match'; // Or the default evaluation type
+      newRows[rowIndex].conversation.phrases[newIndex] = ''; // Or the default phrase value
+      
       return newRows;
     });
   }, []);
-
+  
   const onDragEnd = (result) => {
     if (!result.destination) {
       return;
@@ -337,7 +351,6 @@ const RestEvaluationComponent = () => {
 
   const addConversationRow = useCallback(() => {
 
-    console.log('Adding new row');
     setRows(prev => [
       ...prev,
       {
@@ -428,6 +441,7 @@ const createConversationRowFromInput = (input) => {
           evaluations: [],
           phrases: [],
           outputValues: [],
+          outputKeys: [],
           result: null,
           latency: { startTime: null, latency: null },
       },

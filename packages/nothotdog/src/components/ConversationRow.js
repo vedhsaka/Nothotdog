@@ -113,11 +113,9 @@ const ConversationRow = React.forwardRef(({
       }
       
       let index = newRows[rowIndex].conversation.outputKeys.indexOf(keyPath);
-      if (index === -1) {
-        index = newRows[rowIndex].conversation.outputKeys.length;
-        newRows[rowIndex].conversation.evaluations.push('equals');
-        newRows[rowIndex].conversation.phrases.push('');
-      }
+      index = newRows[rowIndex].conversation.outputKeys.length;
+      newRows[rowIndex].conversation.evaluations.push('equals');
+      newRows[rowIndex].conversation.phrases.push('');
       
       newRows[rowIndex].conversation.outputKeys[index] = keyPath;
       newRows[rowIndex].conversation.outputValues[index] = typeof value === 'object' ? JSON.stringify(value) : String(value);

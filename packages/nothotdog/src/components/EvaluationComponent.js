@@ -204,13 +204,6 @@ const EvaluationComponent = () => {
     setIsEditCase(true); // Set edit mode
   };
   
-  
-
-  const handleSelectGroup = (groupId) => {
-    console.log('Selected group ID:', groupId);
-    // Here you can handle what happens when a group is selected
-  };
-  
   useEffect(() => {
     fetchTests(authFetch, setTests, setError);
   }, []); // make sure this useEffect block runs only once on mount
@@ -247,14 +240,11 @@ const EvaluationComponent = () => {
     return new Promise((resolve, reject) => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         const startTime = new Date().getTime(); // Capture start time
-        console.log('Request sent at:', startTime);
   
         wsRef.current.send(audioBlob);
   
         wsRef.current.onmessage = async (event) => {
           const endTime = new Date().getTime();
-          console.log('WebSocket message received at:', endTime);
-          console.log('WebSocket message:', event.data);
           const outputAudioBlob = new Blob([event.data], { type: 'audio/webm' });
           const id = Date.now();
           await storeAudio(id, outputAudioBlob);
@@ -308,13 +298,10 @@ const EvaluationComponent = () => {
 
       wsRef.current.onopen = () => {
         setConnected(true);
-        console.log('WebSocket connected');
       };
 
       wsRef.current.onmessage = async (event) => {
         const endTime = new Date().getTime();
-        console.log('WebSocket message received at:', endTime);
-        console.log('WebSocket message:', event.data);
         const outputAudioBlob = new Blob([event.data], { type: 'audio/webm' });
         const id = Date.now();
         await storeAudio(id, outputAudioBlob);
@@ -544,8 +531,10 @@ const EvaluationComponent = () => {
         console.log('Test saved successfully');
         setDescription(''); // Clear description after saving
         setShowSaveModal(false); // Close modal
+        alert('Test saved successfully');
       } else {
         console.error('Failed to save the test');
+        alert('Failed to save the test');
       }
     };
     reader.readAsDataURL(audioBlob);

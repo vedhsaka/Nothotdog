@@ -31,7 +31,6 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await response;
-      console.log('User created in API:', data);
     } catch (error) {
       console.error('Error creating user in API:', error);
     }
@@ -54,7 +53,6 @@ export const AuthProvider = ({ children }) => {
       const data = await response;
       if (data.length > 0) {
         setProjectId(data[0].uuid);
-        console.log('Project ID:', data[0].uuid);
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
