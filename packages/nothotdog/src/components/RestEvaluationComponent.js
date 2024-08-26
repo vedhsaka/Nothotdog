@@ -160,7 +160,6 @@ const RestEvaluationComponent = () => {
         setCurrentSavingIndex(null);
         alert('Test saved successfully');
       } else {
-        console.error('Failed to save the test');
         alert('Failed to save the test', error);
       }
     } catch (error) {

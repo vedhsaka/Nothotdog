@@ -523,7 +523,6 @@ const EvaluationComponent = () => {
         setShowSaveModal(false); // Close modal
         alert('Test saved successfully');
       } else {
-        console.error('Failed to save the test');
         alert('Failed to save the test');
       }
     };

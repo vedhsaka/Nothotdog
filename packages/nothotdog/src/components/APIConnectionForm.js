@@ -131,7 +131,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
     }
   };
 
-  const handleSetOutputValue = (value, key) => {
+  const handleSetOutputValue = (key, value) => {
     setSelectedNodePath(key);
     const cleanedKey = cleanValue(key);
     if (typeof cleanedKey === 'object') {
@@ -281,7 +281,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
                             id={`set-output-btn-${index}`}
                             className="set-output-btn"
                             style={{ display: 'none', marginLeft: '2px' }}
-                            onClick={() => handleSetOutputValue(value, key)}
+                            onClick={() => handleSetOutputValue(key, value)}
                           >
                             Set as Output
                           </button>
