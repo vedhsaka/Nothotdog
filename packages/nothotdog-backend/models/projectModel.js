@@ -2,12 +2,12 @@ const supabase = require('../supabaseClient.js');
 const logger = require('../utils/logger');
 
 class ProjectModel {
-  static async createProject(userId, projectName) {
-    logger.info('Creating new project', { userId, projectName });
+  static async createProject(userId, name) {
+    logger.info('Creating new project', { userId, projectName: name });
     try {
       const { data, error } = await supabase
         .from('projects')
-        .insert({ name: projectName, created_by: userId })
+        .insert({ name, created_by: userId })
         .select();
 
       if (error) throw error;
@@ -19,10 +19,10 @@ class ProjectModel {
 
       if (mappingError) throw mappingError;
 
-      logger.info('Project created successfully', { userId, projectId: data[0].id, projectName });
+      logger.info('Project created successfully', { userId, projectId: data[0].id, projectName: name });
       return data[0];
     } catch (error) {
-      logger.error('Error creating project', { userId, projectName, error: error.message, stack: error.stack });
+      logger.error('Error creating project', { userId, projectName: name, error: error.message, stack: error.stack });
       throw error;
     }
   }

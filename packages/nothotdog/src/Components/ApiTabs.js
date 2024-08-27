@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
-import APIConnectionForm from './APIConnectionForm';
+import React from 'react';
+import APIRequestForm from './APIConnectionForm';
 import '../styles/ApiTabs.css';
 
-const ApiTabs = ({ rows, setRows, handleApiResponse, handlePhraseChange, handleDeleteRow, setOutputValue, handleDeleteCondition, addCondition, handleEvaluate, handleSave, handleUpdate, isUpdate }) => {
-  const [activeTab, setActiveTab] = useState(0);
-
+const ApiTabs = ({ 
+  tabs, 
+  setTabs, 
+  activeTabIndex, 
+  setActiveTabIndex, 
+  handleApiResponse, 
+  setOutputValue, 
+  handleApiChange 
+}) => {
   const addNewTab = () => {
-    setRows([...rows, {
+    const newTab = {
+      name: `API ${tabs.length + 1}`,
       api: {
         method: 'GET',
         url: '',
@@ -18,50 +25,61 @@ const ApiTabs = ({ rows, setRows, handleApiResponse, handlePhraseChange, handleD
         evaluations: [],
         phrases: [],
         outputValues: [],
+        outputKeys: [],
         result: null,
         latency: { startTime: null, latency: null },
       },
       apiResponse: null,
-    }]);
-    setActiveTab(rows.length);
+    };
+    setTabs([...tabs, newTab]);
+    setActiveTabIndex(tabs.length);
   };
 
-  const closeTab = (index) => {
-    const newRows = rows.filter((_, i) => i !== index);
-    setRows(newRows);
-    if (activeTab >= newRows.length) {
-      setActiveTab(newRows.length - 1);
+  const closeTab = (index, event) => {
+    event.stopPropagation();
+    if (tabs.length === 1) {
+      return;
     }
+    const newTabs = tabs.filter((_, i) => i !== index);
+    setTabs(newTabs);
+    if (activeTabIndex >= newTabs.length) {
+      setActiveTabIndex(newTabs.length - 1);
+    } else if (index < activeTabIndex) {
+      setActiveTabIndex(activeTabIndex - 1);
+    }
+  };
+
+  const switchTab = (index) => {
+    setActiveTabIndex(index);
   };
 
   return (
     <div className="api-tabs">
       <div className="tab-bar">
-        {rows.map((_, index) => (
+        {tabs.map((tab, index) => (
           <div
             key={index}
-            className={`tab ${activeTab === index ? 'active' : ''}`}
-            onClick={() => setActiveTab(index)}
+            className={`tab ${activeTabIndex === index ? 'active' : ''}`}
+            onClick={() => switchTab(index)}
           >
-            API {index + 1}
-            <button className="close-tab" onClick={(e) => { e.stopPropagation(); closeTab(index); }}>×</button>
+            {tab.name}
+            {tabs.length > 1 && (
+              <button className="close-tab" onClick={(e) => closeTab(index, e)}>×</button>
+            )}
           </div>
         ))}
         <button className="add-tab" onClick={addNewTab}>+</button>
       </div>
       <div className="tab-content">
-        {rows[activeTab] && (
-            <APIRequestForm
-                initialValues={rows[activeTab].api}
-                onApiResponse={(apiData) => handleApiResponse(activeTab, apiData)}
-                setOutputValue={(key, value) => setOutputValue(activeTab, key, value)}
-                onFullApiResponse={(fullResponse) => handleApiResponse(activeTab, fullResponse)}
-                handleApiChange={(field, value) => {
-                    const newRows = [...rows];
-                    newRows[activeTab].api[field] = value;
-                    setRows(newRows);
-                }}
-            />
+        {tabs[activeTabIndex] && (
+          <APIRequestForm
+            key={`form-${activeTabIndex}`}
+            initialValues={tabs[activeTabIndex].api}
+            onApiResponse={(apiData) => handleApiResponse(activeTabIndex, apiData)}
+            setOutputValue={(key, value) => setOutputValue(activeTabIndex, key, value)}
+            onFullApiResponse={(fullResponse) => handleApiResponse(activeTabIndex, fullResponse)}
+            handleApiChange={(field, value) => handleApiChange(activeTabIndex, field, value)}
+          />
         )}
       </div>
     </div>

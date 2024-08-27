@@ -93,7 +93,6 @@ const ConversationRow = React.forwardRef(({
   };
 
   const handleSetOutput = (keyPath, value) => {
-    console.log('Setting output:', keyPath, value);
     setRows(prev => {
       const newRows = [...prev];
       if (!newRows[rowIndex].conversation) {
@@ -197,7 +196,6 @@ const ConversationRow = React.forwardRef(({
 
         <div className="evaluate-section">
           <button className="button primary" onClick={() => handleEvaluate(rowIndex)}>Evaluate</button>
-          {console.log('isUpdate:', isUpdate)}
 
           {isUpdate ? (
           <button 

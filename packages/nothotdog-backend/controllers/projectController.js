@@ -3,23 +3,23 @@ const UserModel = require('../models/userModel');
 const logger = require('../utils/logger');
 
 exports.createProject = async (req, res) => {
+  const userId = req.header("userId");
+  const { name } = req.body;
   try {
-    const { projectName } = req.body;
-    const userId = req.header("userId");
     const user = await UserModel.getUser(userId)
-    logger.info('Create project attempt', { userId, projectName });
-    const project = await ProjectModel.createProject(user.id, projectName);
-    logger.info('Project created successfully', { userId: user.id, projectName, projectId: project.id})
+    logger.info('Create project attempt', { userId, projectName: name });
+    const project = await ProjectModel.createProject(user.id, name);
+    logger.info('Project created successfully', { userId, projectName: name, projectId: project.id})
     res.status(201).json(project);
   } catch (error) {
-    logger.error("Error creating project", { userId: user.id, projectName, error: error.message, stack: error.stack});
+    logger.error("Error creating project", { userId, name, error: error.message, stack: error.stack});
     res.status(500).json({ message: 'Error creating project', error: error.message });
   }
 };
 
 exports.getProjects = async (req, res) => {
+  const userId = req.header("userId");
   try {
-    const userId = req.header("userId");
     const user = await UserModel.getUser(userId)
     logger.info('Fetch project attempt', { userId: user.id });
     const projects = await ProjectModel.getProjects(user.id);
@@ -32,9 +32,9 @@ exports.getProjects = async (req, res) => {
 };
 
 exports.updateProject = async (req, res) => {
+  const { projectId } = req.params;
+  const { name } = req.body;
   try {
-    const { projectId } = req.params;
-    const { name } = req.body;
     logger.info('Update project attempt', { projectId, projectName: name });
     const updatedProject = await ProjectModel.updateProject(projectId, name);
     logger.info('Project updated successfully', { projectId, projectName: name })
@@ -46,9 +46,9 @@ exports.updateProject = async (req, res) => {
 };
 
 exports.deleteProject = async (req, res) => {
+  const { projectId } = req.params;
+  const userId = req.header("userId");
   try {
-    const { projectId } = req.params;
-    const userId = req.header("userId");
     logger.info('Delete project attempt', { projectId, userId });
     await ProjectModel.deleteProject(projectId, userId);
     logger.info('Project deleted successfully', { projectId, userId })
@@ -60,8 +60,8 @@ exports.deleteProject = async (req, res) => {
 };
 
 exports.addUserToProject = async (req, res) => {
+  const { projectId, userId } = req.body;
   try {
-    const { projectId, userId } = req.body;
     const user = await UserModel.getUser(userId)
     const project = await ProjectModel.getProjectById(projectId)
     logger.info('Adding user to project attempted', { projectId, userId });
@@ -75,8 +75,8 @@ exports.addUserToProject = async (req, res) => {
 };
 
 exports.removeUserFromProject = async (req, res) => {
+  const { projectId, userId } = req.body;
   try {
-    const { projectId, userId } = req.body;
     const user = await UserModel.getUser(userId)
     const project = await ProjectModel.getProjectById(projectId)
     logger.info('Removing user from project attempted', { projectId, userId });

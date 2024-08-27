@@ -6,90 +6,85 @@ import axios from 'axios';
 const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues, handleApiChange }) => {
   const [method, setMethod] = useState(initialValues?.method || 'GET');
   const [url, setUrl] = useState(initialValues?.url || '');
-  const [params, setParams] = useState(
-    Array.isArray(initialValues?.queryParams) ? initialValues.queryParams.map(param => ({ key: param.key, value: param.value })) : [{ key: '', value: '' }]
-  );
-  const [headers, setHeaders] = useState(
-    Array.isArray(initialValues?.headers) ? initialValues.headers.map(header => ({ key: header.key, value: header.value })) : [{ key: '', value: '' }]
-  );
-  const [body, setBody] = useState(initialValues?.body || '');
+  const [params, setParams] = useState(() => {
+    const initialParams = initialValues?.queryParams || [];
+    return Array.isArray(initialParams) && initialParams.length > 0 
+      ? initialParams 
+      : [{ key: '', value: '' }];
+  });
+  const [headers, setHeaders] = useState(() => {
+    const initialHeaders = initialValues?.headers || [];
+    return Array.isArray(initialHeaders) && initialHeaders.length > 0 
+      ? initialHeaders 
+      : [{ key: '', value: '' }];
+  });
+  const [body, setBody] = useState(() => {
+    try {
+      return JSON.stringify(JSON.parse(initialValues?.body || '{}'), null, 2);
+    } catch (e) {
+      console.error('Invalid initial JSON body:', e);
+      return '{}';
+    }
+  });
   const [response, setResponse] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedNodePath, setSelectedNodePath] = useState('');
   const [activeTab, setActiveTab] = useState('params');
-
-  const cleanValue = (value) => {
-    let cleanedValue = value.replace(/^["'](.+(?=["']$))["']$/, '$1');
-    cleanedValue = cleanedValue.replace(/,$/, '');
-    return cleanedValue;
-  };
-
 
   useEffect(() => {
     handleApiChange('method', method);
-  }, [method]);
+  }, [method, handleApiChange]);
 
   useEffect(() => {
     handleApiChange('url', url);
-  }, [url]);
+  }, [url, handleApiChange]);
 
   useEffect(() => {
     handleApiChange('queryParams', params);
-  }, [params]);
+  }, [params, handleApiChange]);
 
   useEffect(() => {
     handleApiChange('headers', headers);
-  }, [headers]);
+  }, [headers, handleApiChange]);
 
   useEffect(() => {
     handleApiChange('body', body);
-  }, [body]);
+  }, [body, handleApiChange]);
 
-
-  useEffect(() => {
-    if (method === 'POST' || method === 'PUT') {
-      setHeaders((prevHeaders) => {
-        const contentTypeHeader = prevHeaders.find((h) => h.key.toLowerCase() === 'content-type');
-        if (contentTypeHeader) {
-          return prevHeaders.map((h) =>
-            h.key.toLowerCase() === 'content-type' ? { ...h, value: 'application/json' } : h
-          );
-        } else {
-          return [...prevHeaders, { key: 'Content-Type', value: 'application/json' }];
-        }
-      });
-    }
-  }, [method]);
 
   const addParam = () => setParams([...params, { key: '', value: '' }]);
   const addHeader = () => setHeaders([...headers, { key: '', value: '' }]);
 
   const removeParam = (index) => {
     const newParams = params.filter((_, i) => i !== index);
-    setParams(newParams);
+    setParams(newParams.length > 0 ? newParams : [{ key: '', value: '' }]);
   };
 
   const removeHeader = (index) => {
     const newHeaders = headers.filter((_, i) => i !== index);
-    setHeaders(newHeaders);
+    setHeaders(newHeaders.length > 0 ? newHeaders : [{ key: '', value: '' }]);
+  };
+
+  const handleBodyChange = (e) => {
+    setBody(e.target.value);
+    handleApiChange('body', e.target.value);
   };
 
   const updateParam = (index, field, value) => {
     const newParams = [...params];
-    newParams[index][field] = value;
+    newParams[index] = { ...newParams[index], [field]: value };
     setParams(newParams);
   };
 
   const updateHeader = (index, field, value) => {
     const newHeaders = [...headers];
-    newHeaders[index][field] = value;
+    newHeaders[index] = { ...newHeaders[index], [field]: value };
     setHeaders(newHeaders);
   };
 
   const sendRequest = async () => {
     setIsLoading(true);
     setResponse(null);
-  
+
     try {
       const urlWithParams = new URL(url);
       params.forEach((param) => {
@@ -97,33 +92,43 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
           urlWithParams.searchParams.append(param.key, param.value);
         }
       });
-  
+
       const requestConfig = {
         method: method,
         url: urlWithParams.toString(),
-        headers: headers.reduce((acc, header) => {
-          if (header.key && header.value) {
-            acc[header.key] = header.value;
-          }
-          return acc;
-        }, {}),
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers.reduce((acc, header) => {
+            if (header.key && header.value) {
+              acc[header.key] = header.value;
+            }
+            return acc;
+          }, {})
+        },
       };
-  
+
       if (method === 'POST' || method === 'PUT') {
-        requestConfig.data = body;
+        try {
+          requestConfig.data = JSON.parse(body);
+        } catch (e) {
+          console.error('Invalid JSON in request body:', e);
+          setResponse({ error: 'Invalid JSON in request body' });
+          setIsLoading(false);
+          return;
+        }
       }
-  
+
       const axiosResponse = await axios(requestConfig);
-  
+
       const fullResponse = {
         status: axiosResponse.status,
         statusText: axiosResponse.statusText,
         headers: axiosResponse.headers,
         body: axiosResponse.data,
       };
-  
+
       setResponse(fullResponse);
-      
+
       if (onApiResponse) {
         onApiResponse({
           method,
@@ -146,14 +151,15 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
         });
       }
     } catch (error) {
-        setResponse({
-          error: error.message,
-        })
+      setResponse({
+        error: error.message,
+      });
     } finally {
       setIsLoading(false);
       setActiveTab('response');
     }
-  }
+  };
+
 
   const handleSetOutputValue = (key, value) => {
     setSelectedNodePath(key);
