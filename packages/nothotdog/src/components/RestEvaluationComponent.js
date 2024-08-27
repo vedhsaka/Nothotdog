@@ -140,11 +140,20 @@ const RestEvaluationComponent = () => {
       const newIndex = conversation.outputKeys.length;
       conversation.outputKeys[newIndex] = key;
       conversation.outputValues[newIndex] = value;
-      conversation.evaluations[newIndex] = 'exact_match';
-      conversation.phrases[newIndex] = '';
+      conversation.evaluations[newIndex] = { key, rule: 'Exact Match', value };
       return newTabs;
     });
   }, []);
+
+  const handleSave = async (tabIndex) => {
+    if (!userId) {
+      setShowSignInModal(true);
+      return;
+    }
+    setCurrentSavingIndex(tabIndex);
+    setDescription('');
+    setShowSaveModal(true);
+  };
 
   const handleSaveConfirm = async () => {
     if (currentSavingIndex === null) return;
@@ -156,10 +165,10 @@ const RestEvaluationComponent = () => {
       content: JSON.stringify(tab.api?.body || {}),
       projectId,
       groupId: selectedGroupId || null, // From the modal dropdown
-      checks: tab.conversation.evaluations.map((evaluation, idx) => ({
-        field: tab.conversation.outputKeys[idx] || '',
-        rule: evaluation,
-        value: tab.conversation.phrases[idx]
+      checks: tab.conversation.evaluations.map(evaluation => ({
+        field: evaluation.key,
+        rule: evaluation.rule,
+        value: evaluation.value
       })),
       url: tab.api?.url || '',
       apiType: "REST",
@@ -188,7 +197,6 @@ const RestEvaluationComponent = () => {
       console.error('Error saving test');
     }
   };
-
 
   const handleUpdateConfirm = async () => {
     if (currentSavingIndex === null) return;
@@ -232,7 +240,57 @@ const RestEvaluationComponent = () => {
     } catch (error) {
         console.error('Error updating test:', error);
     }
-};
+  };
+
+  const handleEvaluate = async (tabIndex) => {
+    const tab = tabs[tabIndex];
+    const evaluations = tab.conversation.evaluations;
+    const apiResponse = tab.apiResponse;
+
+    if (!apiResponse) {
+      alert('No API response to evaluate. Please send a request first.');
+      return;
+    }
+
+    const results = evaluations.map(evaluation => {
+      const actualValue = getValueFromPath(apiResponse.body, evaluation.key);
+      return evaluateCondition(actualValue, evaluation.rule, evaluation.value);
+    });
+
+    setTabs(prevTabs => {
+      const newTabs = [...prevTabs];
+      newTabs[tabIndex].evaluationResults = results;
+      return newTabs;
+    });
+
+    alert(`Evaluation complete. ${results.filter(r => r).length} out of ${results.length} checks passed.`);
+  };
+
+  // Helper functions for evaluation
+  const getValueFromPath = (obj, path) => {
+    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+  };
+
+  const evaluateCondition = (actual, rule, expected) => {
+    switch (rule) {
+      case 'Exact Match':
+        return actual === expected;
+      case 'Contains':
+        return String(actual).includes(expected);
+      case 'Begins With':
+        return String(actual).startsWith(expected);
+      case 'Ends With':
+        return String(actual).endsWith(expected);
+      case 'Word Count':
+        return String(actual).split(/\s+/).length === Number(expected);
+      case 'Less Than':
+        return Number(actual) < Number(expected);
+      // Add more conditions as needed
+      default:
+        return false;
+    }
+  };
+
 
 return (
   <div className="evaluation-container">
@@ -257,6 +315,8 @@ return (
         handleApiResponse={handleApiResponse}
         setOutputValue={setOutputValue}
         handleApiChange={handleApiChange}
+        handleSave={handleSave}
+        handleEvaluate={handleEvaluate}
       />
 
       <SaveTestModal

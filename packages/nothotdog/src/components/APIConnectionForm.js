@@ -3,9 +3,12 @@ import { Send, Loader, Plus, X } from 'lucide-react';
 import './../styles/ApiConnections.css';
 import axios from 'axios';
 
-const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues, handleApiChange }) => {
+const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues, handleApiChange, evaluations,setEvaluations }) => {
   const [method, setMethod] = useState(initialValues?.method || 'GET');
   const [url, setUrl] = useState(initialValues?.url || '');
+
+  const [selectedNodePath, setSelectedNodePath] = useState('');
+  
   const [params, setParams] = useState(() => {
     const initialParams = initialValues?.queryParams || [];
     return Array.isArray(initialParams) && initialParams.length > 0 
@@ -160,6 +163,14 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
     }
   };
 
+  const cleanValue = (value) => {
+    if (typeof value === 'string') {
+      let cleanedValue = value.replace(/^["'](.+(?=["']$))["']$/, '$1');
+      cleanedValue = cleanedValue.replace(/,$/, '');
+      return cleanedValue;
+    }
+    return value;
+  };
 
   const handleSetOutputValue = (key, value) => {
     setSelectedNodePath(key);
@@ -169,7 +180,20 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
     } else {
       setOutputValue(cleanedKey, value);
     }
+
+    setEvaluations([...evaluations, { key: cleanedKey, rule: 'Exact Match', value: value }]);
   };
+
+  const updateEvaluation = (index, field, value) => {
+    const updatedEvaluations = [...evaluations];
+    updatedEvaluations[index] = { ...updatedEvaluations[index], [field]: value };
+    setEvaluations(updatedEvaluations);
+  };
+
+  const removeEvaluation = (index) => {
+    setEvaluations(evaluations.filter((_, i) => i !== index));
+  };
+
 
   const generateNestedKeyPaths = (obj, prefix = '') => {
     let result = [];
@@ -328,7 +352,43 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
               <p>No response yet</p>
             )}
           </div>
-        )}
+       )}
+
+      <div className="evaluations-section">
+          <h3>Evaluations</h3>
+            {evaluations.map((evaluation, index) => (
+          <div key={index} className="evaluation-row">
+            <input
+              type="text"
+              value={evaluation.key}
+              onChange={(e) => updateEvaluation(index, 'key', e.target.value)}
+              placeholder="Key"
+            />
+            <select
+                value={evaluation.rule}
+              onChange={(e) => updateEvaluation(index, 'rule', e.target.value)}
+            >
+              <option value="Exact Match">Exact Match</option>
+              <option value="Contains">Contains</option>
+              <option value="Begins With">Begins With</option>
+              <option value="Ends With">Ends With</option>
+              <option value="Word Count">Word Count</option>
+              <option value="Contextually Contains">Contextually Contains</option>
+              <option value="Less Than">Less Than</option>
+            </select>
+            <input
+                type="text"
+                value={evaluation.value}
+                onChange={(e) => updateEvaluation(index, 'value', e.target.value)}
+                placeholder="Expected Value"
+            />
+                  <button onClick={() => removeEvaluation(index)}>Remove</button>
+              </div>
+          ))}
+          <button onClick={() => setEvaluations([...evaluations, { key: '', rule: 'Exact Match', value: '' }])}>
+            Add Evaluation
+          </button>
+        </div>
       </div>
     </div>
   );

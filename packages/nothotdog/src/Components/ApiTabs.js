@@ -9,7 +9,9 @@ const ApiTabs = ({
   setActiveTabIndex, 
   handleApiResponse, 
   setOutputValue, 
-  handleApiChange 
+  handleApiChange,
+  handleSave,
+  handleEvaluate
 }) => {
   const addNewTab = () => {
     const newTab = {
@@ -23,9 +25,8 @@ const ApiTabs = ({
       },
       conversation: {
         evaluations: [],
-        phrases: [],
-        outputValues: [],
         outputKeys: [],
+        outputValues: [],
         result: null,
         latency: { startTime: null, latency: null },
       },
@@ -72,14 +73,26 @@ const ApiTabs = ({
       </div>
       <div className="tab-content">
         {tabs[activeTabIndex] && (
-          <APIRequestForm
-            key={`form-${activeTabIndex}`}
-            initialValues={tabs[activeTabIndex].api}
-            onApiResponse={(apiData) => handleApiResponse(activeTabIndex, apiData)}
-            setOutputValue={(key, value) => setOutputValue(activeTabIndex, key, value)}
-            onFullApiResponse={(fullResponse) => handleApiResponse(activeTabIndex, fullResponse)}
-            handleApiChange={(field, value) => handleApiChange(activeTabIndex, field, value)}
-          />
+          <div>
+            <APIRequestForm
+              key={`form-${activeTabIndex}`}
+              initialValues={tabs[activeTabIndex].api}
+              onApiResponse={(apiData) => handleApiResponse(activeTabIndex, apiData)}
+              setOutputValue={(key, value) => setOutputValue(activeTabIndex, key, value)}
+              onFullApiResponse={(fullResponse) => handleApiResponse(activeTabIndex, fullResponse)}
+              handleApiChange={(field, value) => handleApiChange(activeTabIndex, field, value)}
+              evaluations={tabs[activeTabIndex].conversation.evaluations}
+              setEvaluations={(newEvaluations) => {
+                const newTabs = [...tabs];
+                newTabs[activeTabIndex].conversation.evaluations = newEvaluations;
+                setTabs(newTabs);
+              }}
+            />
+            <div className="tab-actions">
+              <button onClick={() => handleSave(activeTabIndex)}>Save</button>
+              <button onClick={() => handleEvaluate(activeTabIndex)}>Evaluate</button>
+            </div>
+          </div>
         )}
       </div>
     </div>
