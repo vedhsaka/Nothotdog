@@ -173,15 +173,16 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
   };
 
   const handleSetOutputValue = (key, value) => {
-    setSelectedNodePath(key);
-    const cleanedKey = cleanValue(key);
-    if (typeof cleanedKey === 'object') {
-      setOutputValue(key, JSON.stringify(cleanedKey));
+    setOutputValue(key, value);
+    
+    const existingEvalIndex = evaluations.findIndex(evaluations => evaluations.key === key);
+    if (existingEvalIndex !== -1) {
+      const updatedEvaluations = [...evaluations];
+      updatedEvaluations[existingEvalIndex].value = value;
+      setEvaluations(updatedEvaluations);
     } else {
-      setOutputValue(cleanedKey, value);
+      setEvaluations([...evaluations, { key, rule: 'Exact Match', value }]);
     }
-
-    setEvaluations([...evaluations, { key: cleanedKey, rule: 'Exact Match', value: value }]);
   };
 
   const updateEvaluation = (index, field, value) => {

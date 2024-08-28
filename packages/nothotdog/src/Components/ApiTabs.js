@@ -13,6 +13,9 @@ const ApiTabs = ({
   handleSave,
   handleEvaluate
 }) => {
+  if (tabs.length === 0) {
+    return null; // or return some placeholder content
+  }
   const addNewTab = () => {
     const newTab = {
       name: `API ${tabs.length + 1}`,
@@ -38,15 +41,15 @@ const ApiTabs = ({
 
   const closeTab = (index, event) => {
     event.stopPropagation();
-    if (tabs.length === 1) {
-      return;
+    if (tabs.length <= 1) {
+      return; // Don't close the last tab
     }
     const newTabs = tabs.filter((_, i) => i !== index);
     setTabs(newTabs);
     if (activeTabIndex >= newTabs.length) {
       setActiveTabIndex(newTabs.length - 1);
     } else if (index < activeTabIndex) {
-      setActiveTabIndex(activeTabIndex - 1);
+      setActiveTabIndex(prevIndex => prevIndex - 1);
     }
   };
 

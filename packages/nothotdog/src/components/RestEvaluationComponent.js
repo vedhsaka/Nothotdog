@@ -13,7 +13,6 @@ import ApiTabs from './ApiTabs';
 const RestEvaluationComponent = () => {
   const { user, signIn, projectId, userId } = useAuth();
   const { authFetch } = useAuthFetch();
-  const [tabs, setTabs] = useState([]);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -43,38 +42,49 @@ const RestEvaluationComponent = () => {
     fetchGroups();
   }, []);
 
-  useEffect(() => {
-    if (tabs.length === 0) {
-      setTabs([{
-        name: 'API 1',
-        api: {
-          method: 'GET',
-          url: '',
-          headers: [{ key: '', value: '' }],
-          queryParams: [{ key: '', value: '' }],
-          body: '',
-        },
-        conversation: {
-          evaluations: [],
-          phrases: [],
-          outputValues: [],
-          outputKeys: [],
-          result: null,
-          latency: { startTime: null, latency: null },
-        },
-        apiResponse: null,
-      }]);
-    }
 
-    if (location.state && location.state.selectedGroup) {
-      handleGroupSelect(location.state.selectedGroup);
-    }
-  }, []);
+  const [tabs, setTabs] = useState([{
+    name: 'API 1',
+    api: {
+      method: 'GET',
+      url: '',
+      headers: [{ key: '', value: '' }],
+      queryParams: [{ key: '', value: '' }],
+      body: '',
+    },
+    conversation: {
+      evaluations: [],
+      outputKeys: [],
+      outputValues: [],
+      result: null,
+      latency: { startTime: null, latency: null },
+    },
+    apiResponse: null,
+  }]);
+
 
   const handleGroupSelect = useCallback((group) => {
     setSelectedGroupId(group.id);
     const textInputs = group.inputs.filter(input => input.input_type === 'text');
-    setTabs(textInputs.map((input, index) => createTabFromInput(input, index)));
+    const newTabs = textInputs.map((input, index) => createTabFromInput(input, index));
+    setTabs(newTabs.length > 0 ? newTabs : [{
+      name: 'API 1',
+      api: {
+        method: 'GET',
+        url: '',
+        headers: [{ key: '', value: '' }],
+        queryParams: [{ key: '', value: '' }],
+        body: '',
+      },
+      conversation: {
+        evaluations: [],
+        outputKeys: [],
+        outputValues: [],
+        result: null,
+        latency: { startTime: null, latency: null },
+      },
+      apiResponse: null,
+    }]);
     setActiveTabIndex(0);
   }, []);
 
@@ -121,14 +131,15 @@ const RestEvaluationComponent = () => {
 
   const handleApiChange = useCallback((tabIndex, field, value) => {
     setTabs(prevTabs => {
+      if (tabIndex >= prevTabs.length) {
+        console.error('Invalid tab index');
+        return prevTabs;
+      }
       const newTabs = [...prevTabs];
-      newTabs[tabIndex] = {
-        ...newTabs[tabIndex],
-        api: {
-          ...newTabs[tabIndex].api,
-          [field]: value,
-        },
-      };
+      if (!newTabs[tabIndex].api) {
+        newTabs[tabIndex].api = {};
+      }
+      newTabs[tabIndex].api[field] = value;
       return newTabs;
     });
   }, []);
@@ -136,11 +147,26 @@ const RestEvaluationComponent = () => {
   const setOutputValue = useCallback((tabIndex, key, value) => {
     setTabs(prevTabs => {
       const newTabs = [...prevTabs];
-      const conversation = newTabs[tabIndex].conversation;
-      const newIndex = conversation.outputKeys.length;
-      conversation.outputKeys[newIndex] = key;
-      conversation.outputValues[newIndex] = value;
-      conversation.evaluations[newIndex] = { key, rule: 'Exact Match', value };
+      const tab = newTabs[tabIndex];
+      const conversation = tab.conversation;
+  
+      // Update or add the output value
+      const outputIndex = conversation.outputKeys.findIndex(k => k === key);
+      if (outputIndex !== -1) {
+        conversation.outputValues[outputIndex] = value;
+      } else {
+        conversation.outputKeys.push(key);
+        conversation.outputValues.push(value);
+      }
+  
+      // Update or add the evaluation
+      const evalIndex = conversation.evaluations.findIndex(e => e.key === key);
+      if (evalIndex !== -1) {
+        conversation.evaluations[evalIndex] = { ...conversation.evaluations[evalIndex], key, value };
+      } else {
+        conversation.evaluations.push({ key, rule: 'Exact Match', value });
+      }
+  
       return newTabs;
     });
   }, []);
@@ -151,7 +177,9 @@ const RestEvaluationComponent = () => {
       return;
     }
     setCurrentSavingIndex(tabIndex);
-    setDescription('');
+    setDescription(tabs[tabIndex].description || '');
+    setSelectedGroupId(tabs[tabIndex].groupId || '');
+    setIsUpdate(!!tabs[tabIndex].uuid);
     setShowSaveModal(true);
   };
 
@@ -179,8 +207,8 @@ const RestEvaluationComponent = () => {
     };
 
     try {
-      const response = await authFetch('api/inputs', {
-        method: 'POST',
+      const response = await authFetch(isUpdate ? `api/inputs/${tab.uuid}` : 'api/inputs', {
+        method: isUpdate ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
@@ -189,12 +217,22 @@ const RestEvaluationComponent = () => {
         setDescription('');
         setShowSaveModal(false);
         setCurrentSavingIndex(null);
-        alert('Test saved successfully');
+        alert(isUpdate ? 'Test updated successfully' : 'Test saved successfully');
+        setTabs(prevTabs => {
+          const newTabs = [...prevTabs];
+          newTabs[currentSavingIndex] = {
+            ...newTabs[currentSavingIndex],
+            description: description,
+            groupId: selectedGroupId,
+            uuid: isUpdate ? tab.uuid : response.uuid // Assuming the API returns the new UUID for created tests
+          };
+          return newTabs;
+        });
       } else {
-        alert('Failed to save the test');
+        alert(isUpdate ? 'Failed to update the test' : 'Failed to save the test');
       }
     } catch (error) {
-      console.error('Error saving test');
+      console.error(isUpdate ? 'Error updating test:' : 'Error saving test:', error);
     }
   };
 
@@ -246,28 +284,37 @@ const RestEvaluationComponent = () => {
     const tab = tabs[tabIndex];
     const evaluations = tab.conversation.evaluations;
     const apiResponse = tab.apiResponse;
-
+  
     if (!apiResponse) {
       alert('No API response to evaluate. Please send a request first.');
       return;
     }
-
+  
+    if (!evaluations || evaluations.length === 0) {
+      alert('No evaluations to perform. Please add at least one evaluation.');
+      return;
+    }
+  
     const results = evaluations.map(evaluation => {
+      if (!evaluation.key) {
+        return false; // Skip evaluation if key is not defined
+      }
       const actualValue = getValueFromPath(apiResponse.body, evaluation.key);
       return evaluateCondition(actualValue, evaluation.rule, evaluation.value);
     });
-
+  
     setTabs(prevTabs => {
       const newTabs = [...prevTabs];
-      newTabs[tabIndex].evaluationResults = results;
+      newTabs[tabIndex].conversation.result = results.every(r => r) ? 'pass' : 'fail';
       return newTabs;
     });
-
+  
     alert(`Evaluation complete. ${results.filter(r => r).length} out of ${results.length} checks passed.`);
   };
 
   // Helper functions for evaluation
   const getValueFromPath = (obj, path) => {
+    if (!path) return undefined;
     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
   };
 
