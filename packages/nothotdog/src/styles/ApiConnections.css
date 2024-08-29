@@ -364,3 +364,45 @@
 .remove-button:hover {
   color: #bd2130;
 }
+
+
+.json-response {
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.json-line {
+  position: relative;
+  padding-left: 20px;
+}
+
+.json-key {
+  color: #881391;
+}
+
+.json-value {
+  color: #1A1A1A;
+}
+
+.json-nested {
+  padding-left: 20px;
+}
+
+.set-output-btn {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 2px 5px;
+  font-size: 0.8em;
+  cursor: pointer;
+}
+
+.json-line:hover > .set-output-btn {
+  display: inline-block;
+}

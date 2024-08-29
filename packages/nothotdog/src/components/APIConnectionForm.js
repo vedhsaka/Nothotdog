@@ -3,24 +3,11 @@ import { Send, Loader, Plus, X } from 'lucide-react';
 import './../styles/ApiConnections.css';
 import axios from 'axios';
 
-const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues, handleApiChange, evaluations,setEvaluations }) => {
+const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues, handleApiChange, evaluations, setEvaluations }) => {
   const [method, setMethod] = useState(initialValues?.method || 'GET');
   const [url, setUrl] = useState(initialValues?.url || '');
-
-  const [selectedNodePath, setSelectedNodePath] = useState('');
-  
-  const [params, setParams] = useState(() => {
-    const initialParams = initialValues?.queryParams || [];
-    return Array.isArray(initialParams) && initialParams.length > 0 
-      ? initialParams 
-      : [{ key: '', value: '' }];
-  });
-  const [headers, setHeaders] = useState(() => {
-    const initialHeaders = initialValues?.headers || [];
-    return Array.isArray(initialHeaders) && initialHeaders.length > 0 
-      ? initialHeaders 
-      : [{ key: '', value: '' }];
-  });
+  const [params, setParams] = useState(initialValues?.queryParams || [{ key: '', value: '' }]);
+  const [headers, setHeaders] = useState(initialValues?.headers || [{ key: '', value: '' }]);
   const [body, setBody] = useState(() => {
     try {
       return JSON.stringify(JSON.parse(initialValues?.body || '{}'), null, 2);
@@ -53,7 +40,6 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
     handleApiChange('body', body);
   }, [body, handleApiChange]);
 
-
   const addParam = () => setParams([...params, { key: '', value: '' }]);
   const addHeader = () => setHeaders([...headers, { key: '', value: '' }]);
 
@@ -65,11 +51,6 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
   const removeHeader = (index) => {
     const newHeaders = headers.filter((_, i) => i !== index);
     setHeaders(newHeaders.length > 0 ? newHeaders : [{ key: '', value: '' }]);
-  };
-
-  const handleBodyChange = (e) => {
-    setBody(e.target.value);
-    handleApiChange('body', e.target.value);
   };
 
   const updateParam = (index, field, value) => {
@@ -99,18 +80,15 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
       const requestConfig = {
         method: method,
         url: urlWithParams.toString(),
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers.reduce((acc, header) => {
-            if (header.key && header.value) {
-              acc[header.key] = header.value;
-            }
-            return acc;
-          }, {})
-        },
+        headers: headers.reduce((acc, header) => {
+          if (header.key && header.value) {
+            acc[header.key] = header.value;
+          }
+          return acc;
+        }, {}),
       };
 
-      if (method === 'POST' || method === 'PUT') {
+      if (['POST', 'PUT', 'PATCH'].includes(method)) {
         try {
           requestConfig.data = JSON.parse(body);
         } catch (e) {
@@ -156,6 +134,12 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
     } catch (error) {
       setResponse({
         error: error.message,
+        ...(error.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          headers: error.response.headers,
+          body: error.response.data
+        } : {})
       });
     } finally {
       setIsLoading(false);
@@ -163,18 +147,8 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
     }
   };
 
-  const cleanValue = (value) => {
-    if (typeof value === 'string') {
-      let cleanedValue = value.replace(/^["'](.+(?=["']$))["']$/, '$1');
-      cleanedValue = cleanedValue.replace(/,$/, '');
-      return cleanedValue;
-    }
-    return value;
-  };
-
   const handleSetOutputValue = (key, value) => {
     setOutputValue(key, value);
-    
     const existingEvalIndex = evaluations.findIndex(evaluations => evaluations.key === key);
     if (existingEvalIndex !== -1) {
       const updatedEvaluations = [...evaluations];
@@ -195,22 +169,50 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
     setEvaluations(evaluations.filter((_, i) => i !== index));
   };
 
-
-  const generateNestedKeyPaths = (obj, prefix = '') => {
-    let result = [];
-    for (const [key, value] of Object.entries(obj)) {
-      const newKey = prefix ? `${prefix}.${key}` : key;
-      if (typeof value === 'object' && value !== null) {
-        result = result.concat(generateNestedKeyPaths(value, newKey));
-      } else {
-        result.push({ key: newKey, value });
-      }
+  const renderJsonWithSelectableKeys = (json, path = '') => {
+    if (json === null || json === undefined) {
+      return <span className="json-value">null</span>;
     }
-    return result;
+
+    if (typeof json !== 'object') {
+      return <span className="json-value">{JSON.stringify(json)}</span>;
+    }
+
+    if (Array.isArray(json)) {
+      return (
+        <div className="json-array">
+          [
+          {json.map((item, index) => (
+            <div key={index} className="json-array-item">
+              {renderJsonWithSelectableKeys(item, path ? `${path}.${index}` : `${index}`)}
+              {index < json.length - 1 && ','}
+            </div>
+          ))}
+          ]
+        </div>
+      );
+    }
+
+    return (
+      <div className="json-object">
+        {'{'}
+        {Object.entries(json).map(([key, value], index) => (
+          <div key={key} className="json-line">
+            <span className="json-key">"{key}":</span>{' '}
+            {renderJsonWithSelectableKeys(value, path ? `${path}.${key}` : key)}
+            <button
+              className="set-output-btn"
+              onClick={() => handleSetOutputValue(path ? `${path}.${key}` : key, value)}
+            >
+              Set as Output
+            </button>
+            {index < Object.keys(json).length - 1 && ','}
+          </div>
+        ))}
+        {'}'}
+      </div>
+    );
   };
-  
-  // Use `handleSetOutputValue` where appropriate
-  
 
   return (
     <div className="api-request-form">
@@ -220,6 +222,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
           <option>POST</option>
           <option>PUT</option>
           <option>DELETE</option>
+          <option>PATCH</option>
         </select>
         <input
           type="text"
@@ -242,7 +245,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
 
       <div className="tab-content">
         {activeTab === 'params' && (
-          <div className="section params-section api-form">
+          <div className="section params-section">
             <h3>Query Params</h3>
             {params.map((param, index) => (
               <div key={index} className="input-group">
@@ -270,18 +273,18 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
         )}
 
         {activeTab === 'headers' && (
-          <div className="section headers-section api-form">
+          <div className="section headers-section">
             <h3>Headers</h3>
             {headers.map((header, index) => (
               <div key={index} className="input-group">
                 <input
-                  className="input"
+                  className="input key"
                   value={header.key}
                   onChange={(e) => updateHeader(index, 'key', e.target.value)}
                   placeholder="Key"
                 />
                 <input
-                  className="input"
+                  className="input value"
                   value={header.value}
                   onChange={(e) => updateHeader(index, 'value', e.target.value)}
                   placeholder="Value"
@@ -314,7 +317,24 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
             <h3>Response</h3>
             {response ? (
               response.error ? (
-                <p className="error">Error: {response.error}</p>
+                <div>
+                  <p className="error">Error: {response.error}</p>
+                  {response.status && <p>Status: {response.status} {response.statusText}</p>}
+                  {response.headers && (
+                    <div>
+                      <h4>Headers:</h4>
+                      <pre>{JSON.stringify(response.headers, null, 2)}</pre>
+                    </div>
+                  )}
+                  {response.body && (
+                    <div>
+                      <h4>Body:</h4>
+                      <pre className="json-response">
+                        {renderJsonWithSelectableKeys(response.body)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
                   <p className="status">Status: {response.status} {response.statusText}</p>
@@ -322,29 +342,8 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
                     <h4>Headers:</h4>
                     <pre>{JSON.stringify(response.headers, null, 2)}</pre>
                     <h4>Body:</h4>
-                    <pre>
-                      {typeof response.body === 'object' ? (
-                        generateNestedKeyPaths(response.body).map(({ key, value }, index) => (
-                          <div
-                            key={index}
-                            className="response-line"
-                            onMouseEnter={() => (document.getElementById(`set-output-btn-${index}`).style.display = 'inline')}
-                            onMouseLeave={() => (document.getElementById(`set-output-btn-${index}`).style.display = 'none')}
-                          >
-                            {key}: {JSON.stringify(value)}
-                            <button
-                              id={`set-output-btn-${index}`}
-                              className="set-output-btn"
-                              style={{ display: 'none', marginLeft: '2px' }}
-                              onClick={() => handleSetOutputValue(key, value)}
-                            >
-                              Set as Output
-                            </button>
-                          </div>
-                        ))
-                      ) : (
-                        response.body
-                      )}
+                    <pre className="json-response">
+                      {renderJsonWithSelectableKeys(response.body)}
                     </pre>
                   </div>
                 </>
@@ -353,11 +352,12 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
               <p>No response yet</p>
             )}
           </div>
-       )}
+        )}
+      </div>
 
       <div className="evaluations-section">
-          <h3>Evaluations</h3>
-            {evaluations.map((evaluation, index) => (
+        <h3>Evaluations</h3>
+        {evaluations.map((evaluation, index) => (
           <div key={index} className="evaluation-row">
             <input
               type="text"
@@ -366,7 +366,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
               placeholder="Key"
             />
             <select
-                value={evaluation.rule}
+              value={evaluation.rule}
               onChange={(e) => updateEvaluation(index, 'rule', e.target.value)}
             >
               <option value="Exact Match">Exact Match</option>
@@ -378,18 +378,17 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
               <option value="Less Than">Less Than</option>
             </select>
             <input
-                type="text"
-                value={evaluation.value}
-                onChange={(e) => updateEvaluation(index, 'value', e.target.value)}
-                placeholder="Expected Value"
+              type="text"
+              value={evaluation.value}
+              onChange={(e) => updateEvaluation(index, 'value', e.target.value)}
+              placeholder="Expected Value"
             />
-                  <button onClick={() => removeEvaluation(index)}>Remove</button>
-              </div>
-          ))}
-          <button onClick={() => setEvaluations([...evaluations, { key: '', rule: 'Exact Match', value: '' }])}>
-            Add Evaluation
-          </button>
-        </div>
+            <button onClick={() => removeEvaluation(index)}>Remove</button>
+          </div>
+        ))}
+        <button onClick={() => setEvaluations([...evaluations, { key: '', rule: 'Exact Match', value: '' }])}>
+          Add Evaluation
+        </button>
       </div>
     </div>
   );
