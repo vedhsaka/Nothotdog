@@ -23,6 +23,29 @@ const RestEvaluationComponent = () => {
   const location = useLocation();
   const [isUpdate, setIsUpdate] = useState(false);
 
+  const [tabs, setTabs] = useState([createEmptyTab()]);
+
+  function createEmptyTab(index) {
+    return {
+      name: `New Tab`,
+      api: {
+        method: 'GET',
+        url: '',
+        headers: [{ key: '', value: '' }],
+        queryParams: [{ key: '', value: '' }],
+        body: '',
+      },
+      conversation: {
+        evaluations: [],
+        outputKeys: [],
+        outputValues: [],
+        result: null,
+        latency: { startTime: null, latency: null },
+      },
+      apiResponse: null,
+    };
+  }
+
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -40,68 +63,26 @@ const RestEvaluationComponent = () => {
     };
 
     fetchGroups();
-  }, []);
+  }, [authFetch, projectId]);
 
 
-  const [tabs, setTabs] = useState([{
-    name: 'API 1',
-    api: {
-      method: 'GET',
-      url: '',
-      headers: [{ key: '', value: '' }],
-      queryParams: [{ key: '', value: '' }],
-      body: '',
-    },
-    conversation: {
-      evaluations: [],
-      outputKeys: [],
-      outputValues: [],
-      result: null,
-      latency: { startTime: null, latency: null },
-    },
-    apiResponse: null,
-  }]);
-
-
-  const handleGroupSelect = useCallback((group) => {
-    setSelectedGroupId(group.id);
-    const textInputs = group.inputs.filter(input => input.input_type === 'text');
-    const newTabs = textInputs.map((input, index) => createTabFromInput(input, index));
-    setTabs(newTabs.length > 0 ? newTabs : [{
-      name: 'API 1',
-      api: {
-        method: 'GET',
-        url: '',
-        headers: [{ key: '', value: '' }],
-        queryParams: [{ key: '', value: '' }],
-        body: '',
-      },
-      conversation: {
-        evaluations: [],
-        outputKeys: [],
-        outputValues: [],
-        result: null,
-        latency: { startTime: null, latency: null },
-      },
-      apiResponse: null,
-    }]);
-    setActiveTabIndex(0);
-  }, []);
-
-  const createTabFromInput = (input, index) => ({
-    name: `API ${index + 1}`,
+  const createTabFromInput = (input) => ({
+    name: input.description || 'API Test',
     api: {
       method: input.method || 'GET',
       url: input.url || '',
-      headers: Object.entries(input.headers || {}).map(([key, value]) => ({ key, value })),
-      queryParams: Object.entries(input.query_params || {}).map(([key, value]) => ({ key, value })),
+      headers: input.headers ? Object.entries(input.headers).map(([key, value]) => ({ key, value })) : [{ key: '', value: '' }],
+      queryParams: input.query_params ? Object.entries(input.query_params).map(([key, value]) => ({ key, value })) : [{ key: '', value: '' }],
       body: input.content || '',
     },
     conversation: {
-      evaluations: input.checks ? input.checks.map(check => check.rule) : [],
-      phrases: input.checks ? input.checks.map(check => check.value) : [],
+      evaluations: input.checks ? input.checks.map(check => ({
+        key: check.field,
+        rule: check.rule,
+        value: check.value
+      })) : [],
       outputKeys: input.checks ? input.checks.map(check => check.field) : [],
-      outputValues: [],
+      outputValues: input.checks ? input.checks.map(check => check.value) : [],
       result: null,
       latency: { startTime: null, latency: null },
     },
@@ -110,6 +91,66 @@ const RestEvaluationComponent = () => {
     description: input.description || '',
     groupId: input.groupId || '',
   });
+
+
+
+  const handleGroupSelect = useCallback((group) => {
+    setSelectedGroupId(group.id);
+    // const textInputs = group.inputs.filter(input => input.input_type === 'text');
+    // const newTabs = textInputs.map((input, index) => createTabFromInput(input, index));
+    // setTabs(newTabs.length > 0 ? newTabs : [{
+    //   name: 'API 1',
+    //   api: {
+    //     method: 'GET',
+    //     url: '',
+    //     headers: [{ key: '', value: '' }],
+    //     queryParams: [{ key: '', value: '' }],
+    //     body: '',
+    //   },
+    //   conversation: {
+    //     evaluations: [],
+    //     outputKeys: [],
+    //     outputValues: [],
+    //     result: null,
+    //     latency: { startTime: null, latency: null },
+    //   },
+    //   apiResponse: null,
+    // }]);
+    // setActiveTabIndex(0);
+  }, []);
+
+  const isTabEmpty = (tab) => {
+    return !tab || (tab.api.url === '' && tab.conversation.evaluations.length === 0);
+  };
+
+  const handleInputSelect = (input) => {
+    setTabs(prevTabs => {
+      const existingTabIndex = prevTabs.findIndex(tab => tab.uuid === input.uuid);
+      const newTab = createTabFromInput(input);
+  
+      if (existingTabIndex !== -1) {
+        // Update existing tab
+        const updatedTabs = [...prevTabs];
+        updatedTabs[existingTabIndex] = newTab;
+        setActiveTabIndex(existingTabIndex);
+        return updatedTabs;
+      } else if (isTabEmpty(prevTabs[activeTabIndex])) {
+        // Replace current empty tab
+        const updatedTabs = [...prevTabs];
+        updatedTabs[activeTabIndex] = newTab;
+        return updatedTabs;
+      } else {
+        // Add new tab
+        setActiveTabIndex(prevTabs.length);
+        return [...prevTabs, newTab];
+      }
+    });
+  };
+
+  const handleAddNewTab = () => {
+    setTabs(prevTabs => [...prevTabs, createEmptyTab()]);
+    setActiveTabIndex(tabs.length);
+  };
 
   const handleApiResponse = useCallback((tabIndex, apiData) => {
     setTabs(prevTabs => {
@@ -201,8 +242,18 @@ const RestEvaluationComponent = () => {
       url: tab.api?.url || '',
       apiType: "REST",
       method: tab.api?.method || 'GET',
-      headers: tab.api?.headers || {},
-      query_params: tab.api?.queryParams || {},
+      headers: tab.api?.headers.reduce((acc, header) => {
+        if (header.key && header.value) {
+          acc[header.key] = header.value;
+        }
+        return acc;
+      }, {}),
+      query_params: tab.api?.queryParams.reduce((acc, param) => {
+        if (param.key && param.value) {
+          acc[param.key] = param.value;
+        }
+        return acc;
+      }, {}),
       content_type: "json"
     };
 
@@ -347,7 +398,8 @@ return (
       projectId={projectId}
       authFetch={authFetch} 
       userId={userId}
-      onInputSelect={(input) => handleGroupSelect({ inputs: [input] })}
+      // onInputSelect={(input) => handleGroupSelect({ inputs: [input] })}
+      onInputSelect={handleInputSelect}
       onGroupSelect={handleGroupSelect}
       onTextGroupSelect={handleGroupSelect}
       componentType={'text'}
@@ -364,6 +416,7 @@ return (
         handleApiChange={handleApiChange}
         handleSave={handleSave}
         handleEvaluate={handleEvaluate}
+        handleAddNewTab={handleAddNewTab}
       />
 
       <SaveTestModal
