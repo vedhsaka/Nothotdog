@@ -8,12 +8,12 @@ const fetchTests = async (authFetch, setTests, setError) => {
     const allInputs = data.data.flatMap(project => {
       const projectInputs = project.inputs.map(input => ({
         ...input,
-        audioBlob: input.input_type === 'voice' ? b64toBlob(input.audioBase64, 'audio/webm') : null,
+        audioBlob: input.input_type === 'voice' ? b64toBlob(input.audioBase64, 'audio/mp3') : null,
       }));
 
       const groupInputs = project.groups.flatMap(group => group.inputs.map(input => ({
         ...input,
-        audioBlob: input.input_type === 'voice' ? b64toBlob(input.audioBase64, 'audio/webm') : null,
+        audioBlob: input.input_type === 'voice' ? b64toBlob(input.audioBase64, 'audio/mp3') : null,
       })));
 
       return [...projectInputs, ...groupInputs];
