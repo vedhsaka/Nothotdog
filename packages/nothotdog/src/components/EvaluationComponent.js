@@ -50,6 +50,7 @@ const EvaluationComponent = () => {
   const [audioData, setAudioData] = useState([]); // Store audio IDs
   const [outputAudioData, setOutputAudioData] = useState([]); // Store output audio IDs
   const [url, setUrl] = useState('ws://');
+  const [inputUrl, setInputUrl] = useState('ws://');
   const [showModal, setShowModal] = useState(false);
   const [currentAudioBlob, setCurrentAudioBlob] = useState(null);
   const [description, setDescription] = useState('');
@@ -434,21 +435,14 @@ const EvaluationComponent = () => {
   const handleUrlChange = (e) => {
     let newUrl = e.target.value;
 
-    // Check if the URL begins with 'https://'
-    if (newUrl.startsWith('https://') || newUrl.startsWith('http://')) {
-      alert('Web Socket API URLs are needed');
-      newUrl = ''; // Clear the URL field
+    // If the input doesn't start with 'ws://', add it
+    if (!newUrl.startsWith('ws://')) {
+      newUrl = 'ws://' + newUrl.replace(/^ws:?\/?/i, '');
     } else {
-      // Remove any instances of 'ws://ws://'
-      if (newUrl.includes('ws://ws://')) {
-        newUrl = newUrl.replace('ws://ws://', '');
-      }
-      // Add 'ws://' if the URL does not begin with it
-      if (!newUrl.startsWith('ws://')) {
-        newUrl = 'ws://' + newUrl;
-      }
+      // If it starts with 'ws://', ensure it's formatted correctly
+      newUrl = 'ws://' + newUrl.slice(5).replace(/^ws:?\/?/i, '');
     }
-
+  
     setUrl(newUrl);
   };
 
