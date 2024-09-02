@@ -194,7 +194,7 @@ const EvaluationComponent = () => {
     setLatencies((prevLatencies) => [...prevLatencies, { startTime: null, latency: null }]);
   
     // Store the audio data
-    const audioBlob = b64toBlob(voice.content, 'audio/webm');
+    const audioBlob = b64toBlob(voice.content, 'audio/mp3');
     storeAudio(audioId, audioBlob);
     setAudioData((prevAudioData) => [...prevAudioData, audioId]);
     setOutputAudioData((prevOutputAudioData) => [...prevOutputAudioData, null]);
@@ -245,7 +245,7 @@ const EvaluationComponent = () => {
   
         wsRef.current.onmessage = async (event) => {
           const endTime = new Date().getTime();
-          const outputAudioBlob = new Blob([event.data], { type: 'audio/webm' });
+          const outputAudioBlob = new Blob([event.data], { type: 'audio/mp3' });
           const id = Date.now();
           await storeAudio(id, outputAudioBlob);
   
@@ -299,7 +299,7 @@ const EvaluationComponent = () => {
 
       wsRef.current.onmessage = async (event) => {
         const endTime = new Date().getTime();
-        const outputAudioBlob = new Blob([event.data], { type: 'audio/webm' });
+        const outputAudioBlob = new Blob([event.data], { type: 'audio/mp3' });
         const id = Date.now();
         await storeAudio(id, outputAudioBlob);
       
@@ -383,7 +383,7 @@ const EvaluationComponent = () => {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioBufferRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioBufferRef.current, { type: 'audio/mp3' });
         const id = Date.now();
         await storeAudio(id, audioBlob);
         setAudioData((prevAudioData) => [...prevAudioData, id]);
@@ -417,7 +417,7 @@ const EvaluationComponent = () => {
     const reader = new FileReader();
     reader.onload = async () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        const audioBlob = new Blob([reader.result], { type: 'audio/webm' });
+        const audioBlob = new Blob([reader.result], { type: 'audio/mp3' });
         wsRef.current.send(reader.result);
   
         const startTime = new Date().getTime(); // Capture start time
