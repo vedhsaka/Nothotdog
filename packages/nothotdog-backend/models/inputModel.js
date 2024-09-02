@@ -341,106 +341,114 @@ class InputModel {
       }
   }
 
-  static async testInput(inputType, content, checks) {
-    logger.info('Starting input test', { inputType, checksCount: checks.length });
-    try {
-      let processedContent;
-  
+static async testInput(inputType, content, checks) {
+  logger.info('Starting input test', { inputType, checksCount: checks.length });
+  try {
+    let processedContent;
+
+    if (inputType === "voice") {
+      logger.info('Processing voice input');
+      let output = await this.processVoiceInput(content);
+      processedContent = output.transcript;
+      logger.info('Voice input processed successfully', { processedContent });
+    } else {
+      logger.info('Processing non-voice input');
+      processedContent = this.processNonVoiceInput(content);
+    }
+
+    const checkResults = [];
+    let allChecksPassed = true;
+
+    for (const check of checks) {
+      const { field, rule, value, threshold } = check;
+      logger.info('Performing check', { field, rule, value, threshold });
+      let passed = false;
+      let details = '';
+      let actualValue;
+
       if (inputType === "voice") {
-        logger.info('Processing voice input');
-        processedContent = await this.processVoiceInput(content);
-      } else {
-        logger.info('Processing non-voice input');
-        processedContent = this.processNonVoiceInput(content);
-      }
-  
-      const checkResults = [];
-      let allChecksPassed = true;
-  
-      for (const check of checks) {
-        const { field, rule, value, threshold } = check;
-        logger.info('Performing check', { field, rule, value, threshold });
-        let passed = false;
-        let details = '';
-        let actualValue;
-  
+        actualValue = processedContent; // Use the full transcript for voice inputs
+      } else { 
         try {
-          actualValue = this.getNestedValue(processedContent, field);
+        actualValue = this.getNestedValue(processedContent, field);
         } catch (error) {
           logger.warn('Error accessing field for check', { field, error: error.message });
           checkResults.push({ ...check, passed: false, details: `Error accessing field: ${error.message}`, actualValue: undefined });
           allChecksPassed = false;
           continue;
         }
-  
-        // Normalize values for comparison if input type is voice and the rule is applicable
-        const shouldNormalize = inputType === "voice" && ['contains', 'exact_match', 'starts_with', 'ends_with'].includes(rule);
-        const normalizedActualValue = shouldNormalize ? this.normalizeForVoiceComparison(actualValue) : actualValue;
-        const normalizedExpectedValue = shouldNormalize ? this.normalizeForVoiceComparison(value) : value;
-  
-        switch (rule) {
-          case 'contains':
-            passed = String(normalizedActualValue).includes(String(normalizedExpectedValue));
-            details = `Checked if ${field} contains: "${value}"`;
-            break;
-          case 'exact_match':
-            passed = normalizedActualValue === normalizedExpectedValue;
-            details = `Checked if ${field} exactly matches: "${value}"`;
-            break;
-          case 'starts_with':
-            passed = String(normalizedActualValue).startsWith(String(normalizedExpectedValue));
-            details = `Checked if ${field} starts with: "${value}"`;
-            break;
-          case 'ends_with':
-            passed = String(normalizedActualValue).endsWith(String(normalizedExpectedValue));
-            details = `Checked if ${field} ends with: "${value}"`;
-            break;
-          case 'greater_than':
-            passed = Number(actualValue) > Number(value);
-            details = `Checked if ${field} is greater than: ${value}`;
-            break;
-          case 'less_than':
-            passed = Number(actualValue) < Number(value);
-            details = `Checked if ${field} is less than: ${value}`;
-            break;
-          case 'equals':
-            if (inputType === "voice" && typeof actualValue === 'string' && typeof value === 'string') {
-              passed = this.normalizeForVoiceComparison(actualValue) === this.normalizeForVoiceComparison(value);
-            } else {
-              passed = actualValue == value;
-            }
-            details = `Checked if ${field} equals: "${value}"`;
-            break;
-          case 'context_match':
-            logger.info('Performing context match check');
-            const contextMatchScore = await this.checkContextMatch(String(actualValue), String(value));
-            const contextMatchThreshold = threshold !== undefined ? parseFloat(threshold) : 0.6;
-            passed = contextMatchScore >= contextMatchThreshold;
-            details = `Context match score: ${contextMatchScore.toFixed(2)}, Threshold: ${contextMatchThreshold}`;
-            break;
-          default:
-            logger.warn('Unimplemented check rule', { rule });
-            passed = false;
-            details = 'Check rule not implemented';
-        }
-  
-        logger.info('Check result', { field, rule, passed, details });
-        checkResults.push({ ...check, passed, details, actualValue });
-        if (!passed) allChecksPassed = false;
       }
-  
-      const testResult = allChecksPassed ? "pass" : "fail";
-      logger.info('Input test completed', { testResult, checksPerformed: checks.length });
-      return {
-        test_result: testResult,
-        checks: checkResults,
-        processedContent: inputType === "voice" ? processedContent.transcript : undefined
-      };
-    } catch (error) {
-      logger.error('Error during input test', { inputType, error: error.message, stack: error.stack });
-      throw error;
+
+      // Normalize values for comparison if input type is voice and the rule is applicable
+      const shouldNormalize = inputType === "voice" && ['contains', 'exact_match', 'starts_with', 'ends_with'].includes(rule);
+      const normalizedActualValue = shouldNormalize ? this.normalizeForVoiceComparison(actualValue) : actualValue;
+      const normalizedExpectedValue = shouldNormalize ? this.normalizeForVoiceComparison(value) : value;
+
+      switch (rule) {
+        case 'contains':
+          passed = String(normalizedActualValue).includes(String(normalizedExpectedValue));
+          details = `Checked if ${normalizedActualValue} contains: "${normalizedExpectedValue}"`;
+          break;
+        case 'exact_match':
+          passed = normalizedActualValue === normalizedExpectedValue;
+          details = `Checked if ${normalizedActualValue} exactly matches: "${normalizedExpectedValue}"`;
+          break;
+        case 'starts_with':
+          passed = String(normalizedActualValue).startsWith(String(normalizedExpectedValue));
+          details = `Checked if ${normalizedActualValue} starts with: "${normalizedExpectedValue}"`;
+          break;
+        case 'ends_with':
+          passed = String(normalizedActualValue).endsWith(String(normalizedExpectedValue));
+          details = `Checked if ${normalizedActualValue} ends with: "${normalizedExpectedValue}"`;
+          break;
+        case 'greater_than':
+          passed = Number(actualValue) > Number(value);
+          details = `Checked if ${actualValue} is greater than: ${value}`;
+          break;
+        case 'less_than':
+          passed = Number(actualValue) < Number(value);
+          details = `Checked if ${actualValue} is less than: ${value}`;
+          break;
+        case 'equals':
+          if (inputType === "voice" && typeof actualValue === 'string' && typeof value === 'string') {
+            passed = normalizedActualValue === normalizedExpectedValue;
+            details = `Checked if ${actualValue} equals: "${value}"`;
+          } else {
+            passed = actualValue == value;
+            details = `Checked if ${actualValue} equals: "${value}"`;
+
+          }
+          break;
+        case 'context_match':
+          logger.info('Performing context match check');
+          const contextMatchScore = await this.checkContextMatch(String(actualValue), String(value));
+          const contextMatchThreshold = threshold !== undefined ? parseFloat(threshold) : 0.6;
+          passed = contextMatchScore >= contextMatchThreshold;
+          details = `Context match score: ${contextMatchScore.toFixed(2)}, Threshold: ${contextMatchThreshold}`;
+          break;
+        default:
+          logger.warn('Unimplemented check rule', { rule });
+          passed = false;
+          details = 'Check rule not implemented';
+      }
+
+      logger.info('Check result', { field, rule, passed, details });
+      checkResults.push({ ...check, passed, details, actualValue });
+      if (!passed) allChecksPassed = false;
     }
+
+    const testResult = allChecksPassed ? "pass" : "fail";
+    logger.info('Input test completed', { testResult, checksPerformed: checks.length });
+    return {
+      test_result: testResult,
+      checks: checkResults,
+      processedContent: inputType === "voice" ? processedContent : undefined
+    };
+  } catch (error) {
+    logger.error('Error during input test', { inputType, error: error.message, stack: error.stack });
+    throw error;
   }
+}
   
   static normalizeForVoiceComparison(value) {
     if (typeof value !== 'string') {
