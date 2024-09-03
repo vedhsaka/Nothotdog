@@ -27,7 +27,7 @@ const RestEvaluationComponent = () => {
 
   function createEmptyTab(index) {
     return {
-      name: `New Tab`,
+      name: `API 1`,
       api: {
         method: 'GET',
         url: '',
