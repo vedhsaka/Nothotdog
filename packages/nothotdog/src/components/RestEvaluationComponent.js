@@ -46,26 +46,6 @@ const RestEvaluationComponent = () => {
     };
   }
 
-
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        const response = await authFetch(`api/groups/${projectId}`);
-        const groupsData = await response;
-        const groups = groupsData.data.map(group => ({
-          id: group.uuid,
-          name: group.name
-        }));
-        setGroupOptions(groups);
-      } catch (error) {
-        console.error('Error fetching groups:', error);
-      }
-    };
-
-    fetchGroups();
-  }, [authFetch, projectId]);
-
-
   const createTabFromInput = (input) => ({
     name: input.description || 'API Test',
     api: {
