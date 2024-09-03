@@ -29,7 +29,8 @@ To get started with NotHotDog, please refer to our [User Guide](docs/user-guide.
 
 ## Contributing
 
-We welcome contributions to NotHotDog! 
+- We welcome contributions to NotHotDog!
+- Please comment on the issue if you are interested in contributing to it.
 
 ## License
 
