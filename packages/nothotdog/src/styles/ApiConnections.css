@@ -203,7 +203,7 @@
     display: none;
   }
   
-  .response-line:hover .set-output-btn {
+  .json-line:hover .set-output-btn {
     display: inline;
   }
   
@@ -335,10 +335,10 @@
   align-items: center;
 }
 
-.response-line:hover .set-output-btn {
+.json-line:hover .set-output-btn {
   display: inline;
 }
-.response-line:hover {
+.json-line:hover {
   background-color: #e4e4f5;
 }
 
@@ -400,7 +400,7 @@
   color: white;
   border: none;
   padding: 2px 5px;
-  font-size: 0.8em;
+  font-size: 1em;
   cursor: pointer;
 }
 
