@@ -16,7 +16,7 @@ exports.saveInput = async (req, res) => {
             logger.warn('No input content provided', { userId, inputType, projectId });
             return res.status(400).json({ message: 'No input content provided' });
         }
-        if (groupId != null) {
+        if (groupId != null || groupId != "") {
             const group = await GroupModel.getGroupById(groupId);
             group_id = group.id;
             order = sequence;
