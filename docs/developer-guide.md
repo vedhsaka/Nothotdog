@@ -17,12 +17,14 @@
 NotHotDog is an open-source testing framework designed to test and validate voice and text-based AI agents. It provides a user-friendly interface for creating, managing, and executing tests against AI models.
 
 The project is structured as a monorepo with two main packages:
+
 - `nothotdog`: The frontend application built with React
 - `nothotdog-backend`: The backend API server built with Node.js and Express
 
 ## Technology Stack
 
 ### Frontend (nothotdog)
+
 - React.js
 - React Router for navigation
 - Supabase for authentication and data storage
@@ -30,6 +32,7 @@ The project is structured as a monorepo with two main packages:
 - Axios for API requests
 
 ### Backend (nothotdog-backend)
+
 - Node.js
 - Express.js
 - Supabase for database and authentication
@@ -68,12 +71,14 @@ NotHotDog/
 ## Setup and Installation
 
 1. Clone the repository:
+
    ```
    git clone https://github.com/vedhsaka/NotHotDog.git
    cd NotHotDog
    ```
 
 2. Install dependencies for both packages:
+
    ```
    cd packages/nothotdog
    npm install
@@ -82,14 +87,16 @@ NotHotDog/
    ```
 
 3. Set up environment variables:
+
    - Create a `.env` file in the `nothotdog` directory
    - Create a `.env.local` file in the `nothotdog-backend` directory
    - For the frontend (`nothotdog/.env.local`):
+
      ```
      REACT_APP_SUPABASE_URL=your_supabase_url
      REACT_APP_SUPABASE_KEY=your_supabase_anon_key
      DEEPGRAM_API_KEY=your_deepgram_api_key
-     CLUDE_API_KEYS=your_claude_api_key
+     CLAUDE_API_KEYS=your_claude_api_key
      ```
 
    - For the backend (`nothotdog-backend/.env.local`):
@@ -97,7 +104,7 @@ NotHotDog/
      SUPABASE_URL=your_supabase_url
      SUPABASE_KEY=your_supabase_anon_key
      DEEPGRAM_API_KEY=your_deepgram_api_key
-     CLUDE_API_KEYS=your_claude_api_key
+     CLAUDE_API_KEYS=your_claude_api_key
      PORT=8000
      AXIOM_API_TOKEN=your_axiom_api_token
      AXIOM_DATASET=your_axiom_bucket
@@ -135,6 +142,7 @@ The backend API provides the following main endpoints:
 Deployment instructions will vary based on your hosting provider. Generally, you'll need to:
 
 1. Build the frontend:
+
    ```
    cd packages/nothotdog
    npm run build
