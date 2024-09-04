@@ -156,9 +156,8 @@
   .headers-section .input-group {
     display: flex;
     gap: 10px;
-    padding: 15px !important;
+    padding: 20px !important;
     margin: 10px auto 10px 25px;
-    flex-direction: row;
   }
   
   .params-section .input,
@@ -203,7 +202,7 @@
     display: none;
   }
   
-  .json-line:hover .set-output-btn {
+  .response-line:hover .set-output-btn {
     display: inline;
   }
   
@@ -335,10 +334,10 @@
   align-items: center;
 }
 
-.json-line:hover .set-output-btn {
+.response-line:hover .set-output-btn {
   display: inline;
 }
-.json-line:hover {
+.response-line:hover {
   background-color: #e4e4f5;
 }
 
@@ -400,7 +399,7 @@
   color: white;
   border: none;
   padding: 2px 5px;
-  font-size: 1em;
+  font-size: 0.8em;
   cursor: pointer;
 }
 
