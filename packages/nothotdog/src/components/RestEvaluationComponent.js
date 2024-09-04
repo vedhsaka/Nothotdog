@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import '../components/EvaluationComponent';
 import '../styles/Modal.css';
 import '../styles/ApiTabs.css';
@@ -8,22 +8,38 @@ import TestGroupSidebar from '../components/TestGroupSideBar';
 import { SaveTestModal, SignInModal } from './UtilityModals';
 import { useLocation } from 'react-router-dom';
 import ApiTabs from './ApiTabs';
+import useSaveTest from '../hooks/useSaveTest';
 
 
 const RestEvaluationComponent = () => {
   const { user, signIn, projectId, userId } = useAuth();
   const { authFetch } = useAuthFetch();
   const [activeTabIndex, setActiveTabIndex] = useState(0);
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [description, setDescription] = useState('');
-  const [groupOptions, setGroupOptions] = useState([]);
-  const [selectedGroupId, setSelectedGroupId] = useState('');
-  const [currentSavingIndex, setCurrentSavingIndex] = useState(null);
-  const location = useLocation();
-  const [isUpdate, setIsUpdate] = useState(false);
-
+  // const [showSaveModal, setShowSaveModal] = useState(false);
+  // const [showSignInModal, setShowSignInModal] = useState(false);
+  // const [description, setDescription] = useState('');
+  // const [groupOptions, setGroupOptions] = useState([]);
+  // const [selectedGroupId, setSelectedGroupId] = useState('');
+  // const [currentSavingIndex, setCurrentSavingIndex] = useState(null);
+  // const location = useLocation();
+  // const [isUpdate, setIsUpdate] = useState(false);
   const [tabs, setTabs] = useState([createEmptyTab()]);
+
+  const {
+    showSaveModal,
+    setShowSaveModal,
+    showSignInModal,
+    setShowSignInModal,
+    description,
+    setDescription,
+    groupOptions,
+    selectedGroupId,
+    setSelectedGroupId,
+    currentSavingIndex,
+    isUpdate,
+    handleSave
+  } = useSaveTest();
+
 
   function createEmptyTab(index) {
     return {
@@ -192,17 +208,17 @@ const RestEvaluationComponent = () => {
     });
   }, []);
 
-  const handleSave = async (tabIndex) => {
-    if (!userId) {
-      setShowSignInModal(true);
-      return;
-    }
-    setCurrentSavingIndex(tabIndex);
-    setDescription(tabs[tabIndex].description || '');
-    setSelectedGroupId(tabs[tabIndex].groupId || '');
-    setIsUpdate(!!tabs[tabIndex].uuid);
-    setShowSaveModal(true);
-  };
+  // const handleSave = async (tabIndex) => {
+  //   if (!userId) {
+  //     setShowSignInModal(true);
+  //     return;
+  //   }
+  //   setCurrentSavingIndex(tabIndex);
+  //   setDescription(tabs[tabIndex].description || '');
+  //   setSelectedGroupId(tabs[tabIndex].groupId || '');
+  //   setIsUpdate(!!tabs[tabIndex].uuid);
+  //   setShowSaveModal(true);
+  // };
 
   const handleSaveConfirm = async () => {
     if (currentSavingIndex === null) return;
