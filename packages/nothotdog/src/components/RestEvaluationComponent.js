@@ -185,7 +185,7 @@ const RestEvaluationComponent = () => {
       if (evalIndex !== -1) {
         conversation.evaluations[evalIndex] = { ...conversation.evaluations[evalIndex], key, value };
       } else {
-        conversation.evaluations.push({ key, rule: 'Exact Match', value });
+        conversation.evaluations.push({ key, rule: 'equals', value });
       }
   
       return newTabs;
@@ -326,49 +326,41 @@ const RestEvaluationComponent = () => {
       return;
     }
   
-    const results = evaluations.map(evaluation => {
-      if (!evaluation.key) {
-        return false; // Skip evaluation if key is not defined
+    try {
+      const checks = evaluations.map((evaluation, idx) => ({
+        field: tab.conversation.outputKeys[idx] || '',
+        rule: evaluation.rule,
+        value: evaluation.value
+      }));
+  
+      const response = await authFetch('api/test-inputs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputType: "text",
+          content: apiResponse.body,
+          checks: checks
+        }),
+      });
+  
+      if (response) {
+        setTabs(prevTabs => {
+          const newTabs = [...prevTabs];
+          newTabs[tabIndex].conversation.result = response.test_result;
+          return newTabs;
+        });
+        
+        alert(`Evaluation complete. Result: ${response.test_result}`);
+      } else {
+        alert('Failed to evaluate the test');
       }
-      const actualValue = getValueFromPath(apiResponse.body, evaluation.key);
-      return evaluateCondition(actualValue, evaluation.rule, evaluation.value);
-    });
-  
-    setTabs(prevTabs => {
-      const newTabs = [...prevTabs];
-      newTabs[tabIndex].conversation.result = results.every(r => r) ? 'pass' : 'fail';
-      return newTabs;
-    });
-  
-    alert(`Evaluation complete. ${results.filter(r => r).length} out of ${results.length} checks passed.`);
-  };
-
-  // Helper functions for evaluation
-  const getValueFromPath = (obj, path) => {
-    if (!path) return undefined;
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
-  };
-
-  const evaluateCondition = (actual, rule, expected) => {
-    switch (rule) {
-      case 'Exact Match':
-        return actual === expected;
-      case 'Contains':
-        return String(actual).includes(expected);
-      case 'Begins With':
-        return String(actual).startsWith(expected);
-      case 'Ends With':
-        return String(actual).endsWith(expected);
-      case 'Word Count':
-        return String(actual).split(/\s+/).length === Number(expected);
-      case 'Less Than':
-        return Number(actual) < Number(expected);
-      // Add more conditions as needed
-      default:
-        return false;
+    } catch (error) {
+      console.error('Error during evaluation:', error);
+      alert('An error occurred during evaluation');
     }
   };
-
 
 return (
   <div className="evaluation-container">

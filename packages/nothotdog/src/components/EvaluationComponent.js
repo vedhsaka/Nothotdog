@@ -934,16 +934,13 @@ const EvaluationComponent = () => {
                           newEvaluations[rowIndex][conditionIndex] = e.target.value;
                           setEvaluations(newEvaluations);
                         }}>
-                          <option value="exact_match">Exact Match</option>
-                          <option value="word_count">Word Count</option>
+                          <option value="equals">Equals</option>
                           <option value="contains">Contains</option>
                           <option value="starts_with">Begins With</option>
                           <option value="ends_with">Ends With</option>
                           <option value="context_match">Contextually Contains</option>
-                          <option value="greater_than">Greater Than</option>
-                          <option value="less_than">Less Than</option>
-                          <option value="equals">Equals</option>
-
+                          <option value="greater_than">Greater than</option>
+                          <option value="less_than">Less than</option>
 
                         </select>
                         <input type="text" value={phrases[rowIndex][conditionIndex] || ''} onChange={(e) => handlePhraseChange(rowIndex, conditionIndex, e.target.value)} placeholder="Enter phrase" />

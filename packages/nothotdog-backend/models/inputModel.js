@@ -517,10 +517,6 @@ class InputModel {
             );
             details = `Checked if ${normalizedActualValue} contains: "${normalizedExpectedValue}"`;
             break;
-          case "exact_match":
-            passed = normalizedActualValue === normalizedExpectedValue;
-            details = `Checked if ${normalizedActualValue} exactly matches: "${normalizedExpectedValue}"`;
-            break;
           case "starts_with":
             passed = String(normalizedActualValue).startsWith(
               String(normalizedExpectedValue),

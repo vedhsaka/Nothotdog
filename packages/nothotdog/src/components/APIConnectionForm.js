@@ -155,7 +155,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
       updatedEvaluations[existingEvalIndex].value = value;
       setEvaluations(updatedEvaluations);
     } else {
-      setEvaluations([...evaluations, { key, rule: 'Exact Match', value }]);
+      setEvaluations([...evaluations, { key, rule: 'equals', value }]);
     }
   };
 
@@ -369,13 +369,13 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
               value={evaluation.rule}
               onChange={(e) => updateEvaluation(index, 'rule', e.target.value)}
             >
-              <option value="Exact Match">Exact Match</option>
-              <option value="Contains">Contains</option>
-              <option value="Begins With">Begins With</option>
-              <option value="Ends With">Ends With</option>
-              <option value="Word Count">Word Count</option>
-              <option value="Contextually Contains">Contextually Contains</option>
-              <option value="Less Than">Less Than</option>
+              <option value="equals">Equals</option>
+              <option value="contains">Contains</option>
+              <option value="starts_with">Begins With</option>
+              <option value="ends_with">Ends With</option>
+              <option value="context_match">Contextually Contains</option>
+              <option value="greater_than">Greater than</option>
+              <option value="less_than">Less than</option>
             </select>
             <input
               type="text"
@@ -386,7 +386,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
             <button onClick={() => removeEvaluation(index)}>Remove</button>
           </div>
         ))}
-        <button onClick={() => setEvaluations([...evaluations, { key: '', rule: 'Exact Match', value: '' }])}>
+        <button onClick={() => setEvaluations([...evaluations, { key: '', rule: 'equals', value: '' }])}>
           Add Evaluation
         </button>
       </div>

@@ -174,13 +174,13 @@ const ConversationRow = React.forwardRef(({
               value={evaluation || 'equals'} 
               onChange={(e) => handleEvaluationChange(conditionIndex, e.target.value)}
             >
-              <option value="equals">Exact Match</option>
+              <option value="equals">Equals</option>
               <option value="contains">Contains</option>
               <option value="starts_with">Begins With</option>
               <option value="ends_with">Ends With</option>
-              <option value="word_count">Word Count</option>
               <option value="context_match">Contextually Contains</option>
-              <option value="less_than">Less Than</option>
+              <option value="greater_than">Greater than</option>
+              <option value="less_than">Less than</option>
             </select>
             <input 
               type="text" 
