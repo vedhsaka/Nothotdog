@@ -20,7 +20,7 @@ NotHotDog is an open-source testing framework designed to evaluate and validate 
 
 ## Getting Started
 
-To get started with NotHotDog, please refer to our [User Guide](docs/user-guide.md).
+To get started with NotHotDog, please refer to our [User Guide](docs/USER_GUIDE.md).
 
 ## Documentation
 

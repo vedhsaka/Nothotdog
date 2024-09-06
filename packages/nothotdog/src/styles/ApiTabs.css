@@ -7,14 +7,14 @@
 .tab-bar {
   display: flex;
   background-color: #f1f1f1;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 0.063rem solid #ddd;
   overflow-x: auto;
 }
 
 .tab {
-  padding: 10px 20px;
+  padding: 0.625rem 1.25rem;
   cursor: pointer;
-  border-right: 1px solid #ddd;
+  border-right: 0.063rem solid #ddd;
   background-color: #e9e9e9;
   position: relative;
   white-space: nowrap;
@@ -22,15 +22,15 @@
 
 .tab.active {
   background-color: #fff;
-  border-bottom: 2px solid #007bff;
+  border-bottom: 0.125rem solid #007bff;
 }
 
 .close-tab {
   background: none;
   border: none;
   color: #999;
-  font-size: 16px;
-  margin-left: 10px;
+  font-size: 1rem;
+  margin-left: 0.625rem;
   cursor: pointer;
 }
 
@@ -39,11 +39,11 @@
 }
 
 .add-tab {
-  padding: 10px 20px;
+  padding: 0.625rem 1.25rem;
   background-color: #f1f1f1;
   border: none;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 .add-tab:hover {
@@ -52,6 +52,6 @@
 
 .tab-content {
   flex-grow: 1;
-  padding: 20px;
+  padding: 1.25rem;
   overflow-y: auto;
 }

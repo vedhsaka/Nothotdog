@@ -1,249 +1,248 @@
 /* ApiConnections.css */
 
 .api-request-form {
-    font-family: 'Arial', sans-serif;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #f5f5f5;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .request-line {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  
-  .method-select {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #fff;
-    font-size: 14px;
-  }
-  
-  .url-input {
-    flex-grow: 1;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
-  }
-  
-  .send-button {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: background-color 0.3s;
-  }
-  
-  .send-button:hover {
-    background-color: #45a049;
-  }
-  
-  .send-button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-  }
-  
+  font-family: "Arial", sans-serif;
+  margin: 0 auto;
+  padding: 1.25rem;
+  background-color: #f5f5f5;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+}
+
+.request-line {
+  display: flex;
+  gap: 0.625rem;
+  margin-bottom: 1.25rem;
+}
+
+.method-select {
+  padding: 0.625rem;
+  border: 0.063rem solid #ccc;
+  border-radius: 0.25rem;
+  background-color: #fff;
+  font-size: 0.875rem;
+}
+
+.url-input {
+  flex-grow: 1;
+  padding: 0.625rem;
+  border: 0.063rem solid #ccc;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.send-button {
+  padding: 0.625rem 1.25rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.313rem;
+  transition: background-color 0.3s;
+}
+
+.send-button:hover {
+  background-color: #45a049;
+}
+
+.send-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.form-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.section {
+  background-color: #ffffff;
+  padding: 0.313rem;
+  border-radius: 0.25rem;
+}
+
+.section h3 {
+  margin: 0 0 10.313rem 20.313rem;
+  font-size: 1rem;
+  color: #333;
+}
+
+.input-group {
+  display: flex;
+  gap: 0.625rem;
+  margin-bottom: 0.625rem;
+}
+
+.input {
+  flex-grow: 1;
+  padding: 0.5rem;
+  border: 0.063rem solid #ddd;
+  border-radius: 0.25rem;
+  font-size: 10.25rem;
+}
+
+.add-button {
+  background-color: #f0f0f0;
+  border: 0.063rem solid #ddd;
+  border-radius: 0.25rem;
+  padding: 0.5rem 10.125rem;
+  font-size: 10.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.313rem;
+  transition: background-color 0.3s;
+  margin-left: 20.313rem;
+}
+
+.add-button:hover {
+  background-color: #e0e0e0;
+}
+
+.body-textarea {
+  width: 95%;
+  height: 9.375rem;
+  padding: 0.5rem;
+  border: 0.063rem solid #ddd;
+  border-radius: 0.25rem;
+  font-size: 10.25rem;
+  resize: vertical;
+}
+
+.response-section {
+  grid-column: 1 / -1;
+  margin-top: 1.25rem;
+}
+
+.status {
+  font-weight: bold;
+  margin-bottom: 0.625rem;
+}
+
+.response-details {
+  background-color: #f9f9f9;
+  border: 0.063rem solid #ddd;
+  border-radius: 0.25rem;
+  padding: 0.625rem;
+}
+
+.response-details h4 {
+  margin-top: 0.625rem;
+  margin-bottom: 0.313rem;
+  font-size: 10.25rem;
+  color: #333;
+}
+
+.response-details pre {
+  background-color: #fff;
+  border: 0.063rem solid #eee;
+  border-radius: 0.25rem;
+  padding: 0.625rem;
+  overflow-x: auto;
+  font-size: 10.125rem;
+}
+.error {
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+/* New styles for side-by-side key-value pairs */
+.params-section .input-group,
+.headers-section .input-group {
+  display: flex;
+  gap: 0.625rem;
+  padding: 10.313rem !important;
+  margin: 0.625rem auto 0.625rem 20.313rem;
+  flex-direction: row;
+}
+
+.params-section .input,
+.headers-section .input {
+  flex: 1;
+  min-width: 0; /* Allows flex items to shrink below their minimum content size */
+}
+.api-form .params-section .input,
+.api-form .headers-section .input {
+  width: 40%;
+  margin: 0.625rem;
+}
+.key {
+  width: 30%;
+}
+.value {
+  width: 55%;
+}
+.api-form .input-group {
+  flex-direction: row;
+  width: 80%;
+}
+
+@media (max-width: 760.5rem) {
   .form-sections {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: 1fr;
   }
-  
-  .section {
-    background-color: #ffffff;
-    padding: 5px;
-    border-radius: 4px;
-  }
-  
-  .section h3 {
-    margin: 0 0 15px 25px;
-    font-size: 16px;
-    color: #333;
-  }
-  
-  .input-group {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  
-  .input {
-    flex-grow: 1;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-  }
-  
-  .add-button {
-    background-color: #f0f0f0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 8px 12px;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: background-color 0.3s;
-    margin-left: 25px;
-  }
-  
-  .add-button:hover {
-    background-color: #e0e0e0;
-  }
-  
-  .body-textarea {
-    width: 95%;
-    height: 150px;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    resize: vertical;
-  }
-  
-  .response-section {
-    grid-column: 1 / -1;
-    margin-top: 20px;
-  }
-  
-  .status {
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-  
-  .response-details {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 10px;
-  }
-  
-  .response-details h4 {
-    margin-top: 10px;
-    margin-bottom: 5px;
-    font-size: 14px;
-    color: #333;
-  }
-  
-  .response-details pre {
-    background-color: #fff;
-    border: 1px solid #eee;
-    border-radius: 4px;
-    padding: 10px;
-    overflow-x: auto;
-    font-size: 12px;
-  }
-  .error {
-    color: #d32f2f;
-    font-weight: bold;
-  }
-  
-  /* New styles for side-by-side key-value pairs */
+
   .params-section .input-group,
   .headers-section .input-group {
-    display: flex;
-    gap: 10px;
-    padding: 15px !important;
-    margin: 10px auto 10px 25px;
-    flex-direction: row;
+    flex-direction: column;
   }
-  
-  .params-section .input,
-  .headers-section .input {
-    flex: 1;
-    min-width: 0; /* Allows flex items to shrink below their minimum content size */
-  }
-  .api-form .params-section .input, .api-form .headers-section .input {
-    width: 40%;
-    margin: 10px;
-  }
-  .key {
-    width: 30%;
-  }
-  .value {
-    width: 55%;
-  }
-  .api-form .input-group {
-    flex-direction: row;
-    width: 80%;
-  }
+}
 
-  
-  @media (max-width: 768px) {
-    .form-sections {
-      grid-template-columns: 1fr;
-    }
-    
-    .params-section .input-group,
-    .headers-section .input-group {
-      flex-direction: column;
-    }
-  }
+.response-line {
+  position: relative;
+}
 
-  .response-line {
-    position: relative;
-  }
-  
-  .set-output-btn {
-    position: absolute;
-    right: 10px;
-    display: none;
-  }
-  
-  .json-line:hover .set-output-btn {
-    display: inline;
-  }
-  
+.set-output-btn {
+  position: absolute;
+  right: 0.625rem;
+  display: none;
+}
 
-  /* css/ApiConnections.css */
+.json-line:hover .set-output-btn {
+  display: inline;
+}
+
+/* css/ApiConnections.css */
 
 .api-request-form {
-  padding: 20px;
+  padding: 1.25rem;
   background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin: 40px auto;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+  margin: 2.5rem auto;
 }
 
 .request-line {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
 }
 
 .method-select,
 .url-input,
 .send-button {
-  margin-right: 10px;
+  margin-right: 0.625rem;
 }
 
 .method-select,
 .url-input {
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border: 0.063rem solid #ccc;
 }
 
 .send-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 16px;
+  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   background-color: #007bff;
   color: white;
   cursor: pointer;
@@ -255,57 +254,57 @@
 
 .tabs {
   display: flex;
-  border-bottom: 1px solid #ccc;
-  margin-bottom: 20px;
+  border-bottom: 0.063rem solid #ccc;
+  margin-bottom: 1.25rem;
 }
 
 .tab {
-  padding: 10px 20px;
+  padding: 0.625rem 1.25rem;
   cursor: pointer;
-  border: 1px solid #ccc;
+  border: 0.063rem solid #ccc;
   border-bottom: none;
   background-color: #f9f9f9;
-  margin-right: 5px;
+  margin-right: 0.313rem;
 }
 
 .tab.active {
   background-color: white;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
-  border-bottom: 1px solid white;
+  border-top-left-radius: 0.25rem;
+  border-top-right-radius: 0.25rem;
+  border-bottom: 0.063rem solid white;
   font-weight: bold;
 }
 
 .tab-content {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 0 0 4px 4px;
+  padding: 0.625rem;
+  border: 0.063rem solid #ccc;
+  border-radius: 0 0 0.25rem 0.25rem;
   background-color: white;
 }
 
 .section {
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
 }
 
 .input-group {
   display: flex;
-  margin-bottom: 10px;
+  margin-bottom: 0.625rem;
 }
 
 .input-group .input {
   flex: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  margin-right: 10px;
+  padding: 0.5rem;
+  border: 0.063rem solid #ccc;
+  border-radius: 0.25rem;
+  margin-right: 0.625rem;
 }
 
 .add-button {
   display: flex;
   align-items: center;
-  padding: 8px 16px;
+  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   background-color: #007bff;
   color: white;
   cursor: pointer;
@@ -313,21 +312,21 @@
 
 .body-textarea {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  min-height: 100px;
+  padding: 0.625rem;
+  border: 0.063rem solid #ccc;
+  border-radius: 0.25rem;
+  min-height: 6.25rem;
 }
 
 .response-section {
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 1.25rem;
+  border: 0.063rem solid #ccc;
+  border-radius: 0.25rem;
   background-color: #f9f9f9;
 }
 
 .response-details {
-  margin-top: 10px;
+  margin-top: 0.625rem;
 }
 
 .response-line {
@@ -344,10 +343,10 @@
 
 .set-output-btn {
   display: none;
-  margin-left: 10px;
-  padding: 2px 8px;
+  margin-left: 0.625rem;
+  padding: 0.125rem 0.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   background-color: #007bff;
   color: white;
   cursor: pointer;
@@ -358,14 +357,13 @@
   border: none;
   color: #dc3545;
   cursor: pointer;
-  padding: 5px;
-  margin-left: 5px;
+  padding: 0.313rem;
+  margin-left: 0.313rem;
 }
 
 .remove-button:hover {
   color: #bd2130;
 }
-
 
 .json-response {
   font-family: monospace;
@@ -375,7 +373,7 @@
 
 .json-line {
   position: relative;
-  padding-left: 20px;
+  padding-left: 1.25rem;
 }
 
 .json-key {
@@ -383,11 +381,11 @@
 }
 
 .json-value {
-  color: #1A1A1A;
+  color: #1a1a1a;
 }
 
 .json-nested {
-  padding-left: 20px;
+  padding-left: 1.25rem;
 }
 
 .set-output-btn {
@@ -399,7 +397,7 @@
   background-color: #007bff;
   color: white;
   border: none;
-  padding: 2px 5px;
+  padding: 0.125rem 0.313rem;
   font-size: 1em;
   cursor: pointer;
 }
