@@ -20,7 +20,7 @@
     border: 1px solid #ccc;
     border-radius: 4px;
     background-color: #fff;
-    font-size: 14px;
+    font-size: 1em;
   }
   
   .url-input {
@@ -28,7 +28,7 @@
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 1em;
   }
   
   .send-button {
