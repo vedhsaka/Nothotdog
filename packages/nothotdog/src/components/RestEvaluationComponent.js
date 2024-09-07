@@ -294,10 +294,10 @@ const RestEvaluationComponent = () => {
         content: JSON.stringify(tab.api?.body || {}),
         projectId,
         groupId: selectedGroupId || null,
-        checks: (tab.conversation.evaluations || []).map((evaluation, idx) => ({
-            field: tab.conversation.outputKeys?.[idx] || '',
-            rule: evaluation || 'exact_match',
-            value: tab.conversation.phrases?.[idx] || '',
+        checks: tab.conversation.evaluations.map(evaluation => ({
+          field: evaluation.key,
+          rule: evaluation.rule,
+          value: evaluation.value
         })),
         url: tab.api?.url || '',
         apiType: "REST",
@@ -344,7 +344,7 @@ const RestEvaluationComponent = () => {
   
     try {
       const checks = evaluations.map((evaluation, idx) => ({
-        field: tab.conversation.outputKeys[idx] || '',
+        field: evaluation.key,
         rule: evaluation.rule,
         value: evaluation.value
       }));

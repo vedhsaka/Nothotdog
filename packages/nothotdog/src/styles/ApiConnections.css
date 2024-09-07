@@ -365,8 +365,15 @@
 .remove-button:hover {
   color: #bd2130;
 }
-
-
+.evaluation-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.evaluation-row input, .evaluation-row select {
+  border: 1px solid silver;
+  border-radius: 4px;
+}
 .json-response {
   font-family: monospace;
   white-space: pre-wrap;
