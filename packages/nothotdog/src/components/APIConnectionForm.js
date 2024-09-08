@@ -383,13 +383,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
               onChange={(e) => updateEvaluation(index, 'value', e.target.value)}
               placeholder="Expected Value"
             />
-
-            <div> {evaluation.passed} </div>
-            {evaluation.passed !== undefined && (
-              <span className={`evaluation-result ${evaluation.passed ? 'passed' : 'failed'}`}>
-                {evaluation.passed ? 'Passed' : 'Failed'}
-              </span>
-            )}
+            <div className="evaluation-result">{evaluation.passed !== undefined ? (evaluation.passed ? '✅' : '❌') : ''}</div>
             <button onClick={() => removeEvaluation(index)}>Remove</button>
           </div>
         ))}
