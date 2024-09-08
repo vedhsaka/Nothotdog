@@ -85,6 +85,7 @@ const ApiTabs = ({
               onFullApiResponse={(fullResponse) => handleApiResponse(activeTabIndex, fullResponse)}
               handleApiChange={(field, value) => handleApiChange(activeTabIndex, field, value)}
               evaluations={tabs[activeTabIndex].conversation.evaluations}
+              testResult={tabs[activeTabIndex].conversation.result}
               setEvaluations={(newEvaluations) => {
                 const newTabs = [...tabs];
                 newTabs[activeTabIndex].conversation.evaluations = newEvaluations;
