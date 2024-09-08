@@ -367,8 +367,6 @@ const RestEvaluationComponent = () => {
           newTabs[tabIndex].conversation.result = response.test_result;
           return newTabs;
         });
-        
-        alert(`Evaluation complete. Result: ${response.test_result}`);
       } else {
         alert('Failed to evaluate the test');
       }
