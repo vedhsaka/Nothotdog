@@ -20,25 +20,51 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('params');
 
-  useEffect(() => {
-    handleApiChange('method', method);
-  }, [method, handleApiChange]);
+  // useEffect(() => {
+  //   handleApiChange('method', method);
+  // }, [method, handleApiChange]);
 
-  useEffect(() => {
-    handleApiChange('url', url);
-  }, [url, handleApiChange]);
+  // useEffect(() => {
+  //   handleApiChange('url', url);
+  // }, [url, handleApiChange]);
 
-  useEffect(() => {
-    handleApiChange('queryParams', params);
-  }, [params, handleApiChange]);
+  // useEffect(() => {
+  //   handleApiChange('queryParams', params);
+  // }, [params, handleApiChange]);
 
-  useEffect(() => {
-    handleApiChange('headers', headers);
-  }, [headers, handleApiChange]);
+  // useEffect(() => {
+  //   handleApiChange('headers', headers);
+  // }, [headers, handleApiChange]);
 
-  useEffect(() => {
-    handleApiChange('body', body);
-  }, [body, handleApiChange]);
+  // useEffect(() => {
+  //   handleApiChange('body', body);
+  // }, [body, handleApiChange]);
+
+
+  const updateMethod = (newMethod) => {
+    setMethod(newMethod);
+    handleApiChange('method', newMethod);
+  };
+
+  const updateUrl = (newUrl) => {
+    setUrl(newUrl);
+    handleApiChange('url', newUrl);
+  };
+
+  const updateParams = (newParams) => {
+    setParams(newParams);
+    handleApiChange('queryParams', newParams);
+  };
+
+  const updateHeaders = (newHeaders) => {
+    setHeaders(newHeaders);
+    handleApiChange('headers', newHeaders);
+  };
+
+  const updateBody = (newBody) => {
+    setBody(newBody);
+    handleApiChange('body', newBody);
+  };
 
   const addParam = () => setParams([...params, { key: '', value: '' }]);
   const addHeader = () => setHeaders([...headers, { key: '', value: '' }]);
@@ -56,13 +82,13 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
   const updateParam = (index, field, value) => {
     const newParams = [...params];
     newParams[index] = { ...newParams[index], [field]: value };
-    setParams(newParams);
+    updateParams(newParams);
   };
 
   const updateHeader = (index, field, value) => {
     const newHeaders = [...headers];
     newHeaders[index] = { ...newHeaders[index], [field]: value };
-    setHeaders(newHeaders);
+    updateHeaders(newHeaders);
   };
 
   const sendRequest = async () => {
@@ -217,7 +243,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
   return (
     <div className="api-request-form">
       <div className="request-line">
-        <select className="method-select" value={method} onChange={(e) => setMethod(e.target.value)}>
+        <select className="method-select" value={method} onChange={(e) => updateMethod(e.target.value)}>
           <option>GET</option>
           <option>POST</option>
           <option>PUT</option>
@@ -228,7 +254,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
           type="text"
           className="url-input"
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          onChange={(e) => updateUrl(e.target.value)}
           placeholder="Enter URL"
         />
         <button className="send-button" onClick={sendRequest} disabled={isLoading}>
