@@ -44,6 +44,7 @@ exports.getGroups = async (req, res) => {
   }
 };
 
+
 exports.updateGroup = async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
@@ -66,6 +67,53 @@ exports.updateGroup = async (req, res) => {
       stack: error.stack 
     });
     res.status(500).json({ message: 'Error updating group', error: error.message });
+  }
+};
+
+exports.reorderInputs = async (req, res) => {
+  const { id } = req.params;
+  const { inputs } = req.body;
+  const userId = req.get("userId");
+
+  logger.info('Reorder inputs attempt', { userId, groupid: id });
+
+  try {
+    const group = await GroupModel.getGroup(id);
+    if (!group) {
+      logger.warn('Group not found', { userId, groupUuid: id });
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    const reorderedInputs = await GroupModel.reorderInputs(group.id, inputs);
+    
+    logger.info('Inputs reordered successfully', { 
+      userId, 
+      groupUuid: id, 
+      groupId: group.id, 
+      updatedCount: reorderedInputs.length,
+      totalInputs: inputs.length
+    });
+
+    if (reorderedInputs.length < inputs.length) {
+      res.status(207).json({ 
+        message: 'Some inputs were reordered successfully', 
+        data: reorderedInputs,
+        warning: `${inputs.length - reorderedInputs.length} inputs failed to update`
+      });
+    } else {
+      res.status(200).json({ 
+        message: 'All inputs reordered successfully', 
+        data: reorderedInputs 
+      });
+    }
+  } catch (error) {
+    logger.error('Error reordering inputs', {
+      userId,
+      groupUuid: id,
+      error: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ message: 'Error reordering inputs', error: error.message });
   }
 };
 

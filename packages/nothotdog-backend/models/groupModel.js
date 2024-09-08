@@ -39,6 +39,25 @@ class GroupModel {
     }
   }
 
+  static async getGroup(uuid) {
+    logger.info('Fetching group by UUID', { uuid });
+    try {
+      const { data, error } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('uuid', uuid)
+        .single();
+
+      if (error) throw error;
+
+      logger.info('Group fetched successfully', { uuid, groupId: data.id });
+      return data;
+    } catch (error) {
+      logger.error('Error fetching group by UUID', { uuid, error: error.message, stack: error.stack });
+      throw error;
+    }
+  }
+
   static async updateGroup(groupId, name) {
     logger.info('Updating group', { groupId, newName: name });
     try {
@@ -76,6 +95,49 @@ class GroupModel {
       throw error;
     }
   }
+
+  static async reorderInputs(groupId, inputs) {
+    logger.info('Reordering inputs in group', { groupId });
+    try {
+      const updates = inputs.map(input => 
+        supabase
+          .from('collections')
+          .update({ sequence: input.sequence })
+          .eq('uuid', input.uuid)
+          .eq('group_id', groupId)
+          .select()
+      );
+
+      const results = await Promise.all(updates);
+
+      // Filter out any failed updates and log them
+      const successfulUpdates = results.filter((result, index) => {
+        if (result.error || !result.data || result.data.length === 0) {
+          logger.warn('Failed to update input', { 
+            groupId, 
+            inputUuid: inputs[index].uuid, 
+            error: result.error ? result.error.message : 'No data returned'
+          });
+          return false;
+        }
+        return true;
+      });
+
+      const updatedInputs = successfulUpdates.map(result => result.data[0]);
+
+      logger.info('Inputs reordered successfully', { 
+        groupId, 
+        updatedCount: updatedInputs.length,
+        totalInputs: inputs.length
+      });
+
+      return updatedInputs;
+    } catch (error) {
+      logger.error('Error reordering inputs', { groupId, error: error.message, stack: error.stack });
+      throw error;
+    }
+  }
+
 
   static async deleteGroup(groupId) {
     logger.info('Deleting group', { groupId });

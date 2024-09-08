@@ -22,7 +22,9 @@ router.post('/remove-user-from-project', projectController.removeUserFromProject
 router.post('/groups', groupController.createGroup);
 router.get('/groups/:project_id', groupController.getGroups);
 router.put('/groups/:id', groupController.updateGroup);
+router.put('/groups/:id/reorder', groupController.reorderInputs);
 router.delete('/groups/:id', groupController.deleteGroup);
+
 
 
 router.post('/inputs', inputController.saveInput); // Note the correction here
