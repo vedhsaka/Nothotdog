@@ -156,9 +156,11 @@
   .headers-section .input-group {
     display: flex;
     gap: 10px;
-    padding: 15px !important;
-    margin: 10px auto 10px 25px;
+    padding: 8px !important;
+    margin: 10px;
     flex-direction: row;
+    width: 80%;
+    box-shadow: none;
   }
   
   .params-section .input,
@@ -413,4 +415,8 @@
 
 .json-line:hover > .set-output-btn {
   display: inline-block;
+}
+.tab-actions {
+  display: flex;
+  gap: 15px;
 }
