@@ -3,7 +3,7 @@ import { Send, Loader, Plus, X } from 'lucide-react';
 import './../styles/ApiConnections.css';
 import axios from 'axios';
 
-const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues, handleApiChange, evaluations, setEvaluations }) => {
+const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues, handleApiChange, evaluations, setEvaluations, testResult }) => {
   const [method, setMethod] = useState(initialValues?.method || 'GET');
   const [url, setUrl] = useState(initialValues?.url || '');
   const [params, setParams] = useState(initialValues?.queryParams || [{ key: '', value: '' }]);
@@ -383,9 +383,17 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
               onChange={(e) => updateEvaluation(index, 'value', e.target.value)}
               placeholder="Expected Value"
             />
+            <div className="evaluation-result">{evaluation.passed !== undefined ? (evaluation.passed ? '✅' : '❌') : ''}</div>
             <button onClick={() => removeEvaluation(index)}>Remove</button>
           </div>
         ))}
+
+        {testResult && (
+          <div className={`evaluation-result ${testResult === 'pass' ? 'pass' : 'fail'}`}>
+           Test Result: {testResult.toUpperCase()}
+          </div> 
+        )}
+      
         <button onClick={() => setEvaluations([...evaluations, { key: '', rule: 'equals', value: '' }])}>
           Add Evaluation
         </button>

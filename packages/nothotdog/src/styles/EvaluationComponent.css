@@ -179,18 +179,29 @@
   text-align: center;
 }
 
-.result-indicator.pass {
+.pass {
   padding: 7px 10px;
   background-color: rgb(211, 240, 228);
   color: rgb(76, 175, 80);
   border: 1px solid green;
+  width: 80px;
+  margin: 10px 0;
+  width: max-content;
+  margin: 10px 0;
+  border-radius: 4px;
+  font-size: 12px;
+
 }
 
-.result-indicator.fail {
+.fail {
   padding: 7px 10px;
   background-color: rgb(253, 220, 222);
   color: maroon;
   border: 1px solid red;
+  width: max-content;
+  margin: 10px 0;
+  border-radius: 4px;
+  font-size: 12px;
 }
 
 audio {

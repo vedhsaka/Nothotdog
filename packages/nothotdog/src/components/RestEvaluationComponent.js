@@ -75,7 +75,8 @@ const RestEvaluationComponent = () => {
       evaluations: input.checks ? input.checks.map(check => ({
         key: check.field,
         rule: check.rule,
-        value: check.value
+        value: check.value,
+        passed: check.passed || null
       })) : [],
       outputKeys: input.checks ? input.checks.map(check => check.field) : [],
       outputValues: input.checks ? input.checks.map(check => check.value) : [],
@@ -346,7 +347,8 @@ const RestEvaluationComponent = () => {
       const checks = evaluations.map((evaluation, idx) => ({
         field: evaluation.key,
         rule: evaluation.rule,
-        value: evaluation.value
+        value: evaluation.value,
+        passed: evaluation.passed || null
       }));
   
       const response = await authFetch('api/test-inputs', {
@@ -365,10 +367,14 @@ const RestEvaluationComponent = () => {
         setTabs(prevTabs => {
           const newTabs = [...prevTabs];
           newTabs[tabIndex].conversation.result = response.test_result;
+           // Update the passed field based on the new evaluation result
+          newTabs[tabIndex].conversation.evaluations = newTabs[tabIndex].conversation.evaluations.map((evaluation, idx) => ({
+            ...evaluation,
+            passed: response.checks[idx].passed  // Set the passed status here
+          }));
+          console.log(newTabs[tabIndex].conversation);
           return newTabs;
         });
-        
-        alert(`Evaluation complete. Result: ${response.test_result}`);
       } else {
         alert('Failed to evaluate the test');
       }
