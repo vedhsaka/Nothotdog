@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import '../styles/TestGroupSideBar.css';
-import { SignInModal } from './UtilityModals'; // Ensure SignInModal is correctly imported
+import { SignInModal } from './UtilityModals';
 import useAuthFetch from '../hooks/AuthFetch';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-
+import { useNavigate } from 'react-router-dom';
 
 const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroupSelect, componentType }) => {
-  const { signIn, userId } = useAuth(); // Access signIn and userId function
-  const { authFetch, showSignInModal, setShowSignInModal } = useAuthFetch(); // Destructure showSignInModal and setShowSignInModal
+  const { signIn, userId } = useAuth();
+  const { authFetch, showSignInModal, setShowSignInModal } = useAuthFetch();
   const [voiceData, setVoiceData] = useState([]);
   const [expandedGroups, setExpandedGroups] = useState({});
   const [showAddGroup, setShowAddGroup] = useState(false);
   const [newGroupDescription, setNewGroupDescription] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate(); // Initialize useNavigate hook
-
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (userId) {
@@ -50,37 +49,35 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
       [groupId]: !prev[groupId]
     }));
   };
+
   const handleTextGroupClick = (group) => {
     const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
 
-    // Disable clicking for text groups in EvaluationComponent and for voice groups in RestEvaluationComponent
     if ((componentType === 'voice' && groupType === 'text')) {
       navigate('/text-evaluation', { state: { selectedGroup: group } });
-
-      return; // Do nothing if the group type should be disabled
+      return;
     }
     if (group.inputs && group.inputs.length > 0) {
-        onTextGroupSelect(group);
+      onTextGroupSelect(group);
     }
-};
+  };
 
-const handleGroupClick = (group) => {
-  const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
+  const handleGroupClick = (group) => {
+    const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
 
-  if (componentType === 'text' && groupType === 'voice') {
-    // Navigate to RestEvaluationComponent and pass the group as state
-    navigate('/voice-evaluation', { state: { selectedGroup: group } });
-    return;
-  }
+    if (componentType === 'text' && groupType === 'voice') {
+      navigate('/voice-evaluation', { state: { selectedGroup: group } });
+      return;
+    }
 
-  if (groupType === 'text') {
-    handleTextGroupClick(group);
-  } else {
-    onGroupSelect(group);
-  }
+    if (groupType === 'text') {
+      handleTextGroupClick(group);
+    } else {
+      onGroupSelect(group);
+    }
 
-  toggleGroup(group.uuid);
-};
+    toggleGroup(group.uuid);
+  };
 
   const handleInputClick = (input) => {
     onInputSelect(input);
@@ -113,7 +110,7 @@ const handleGroupClick = (group) => {
       if (response.data) {
         setNewGroupDescription('');
         setShowAddGroup(false);
-        fetchVoiceData(); // Refresh the list of groups
+        fetchVoiceData();
       } else {
         alert('Failed to create new group. Please try again.');
       }
@@ -123,40 +120,99 @@ const handleGroupClick = (group) => {
     }
   };
 
-  const renderInputs = (inputs) => {
-    return inputs.map(input => (
-      <li key={input.uuid} className="voice-item" onClick={() => handleInputClick(input)}>
-        {input.description || input.file_name || input.text_content}
-      </li>
-    ));
+  const onDragEnd = async (result) => {
+    const { source, destination } = result;
+
+    if (!destination) {
+      return;
+    }
+
+    const sourceGroupId = source.droppableId;
+    const destGroupId = destination.droppableId;
+
+    if (sourceGroupId !== destGroupId) {
+      return;
+    }
+
+    const newVoiceData = [...voiceData];
+    const projectIndex = newVoiceData.findIndex(project => 
+      project.groups.some(group => group.uuid === sourceGroupId)
+    );
+    const groupIndex = newVoiceData[projectIndex].groups.findIndex(group => group.uuid === sourceGroupId);
+    const group = newVoiceData[projectIndex].groups[groupIndex];
+    
+    const [reorderedItem] = group.inputs.splice(source.index, 1);
+    group.inputs.splice(destination.index, 0, reorderedItem);
+
+    setVoiceData(newVoiceData);
+
+    // Save the new order
+    try {
+      await authFetch(`api/groups/${sourceGroupId}/reorder`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'userId': userId
+        },
+        body: JSON.stringify({
+          inputs: group.inputs.map((input, index) => ({
+            uuid: input.uuid,
+            sequence: index + 1
+          }))
+        })
+      });
+    } catch (error) {
+      console.error('Error saving new sequence:', error);
+      alert('Failed to save the new order. Please try again.');
+    }
   };
+
+  const renderInputs = (inputs, groupId) => (
+    <Droppable droppableId={groupId}>
+      {(provided) => (
+        <ul {...provided.droppableProps} ref={provided.innerRef} className={`voice-list ${expandedGroups[groupId] ? 'expanded' : ''}`}>
+          {inputs.map((input, index) => (
+            <Draggable key={input.uuid} draggableId={input.uuid} index={index}>
+              {(provided) => (
+                <li
+                  ref={provided.innerRef}
+                  {...provided.draggableProps}
+                  {...provided.dragHandleProps}
+                  className="voice-item"
+                  onClick={() => handleInputClick(input)}
+                >
+                  {input.description || input.file_name || input.text_content}
+                </li>
+              )}
+            </Draggable>
+          ))}
+          {provided.placeholder}
+        </ul>
+      )}
+    </Droppable>
+  );
 
   const renderGroups = (project) => {
     return project.groups.map(group => {
-        const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
-        return (
-            <li key={group.uuid} className="group-item">
-                <div className="group-header" onClick={() => {
-                    if (groupType === 'text') {
-                        handleTextGroupClick(group); // Handles text groups specifically
-                    } else {
-                        handleGroupClick(group); // Handles other group types
-                    }
-                    toggleGroup(group.uuid); // Ensure the group expands/collapses on click
-                }}>
-                    <span className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>▶</span>
-                    {group.name} ({groupType})
-                </div>
-                {expandedGroups[group.uuid] && (
-                    <ul className={`voice-list ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>
-                        {renderInputs(group.inputs)}
-                    </ul>
-                )}
-            </li>
-        );
+      const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
+      return (
+        <li key={group.uuid} className="group-item">
+          <div className="group-header" onClick={() => {
+            if (groupType === 'text') {
+              handleTextGroupClick(group);
+            } else {
+              handleGroupClick(group);
+            }
+            toggleGroup(group.uuid);
+          }}>
+            <span className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>▶</span>
+            {group.name} ({groupType})
+          </div>
+          {expandedGroups[group.uuid] && renderInputs(group.inputs, group.uuid)}
+        </li>
+      );
     });
-};
-
+  };
 
   const renderIndividualInputs = (project) => {
     return project.inputs.map(input => (
@@ -171,7 +227,7 @@ const handleGroupClick = (group) => {
   }
 
   if (error) {
-    return <div class="login-warning-message">{error}</div>;
+    return <div className="login-warning-message">{error}</div>;
   }
 
   return (
@@ -196,22 +252,24 @@ const handleGroupClick = (group) => {
           </div>
         </div>
       )}
-      {voiceData.map(project => (
-        <div key={project.uuid}>
-          <ul className="group-list">
-            {renderGroups(project)}
-          </ul>
-          <ul className="individual-voice-list">
-            {renderIndividualInputs(project)}
-          </ul>
-        </div>
-      ))}
+      <DragDropContext onDragEnd={onDragEnd}>
+        {voiceData.map(project => (
+          <div key={project.uuid}>
+            <ul className="group-list">
+              {renderGroups(project)}
+            </ul>
+            <ul className="individual-voice-list">
+              {renderIndividualInputs(project)}
+            </ul>
+          </div>
+        ))}
+      </DragDropContext>
 
       {showSignInModal && (
         <SignInModal
           showSignInModal={showSignInModal}
           setShowSignInModal={setShowSignInModal}
-          signIn={signIn} // Make sure signIn function is available
+          signIn={signIn}
         />
       )}
     </div>
