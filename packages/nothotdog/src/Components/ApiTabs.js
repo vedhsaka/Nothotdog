@@ -93,8 +93,8 @@ const ApiTabs = ({
               }}
             />
             <div className="tab-actions">
-              <button onClick={() => handleSave(activeTabIndex)}>Save</button>
-              <button onClick={() => handleEvaluate(activeTabIndex)}>Evaluate</button>
+              <button onClick={() => handleSave(activeTabIndex)} className="button primary">Save</button>
+              <button onClick={() => handleEvaluate(activeTabIndex)} className="button semi-primary">Evaluate</button>
             </div>
           </div>
         )}
