@@ -369,7 +369,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
         )}
       </div>
 
-      <div className="evaluations-section">
+      <div className="evaluations-section">        
         <h3>Evaluations</h3>
         {evaluations.map((evaluation, index) => (
           <div key={index} className="evaluation-row">
@@ -397,8 +397,11 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
               onChange={(e) => updateEvaluation(index, 'value', e.target.value)}
               placeholder="Expected Value"
             />
-            <div className="evaluation-result">{evaluation.passed !== undefined ? (evaluation.passed ? '✅' : '❌') : ''}</div>
+           
             <button onClick={() => removeEvaluation(index)}>Remove</button>
+            {(evaluation.passed == true || evaluation.passed == false) && (
+              <div className="evaluation-result">{(evaluation.passed ? '✅' : '❌')}</div>
+            )}
           </div>
         ))}
 
