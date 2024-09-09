@@ -20,25 +20,13 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('params');
 
-  // useEffect(() => {
-  //   handleApiChange('method', method);
-  // }, [method, handleApiChange]);
-
-  // useEffect(() => {
-  //   handleApiChange('url', url);
-  // }, [url, handleApiChange]);
-
-  // useEffect(() => {
-  //   handleApiChange('queryParams', params);
-  // }, [params, handleApiChange]);
-
-  // useEffect(() => {
-  //   handleApiChange('headers', headers);
-  // }, [headers, handleApiChange]);
-
-  // useEffect(() => {
-  //   handleApiChange('body', body);
-  // }, [body, handleApiChange]);
+  useEffect(() => {
+    setMethod(initialValues?.method || 'GET');
+    setUrl(initialValues?.url || '');
+    setParams(initialValues?.queryParams || [{ key: '', value: '' }]);
+    setHeaders(initialValues?.headers || [{ key: '', value: '' }]);
+    setBody(initialValues?.body || '{}');
+  }, [initialValues]);
 
 
   const updateMethod = (newMethod) => {
@@ -332,7 +320,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
             <textarea
               className="body-textarea"
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={(e) => updateBody(e.target.value)}
               placeholder="Enter request body (JSON)"
             />
           </div>
