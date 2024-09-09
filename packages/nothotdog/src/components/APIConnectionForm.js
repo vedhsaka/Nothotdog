@@ -6,8 +6,8 @@ import axios from 'axios';
 const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues, handleApiChange, evaluations, setEvaluations, testResult }) => {
   const [method, setMethod] = useState(initialValues?.method || 'GET');
   const [url, setUrl] = useState(initialValues?.url || '');
-  const [params, setParams] = useState(initialValues?.queryParams || [{ key: '', value: '' }]);
-  const [headers, setHeaders] = useState(initialValues?.headers || [{ key: '', value: '' }]);
+  const [params, setParams] = useState(Array.isArray(initialValues?.queryParams) ? initialValues.queryParams : [{ key: '', value: '' }]);
+  const [headers, setHeaders] = useState(Array.isArray(initialValues?.headers) ? initialValues.headers : [{ key: '', value: '' }]);
   const [body, setBody] = useState(() => {
     try {
       return JSON.stringify(JSON.parse(initialValues?.body || '{}'), null, 2);
@@ -82,25 +82,28 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
   const sendRequest = async () => {
     setIsLoading(true);
     setResponse(null);
-
+  
     try {
       const urlWithParams = new URL(url);
-      params.forEach((param) => {
-        if (param.key && param.value) {
-          urlWithParams.searchParams.append(param.key, param.value);
-        }
-      });
+      // Check if params is an array before calling forEach
+      if (Array.isArray(params)) {
+        params.forEach((param) => {
+          if (param.key && param.value) {
+            urlWithParams.searchParams.append(param.key, param.value);
+          }
+        });
+      }
 
       const requestConfig = {
         method: method,
         url: urlWithParams.toString(),
-        headers: headers.reduce((acc, header) => {
+        headers: Array.isArray(headers) ? headers.reduce((acc, header) => {
           if (header.key && header.value) {
             acc[header.key] = header.value;
           }
           return acc;
-        }, {}),
-      };
+        }, {}) : {}, // Fallback to an empty object if headers is not an array
+      };  
 
       if (['POST', 'PUT', 'PATCH'].includes(method)) {
         try {
@@ -153,25 +156,18 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
           statusText: error.response.statusText,
           headers: error.response.headers,
           body: error.response.data
-        } : {})
+        } : {}),
       });
     } finally {
       setIsLoading(false);
       setActiveTab('response');
     }
-  };
+  };  
 
   const handleSetOutputValue = (key, value) => {
     setOutputValue(key, value);
-    const existingEvalIndex = evaluations.findIndex(evaluations => evaluations.key === key);
-    if (existingEvalIndex !== -1) {
-      const updatedEvaluations = [...evaluations];
-      updatedEvaluations[existingEvalIndex].value = value;
-      setEvaluations(updatedEvaluations);
-    } else {
-      setEvaluations([...evaluations, { key, rule: 'equals', value }]);
-    }
-  };
+    setEvaluations([...evaluations, { key, rule: 'equals', value }]);
+  };  
 
   const updateEvaluation = (index, field, value) => {
     const updatedEvaluations = [...evaluations];
