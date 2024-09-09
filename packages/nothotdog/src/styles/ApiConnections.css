@@ -420,3 +420,40 @@
   display: flex;
   gap: 15px;
 }
+
+.message-container {
+    position: fixed;
+    top: 15%;
+    left: 0;
+    right: 0;
+    z-index: 100000;
+    margin: 0 auto;
+    padding: 10px 20px;
+    width: 30%;
+    text-align: center;
+}
+
+.api-error-message {
+  display: inline-flex;
+  border: 2px solid #fff;
+  border-radius: 12px;
+  font-weight: 400;
+  box-shadow: 0 4px 12px 0 #d7d5e2;
+  background-color: #feedee;
+}
+
+.success-message {
+    display: inline-flex;
+    border: 2px solid #fff;
+    border-radius: 12px;
+    font-weight: 400;
+    box-shadow: 0 4px 12px 0 #d7d5e2;
+    background-color: #edfef6;
+}
+.close-message {
+  right: 40px;
+  color: #000;
+  font-weight: 700;
+  cursor: pointer;
+  position: absolute
+}
