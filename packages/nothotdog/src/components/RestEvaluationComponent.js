@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import useAuthFetch from '../hooks/AuthFetch';
 import TestGroupSidebar from '../components/TestGroupSideBar';
 import { SaveTestModal, SignInModal } from './UtilityModals';
-import { useLocation } from 'react-router-dom';
+import { evaluateTest } from './TestEvaluationHandler';
 import ApiTabs from './ApiTabs';
 import useSaveTest from '../hooks/useSaveTest';
 
@@ -15,14 +15,6 @@ const RestEvaluationComponent = () => {
   const { user, signIn, projectId, userId } = useAuth();
   const { authFetch } = useAuthFetch();
   const [activeTabIndex, setActiveTabIndex] = useState(0);
-  // const [showSaveModal, setShowSaveModal] = useState(false);
-  // const [showSignInModal, setShowSignInModal] = useState(false);
-  // const [description, setDescription] = useState('');
-  // const [groupOptions, setGroupOptions] = useState([]);
-  // const [selectedGroupId, setSelectedGroupId] = useState('');
-  // const [currentSavingIndex, setCurrentSavingIndex] = useState(null);
-  // const location = useLocation();
-  // const [isUpdate, setIsUpdate] = useState(false);
   const [tabs, setTabs] = useState([createEmptyTab()]);
 
   const {
@@ -332,51 +324,36 @@ const RestEvaluationComponent = () => {
     const tab = tabs[tabIndex];
     const evaluations = tab.conversation.evaluations;
     const apiResponse = tab.apiResponse;
-  
+
     if (!apiResponse) {
       alert('No API response to evaluate. Please send a request first.');
       return;
     }
-  
     if (!evaluations || evaluations.length === 0) {
       alert('No evaluations to perform. Please add at least one evaluation.');
       return;
     }
-  
+
     try {
-      const checks = evaluations.map((evaluation, idx) => ({
+      const checks = evaluations.map((evaluation) => ({
         field: evaluation.key,
         rule: evaluation.rule,
         value: evaluation.value,
-        passed: evaluation.passed || null
       }));
-  
-      const response = await authFetch('api/test-inputs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          inputType: "text",
-          content: apiResponse.body,
-          checks: checks
-        }),
-      });
-  
-      if (response) {
+      const response = await evaluateTest(apiResponse.data, checks, "text", authFetch);
+
+      if (response && response.test_result) {
         setTabs(prevTabs => {
           const newTabs = [...prevTabs];
           newTabs[tabIndex].conversation.result = response.test_result;
-           // Update the passed field based on the new evaluation result
           newTabs[tabIndex].conversation.evaluations = newTabs[tabIndex].conversation.evaluations.map((evaluation, idx) => ({
             ...evaluation,
-            passed: response.checks[idx].passed  // Set the passed status here
+            passed: response.checks[idx].passed
           }));
-          console.log(newTabs[tabIndex].conversation);
           return newTabs;
         });
       } else {
-        alert('Failed to evaluate the test');
+        alert('Failed to evaluate the test or received unexpected response format');
       }
     } catch (error) {
       console.error('Error during evaluation:', error);

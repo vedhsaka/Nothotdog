@@ -12,6 +12,7 @@ import fetchTests from '../utils/fetchTests'; // Import fetchTests
 import TestGroupSidebar from '../components/TestGroupSideBar';
 import { SignInModal } from './UtilityModals';
 import { useLocation } from 'react-router-dom';
+import { evaluateTest } from './TestEvaluationHandler';
 
 
 import { 
@@ -586,56 +587,37 @@ const EvaluationComponent = () => {
 
   
   const handleEvaluate = async (index) => {
-    return new Promise(async (resolve, reject) => {
+    try {
       const evaluation = evaluations[index];
       const phrase = phrases[index];
       const outputAudioId = outputAudioData[index];
   
-      const outputAudioBlob = await getAudio(outputAudioId);
+      const checks = evaluation.map((evalType, idx) => ({
+        field: outputAudioId ? `audio_${outputAudioId}` : '',
+        rule: evalType,
+        value: phrase[idx],
+      }));
   
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Audio = reader.result.split(',')[1];
-        const checks = evaluation.map((evalType, idx) => ({
-          field: outputAudioId ? `audio_${outputAudioId}` : '', // You can customize this field name if needed
-          rule: evalType,
-          value: phrase[idx],
-        }));
+      const result = await evaluateTest(outputAudioId, checks, 'voice', authFetch);
   
-        const response = await authFetch('api/test-inputs', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            content: base64Audio,
-            checks,
-            inputType: "voice"
-          }),
-        });
+      setResults((prevResults) => {
+        const newResults = [...prevResults];
+        newResults[index] = result.test_result;
+        return newResults;
+      });
   
-        if (response) {
-          const result = await response;
-          setResults((prevResults) => {
-            const newResults = [...prevResults];
-            newResults[index] = result.test_result;
-            return newResults;
-          });
+      setCheckResults((prevCheckResults) => {
+        const newCheckResults = [...prevCheckResults];
+        newCheckResults[index] = result.checks;
+        return newCheckResults;
+      });
   
-          setCheckResults((prevCheckResults) => {
-            const newCheckResults = [...prevCheckResults];
-            newCheckResults[index] = result.checks;
-            return newCheckResults;
-          });
-          resolve(result.test_result); // Resolve with the test result
-        } else {
-          console.error('Failed to evaluate the test');
-          reject('FAIL'); // Reject with 'FAIL' if the evaluation fails
-        }
-      };
-      reader.readAsDataURL(outputAudioBlob);
-    });
-  };  
+      return result.test_result;
+    } catch (error) {
+      console.error('Failed to evaluate the test:', error);
+      return 'FAIL';
+    }
+  };
   
 
   const handlePhraseChange = useCallback((index, conditionIndex, value) => {

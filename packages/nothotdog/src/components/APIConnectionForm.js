@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Loader, Plus, X } from 'lucide-react';
 import './../styles/ApiConnections.css';
-import axios from 'axios';
+import { sendApiRequest } from './ApiRequestHandler';
 
 const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues, handleApiChange, evaluations, setEvaluations, testResult }) => {
   const [method, setMethod] = useState(initialValues?.method || 'GET');
@@ -82,78 +82,43 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
   const sendRequest = async () => {
     setIsLoading(true);
     setResponse(null);
-
+    
     try {
-      const urlWithParams = new URL(url);
-      params.forEach((param) => {
-        if (param.key && param.value) {
-          urlWithParams.searchParams.append(param.key, param.value);
-        }
+      const fullResponse = await sendApiRequest({
+        method,
+        url,
+        params,
+        headers,
+        body
       });
-
-      const requestConfig = {
-        method: method,
-        url: urlWithParams.toString(),
-        headers: headers.reduce((acc, header) => {
-          if (header.key && header.value) {
-            acc[header.key] = header.value;
-          }
-          return acc;
-        }, {}),
-      };
-
-      if (['POST', 'PUT', 'PATCH'].includes(method)) {
-        try {
-          requestConfig.data = JSON.parse(body);
-        } catch (e) {
-          console.error('Invalid JSON in request body:', e);
-          setResponse({ error: 'Invalid JSON in request body' });
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      const axiosResponse = await axios(requestConfig);
-
-      const fullResponse = {
-        status: axiosResponse.status,
-        statusText: axiosResponse.statusText,
-        headers: axiosResponse.headers,
-        body: axiosResponse.data,
-      };
-
+  
       setResponse(fullResponse);
-
+  
+      const responseData = {
+        method,
+        url,
+        requestHeaders: headers,
+        queryParams: params,
+        requestBody: ['POST', 'PUT', 'PATCH'].includes(method) ? JSON.parse(body) : undefined,
+        response: {
+          status: fullResponse.status,
+          statusText: fullResponse.statusText,
+          headers: fullResponse.headers,
+          data: fullResponse.body
+        }
+      };
+  
       if (onApiResponse) {
-        onApiResponse({
-          method,
-          url: urlWithParams.toString(),
-          headers: requestConfig.headers,
-          queryParams: Object.fromEntries(urlWithParams.searchParams.entries()),
-          body: requestConfig.data,
-          response: fullResponse
-        });
+        onApiResponse(responseData);
       }
-
+  
       if (onFullApiResponse) {
-        onFullApiResponse({
-          method,
-          url: urlWithParams.toString(),
-          headers: requestConfig.headers,
-          queryParams: Object.fromEntries(urlWithParams.searchParams.entries()),
-          body: requestConfig.data,
-          response: fullResponse
-        });
+        onFullApiResponse(responseData);
       }
     } catch (error) {
+      console.error('API request error:', error);
       setResponse({
         error: error.message,
-        ...(error.response ? {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          headers: error.response.headers,
-          body: error.response.data
-        } : {})
       });
     } finally {
       setIsLoading(false);

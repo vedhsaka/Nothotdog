@@ -5,6 +5,8 @@ import { SignInModal } from './UtilityModals';
 import useAuthFetch from '../hooks/AuthFetch';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { sendApiRequest } from './ApiRequestHandler';
+import { evaluateTest } from './TestEvaluationHandler';
 
 const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroupSelect, componentType }) => {
   const { signIn, userId } = useAuth();
@@ -167,6 +169,64 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
     }
   };
 
+  const handleRunGroup = async (group) => {
+    if (!userId) {
+      setShowSignInModal(true);
+      return;
+    }
+  
+    const results = [];
+    for (const input of group.inputs) {
+      try {
+        // Make the API call to the user's endpoint
+        const apiResponse = await sendApiRequest({
+          method: input.method || 'GET',
+          url: input.url,
+          params: input.queryParams || [],
+          headers: [input.headers].flat() || [],
+          body: input.body || {}
+        });
+        
+        // Evaluate the test using the centralized function
+        const result = await evaluateTest(
+          apiResponse.data, 
+          input.checks, 
+          input.inputType,
+          authFetch
+        );
+
+        results.push({ inputId: input.uuid, result: result.test_result });
+        
+        // Update the UI immediately after each test
+        updateGroupWithResults(group.uuid, results);
+      } catch (error) {
+        console.error(`Error running test for input ${input.uuid}:`, error);
+        results.push({ inputId: input.uuid, result: 'error' });
+        updateGroupWithResults(group.uuid, results);
+      }
+    }
+  };
+
+  const updateGroupWithResults = (groupId, results) => {
+    setVoiceData(prevData => {
+      return prevData.map(project => ({
+        ...project,
+        groups: project.groups.map(group => {
+          if (group.uuid === groupId) {
+            return {
+              ...group,
+              inputs: group.inputs.map((input, index) => ({
+                ...input,
+                testResult: results[index]
+              }))
+            };
+          }
+          return group;
+        })
+      }));
+    });
+  };
+
   const renderInputs = (inputs, groupId) => (
     <Droppable droppableId={groupId}>
       {(provided) => (
@@ -197,22 +257,51 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
       const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
       return (
         <li key={group.uuid} className="group-item">
-          <div className="group-header" onClick={() => {
-            if (groupType === 'text') {
-              handleTextGroupClick(group);
-            } else {
-              handleGroupClick(group);
-            }
-            toggleGroup(group.uuid);
-          }}>
-            <span className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>▶</span>
-            {group.name} ({groupType})
+          <div className="group-header">
+            <span 
+              className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}
+              onClick={() => toggleGroup(group.uuid)}
+            >
+              ▶
+            </span>
+            <span onClick={() => handleGroupClick(group)}>{group.name} ({groupType})</span>
+            <button 
+              className="run-group-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRunGroup(group);
+              }}
+            >
+              Run
+            </button>
           </div>
           {expandedGroups[group.uuid] && renderInputs(group.inputs, group.uuid)}
         </li>
       );
     });
   };
+
+  // const renderGroups = (project) => {
+  //   return project.groups.map(group => {
+  //     const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
+  //     return (
+  //       <li key={group.uuid} className="group-item">
+  //         <div className="group-header" onClick={() => {
+  //           if (groupType === 'text') {
+  //             handleTextGroupClick(group);
+  //           } else {
+  //             handleGroupClick(group);
+  //           }
+  //           toggleGroup(group.uuid);
+  //         }}>
+  //           <span className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>▶</span>
+  //           {group.name} ({groupType})
+  //         </div>
+  //         {expandedGroups[group.uuid] && renderInputs(group.inputs, group.uuid)}
+  //       </li>
+  //     );
+  //   });
+  // };
 
   const renderIndividualInputs = (project) => {
     return project.inputs.map(input => (

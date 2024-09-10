@@ -249,3 +249,43 @@
   background-color: #34495e;
   box-shadow: 0 5px 10px rgba(0,0,0,0.3);
 }
+
+
+.run-group-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.run-group-button:hover {
+  background-color: #45a049;
+}
+
+.test-result {
+  margin-left: 10px;
+  font-weight: bold;
+}
+
+.test-result.pass {
+  color: #4CAF50;
+}
+
+.test-result.fail {
+  color: #f44336;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+}
+
+.voice-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
