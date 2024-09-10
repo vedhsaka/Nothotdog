@@ -392,10 +392,16 @@ const RestEvaluationComponent = () => {
             passed: response.checks[idx].passed // Set the passed status here
           }));
           console.log(newTabs[tabIndex].conversation);
+          setSuccessMessage('Test evaluated successfully...');
+          setApiErrorMessage('');  // Clear error message if operation was successful
+          hideMessageAfterDelay();
           return newTabs;
         });
       } else {
-        alert('Failed to evaluate the test');
+        setApiErrorMessage('Failed to evaluate the test');
+        setSuccessMessage(''); // Clear success message if operation failed
+        hideMessageAfterDelay();
+
       }
     } catch (error) {
       console.error('Error during evaluation:', error);
