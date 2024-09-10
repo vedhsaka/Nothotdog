@@ -165,13 +165,24 @@ const RestEvaluationComponent = () => {
   const handleApiResponse = useCallback((tabIndex, apiData) => {
     setTabs(prevTabs => {
       const newTabs = [...prevTabs];
+      const headersArray = Object.entries(apiData.headers).map(([key, value]) => ({
+        key,
+        value
+      }));
+      
+      // Transform queryParams object into an array of objects
+      const queryParamsArray = Object.entries(apiData.queryParams).map(([key, value]) => ({
+        key,
+        value
+      }));
+      
       newTabs[tabIndex] = {
         ...newTabs[tabIndex],
         api: {
           method: apiData.method,
           url: apiData.url,
-          headers: apiData.headers,
-          queryParams: apiData.queryParams,
+          headers: headersArray,
+          queryParams: queryParamsArray,
           body: apiData.body,
         },
         apiResponse: apiData.response,
