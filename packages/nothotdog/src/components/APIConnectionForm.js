@@ -79,46 +79,65 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
     updateHeaders(newHeaders);
   };
 
+  let processedHeaders = headers.reduce((acc, header) => {
+      if (header.key && header.value) {
+        acc[header.key] = header.value;
+      }
+      return acc;
+    }, {});
+
   const sendRequest = async () => {
     setIsLoading(true);
     setResponse(null);
     
     try {
-      const fullResponse = await sendApiRequest({
+      const axiosResponse = await sendApiRequest({
         method,
         url,
         params,
-        headers,
+        headers: processedHeaders,
         body
       });
+
+      const fullResponse = {
+          status: axiosResponse.status,
+          statusText: axiosResponse.statusText,
+          headers: axiosResponse.headers,
+          body: axiosResponse.data,
+      };
   
       setResponse(fullResponse);
   
-      const responseData = {
-        method,
-        url,
-        requestHeaders: headers,
-        queryParams: params,
-        requestBody: ['POST', 'PUT', 'PATCH'].includes(method) ? JSON.parse(body) : undefined,
-        response: {
-          status: fullResponse.status,
-          statusText: fullResponse.statusText,
-          headers: fullResponse.headers,
-          data: fullResponse.body
-        }
-      };
-  
       if (onApiResponse) {
-        onApiResponse(responseData);
+        onApiResponse({
+          method,
+          url: url,
+          headers,
+          queryParams: params,
+          body,
+          response: fullResponse
+        });
       }
-  
+
       if (onFullApiResponse) {
-        onFullApiResponse(responseData);
+        onFullApiResponse({
+          method,
+          url,
+          headers,
+          queryParams: params,
+          body,
+          response: fullResponse
+        });
       }
     } catch (error) {
-      console.error('API request error:', error);
       setResponse({
         error: error.message,
+        ...(error.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          headers: error.response.headers,
+          body: error.response.data
+        } : {})
       });
     } finally {
       setIsLoading(false);

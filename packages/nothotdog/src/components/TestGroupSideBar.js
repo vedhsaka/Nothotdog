@@ -175,7 +175,8 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
       return;
     }
   
-    const results = [];
+    let groupPassed = true;
+    const updatedInputs = [];
     for (const input of group.inputs) {
       try {
         // Make the API call to the user's endpoint
@@ -183,7 +184,7 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
           method: input.method || 'GET',
           url: input.url,
           params: input.queryParams || [],
-          headers: [input.headers].flat() || [],
+          headers: input.headers|| {},
           body: input.body || {}
         });
         
@@ -195,33 +196,35 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
           authFetch
         );
 
-        results.push({ inputId: input.uuid, result: result.test_result });
-        
-        // Update the UI immediately after each test
-        updateGroupWithResults(group.uuid, results);
+        const testPassed = result.test_result === 'pass';
+        groupPassed = groupPassed && testPassed;
+
+        updatedInputs.push({
+          ...input,
+          testResult: testPassed ? 'pass' : 'fail'
+        });
       } catch (error) {
         console.error(`Error running test for input ${input.uuid}:`, error);
-        results.push({ inputId: input.uuid, result: 'error' });
-        updateGroupWithResults(group.uuid, results);
+        groupPassed = false;
+        updatedInputs.push({
+          ...input,
+          testResult: 'error'
+        });
       }
     }
-  };
 
-  const updateGroupWithResults = (groupId, results) => {
     setVoiceData(prevData => {
       return prevData.map(project => ({
         ...project,
-        groups: project.groups.map(group => {
-          if (group.uuid === groupId) {
+        groups: project.groups.map(g => {
+          if (g.uuid === group.uuid) {
             return {
-              ...group,
-              inputs: group.inputs.map((input, index) => ({
-                ...input,
-                testResult: results[index]
-              }))
+              ...g,
+              inputs: updatedInputs,
+              groupResult: groupPassed ? 'pass' : 'fail'
             };
           }
-          return group;
+          return g;
         })
       }));
     });
@@ -238,7 +241,7 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
                   ref={provided.innerRef}
                   {...provided.draggableProps}
                   {...provided.dragHandleProps}
-                  className="voice-item"
+                  className={`voice-item ${input.testResult || ''}`}
                   onClick={() => handleInputClick(input)}
                 >
                   {input.description || input.file_name || input.text_content}
@@ -256,7 +259,7 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
     return project.groups.map(group => {
       const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
       return (
-        <li key={group.uuid} className="group-item">
+        <li key={group.uuid} className={`group-item ${group.groupResult || ''}`}>
           <div className="group-header">
             <span 
               className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}
@@ -274,34 +277,17 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
             >
               Run
             </button>
+            {group.groupResult && (
+              <span className={`group-result-icon ${group.groupResult}`}>
+                {group.groupResult === 'pass' ? '✓' : '✗'}
+              </span>
+            )}
           </div>
           {expandedGroups[group.uuid] && renderInputs(group.inputs, group.uuid)}
         </li>
       );
     });
   };
-
-  // const renderGroups = (project) => {
-  //   return project.groups.map(group => {
-  //     const groupType = group.inputs.length > 0 ? group.inputs[0].input_type : 'unknown';
-  //     return (
-  //       <li key={group.uuid} className="group-item">
-  //         <div className="group-header" onClick={() => {
-  //           if (groupType === 'text') {
-  //             handleTextGroupClick(group);
-  //           } else {
-  //             handleGroupClick(group);
-  //           }
-  //           toggleGroup(group.uuid);
-  //         }}>
-  //           <span className={`expand-icon ${expandedGroups[group.uuid] ? 'expanded' : ''}`}>▶</span>
-  //           {group.name} ({groupType})
-  //         </div>
-  //         {expandedGroups[group.uuid] && renderInputs(group.inputs, group.uuid)}
-  //       </li>
-  //     );
-  //   });
-  // };
 
   const renderIndividualInputs = (project) => {
     return project.inputs.map(input => (
