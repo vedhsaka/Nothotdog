@@ -6,8 +6,8 @@ import { sendApiRequest } from './ApiRequestHandler';
 const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, initialValues, handleApiChange, evaluations, setEvaluations, testResult }) => {
   const [method, setMethod] = useState(initialValues?.method || 'GET');
   const [url, setUrl] = useState(initialValues?.url || '');
-  const [params, setParams] = useState(initialValues?.queryParams || [{ key: '', value: '' }]);
-  const [headers, setHeaders] = useState(initialValues?.headers || [{ key: '', value: '' }]);
+  const [params, setParams] = useState(Array.isArray(initialValues?.queryParams) ? initialValues.queryParams : [{ key: '', value: '' }]);
+  const [headers, setHeaders] = useState(Array.isArray(initialValues?.headers) ? initialValues.headers : [{ key: '', value: '' }]);
   const [body, setBody] = useState(() => {
     try {
       return JSON.stringify(JSON.parse(initialValues?.body || '{}'), null, 2);
@@ -95,8 +95,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
 
   const sendRequest = async () => {
     setIsLoading(true);
-    setResponse(null);
-    
+    setResponse(null);    
     try {
       const axiosResponse = await sendApiRequest({
         method,
@@ -144,25 +143,18 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
           statusText: error.response.statusText,
           headers: error.response.headers,
           body: error.response.data
-        } : {})
+        } : {}),
       });
     } finally {
       setIsLoading(false);
       setActiveTab('response');
     }
-  };
+  };  
 
   const handleSetOutputValue = (key, value) => {
     setOutputValue(key, value);
-    const existingEvalIndex = evaluations.findIndex(evaluations => evaluations.key === key);
-    if (existingEvalIndex !== -1) {
-      const updatedEvaluations = [...evaluations];
-      updatedEvaluations[existingEvalIndex].value = value;
-      setEvaluations(updatedEvaluations);
-    } else {
-      setEvaluations([...evaluations, { key, rule: 'equals', value }]);
-    }
-  };
+    setEvaluations([...evaluations, { key, rule: 'equals', value }]);
+  };  
 
   const updateEvaluation = (index, field, value) => {
     const updatedEvaluations = [...evaluations];
@@ -360,7 +352,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
         )}
       </div>
 
-      <div className="evaluations-section">
+      <div className="evaluations-section">        
         <h3>Evaluations</h3>
         {evaluations.map((evaluation, index) => (
           <div key={index} className="evaluation-row">
@@ -388,8 +380,11 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
               onChange={(e) => updateEvaluation(index, 'value', e.target.value)}
               placeholder="Expected Value"
             />
-            <div className="evaluation-result">{evaluation.passed !== undefined ? (evaluation.passed ? '✅' : '❌') : ''}</div>
+           
             <button onClick={() => removeEvaluation(index)}>Remove</button>
+            {(evaluation.passed == true || evaluation.passed == false) && (
+              <div className="evaluation-result">{(evaluation.passed ? '✅' : '❌')}</div>
+            )}
           </div>
         ))}
 

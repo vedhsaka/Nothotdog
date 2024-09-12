@@ -16,6 +16,9 @@ const RestEvaluationComponent = () => {
   const { authFetch } = useAuthFetch();
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [tabs, setTabs] = useState([createEmptyTab()]);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [apiErrorMessage, setApiErrorMessage] = useState('');
+  const [showMessage, setShowMessage] = useState(false); // Track visibility
 
   const {
     showSaveModal,
@@ -28,10 +31,20 @@ const RestEvaluationComponent = () => {
     selectedGroupId,
     setSelectedGroupId,
     currentSavingIndex,
+    setCurrentSavingIndex,
     isUpdate,
     handleSave
   } = useSaveTest();
 
+
+  const hideMessageAfterDelay = () => {
+    setShowMessage(true);
+    setTimeout(() => {
+      setShowMessage(false);
+      setSuccessMessage('');
+      setApiErrorMessage('');
+    }, 3000);
+  };
 
   function createEmptyTab(index) {
     return {
@@ -144,13 +157,24 @@ const RestEvaluationComponent = () => {
   const handleApiResponse = useCallback((tabIndex, apiData) => {
     setTabs(prevTabs => {
       const newTabs = [...prevTabs];
+      const headersArray = Object.entries(apiData.headers).map(([key, value]) => ({
+        key,
+        value
+      }));
+      
+      // Transform queryParams object into an array of objects
+      const queryParamsArray = Object.entries(apiData.queryParams).map(([key, value]) => ({
+        key,
+        value
+      }));
+      
       newTabs[tabIndex] = {
         ...newTabs[tabIndex],
         api: {
           method: apiData.method,
           url: apiData.url,
-          headers: apiData.headers,
-          queryParams: apiData.queryParams,
+          headers: headersArray,
+          queryParams: queryParamsArray,
           body: apiData.body,
         },
         apiResponse: apiData.response,
@@ -218,11 +242,11 @@ const RestEvaluationComponent = () => {
     const tab = tabs[currentSavingIndex];
 
     const data = {
-      description: description, // From the modal
+      description: description, 
       inputType: "text",
       content: JSON.stringify(tab.api?.body || {}),
       projectId,
-      groupId: selectedGroupId || null, // From the modal dropdown
+      groupId: selectedGroupId || null,
       checks: tab.conversation.evaluations.map(evaluation => ({
         field: evaluation.key,
         rule: evaluation.rule,
@@ -231,16 +255,12 @@ const RestEvaluationComponent = () => {
       url: tab.api?.url || '',
       apiType: "REST",
       method: tab.api?.method || 'GET',
-      headers: tab.api?.headers.reduce((acc, header) => {
-        if (header.key && header.value) {
-          acc[header.key] = header.value;
-        }
+      headers: Object.entries(tab.api?.headers || {}).reduce((acc, [key, value]) => {
+        if (key && value) acc[key] = value;
         return acc;
       }, {}),
-      query_params: tab.api?.queryParams.reduce((acc, param) => {
-        if (param.key && param.value) {
-          acc[param.key] = param.value;
-        }
+      query_params: Object.entries(tab.api?.queryParams || {}).reduce((acc, [key, value]) => {
+        if (key && value) acc[key] = value;
         return acc;
       }, {}),
       content_type: "json"
@@ -256,25 +276,35 @@ const RestEvaluationComponent = () => {
       if (response) {
         setDescription('');
         setShowSaveModal(false);
-        setCurrentSavingIndex(null);
-        alert(isUpdate ? 'Test updated successfully' : 'Test saved successfully');
+        setSuccessMessage(isUpdate ? 'Test updated successfully' : 'Test saved successfully');
+        setApiErrorMessage('');  // Clear error message if operation was successful
+        hideMessageAfterDelay();
         setTabs(prevTabs => {
           const newTabs = [...prevTabs];
           newTabs[currentSavingIndex] = {
             ...newTabs[currentSavingIndex],
             description: description,
             groupId: selectedGroupId,
-            uuid: isUpdate ? tab.uuid : response.uuid // Assuming the API returns the new UUID for created tests
+            uuid: isUpdate ? tab.uuid : response.uuid
           };
           return newTabs;
         });
       } else {
-        alert(isUpdate ? 'Failed to update the test' : 'Failed to save the test');
+        const errorData = await response.json(); // Assuming API response is JSON
+        const apiErrorMessage = errorData?.message || 'Failed to save or update the test'; // Fallback error message
+        setApiErrorMessage(apiErrorMessage);
+        setSuccessMessage(''); // Clear success message if operation failed
+        hideMessageAfterDelay();
       }
     } catch (error) {
       console.error(isUpdate ? 'Error updating test:' : 'Error saving test:', error);
+      const errorMessage = error?.response?.message || 'An error occurred while saving the test';
+      setApiErrorMessage(errorMessage);
+      setSuccessMessage(''); // Clear success message if an error occurs
+      hideMessageAfterDelay();
     }
   };
+  
 
   const handleUpdateConfirm = async () => {
     if (currentSavingIndex === null) return;
@@ -377,6 +407,20 @@ return (
     />
 
     <div className="evaluation-component">
+      {successMessage && (
+        <div className="message-container success-message" style={{ color: 'green', marginBottom: '10px' }}>
+          {successMessage}
+          <span className="close-message" onClick={() => setSuccessMessage('')}>×</span>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {apiErrorMessage && (
+        <div className="message-container api-error-message" style={{ color: 'red', marginBottom: '10px' }}>
+          {apiErrorMessage}
+          <span className="close-message" onClick={() => setApiErrorMessage('')}>×</span>
+        </div>
+      )}
       <ApiTabs
         tabs={tabs}
         setTabs={setTabs}
