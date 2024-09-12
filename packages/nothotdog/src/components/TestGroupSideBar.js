@@ -278,8 +278,8 @@ const TestGroupSidebar = ({ projectId, onGroupSelect, onInputSelect, onTextGroup
               Run
             </button>
             {group.groupResult && (
-              <span className={`group-result-icon ${group.groupResult}`}>
-                {group.groupResult === 'pass' ? '✓' : '✗'}
+              <span className={`group-result-icon`}>
+                {group.groupResult === 'pass' ? '✅' : '❌'}
               </span>
             )}
           </div>

@@ -37,10 +37,14 @@
 
 .group-item.pass {
   border-color: #4CAF50;
+  padding:0 ;
+  width: 100%;
 }
 
 .group-item.fail {
   border-color: #f44336;
+  padding: 0;
+  width: 100%;
 }
 
 
@@ -275,6 +279,14 @@
   border-left-color: #f44336;
   background-color: rgba(244, 67, 54, 0.1);
   border-radius: 4px;
+  width: 100%;
+}
+
+.voice-item.error {
+  border-left-color: orange;
+  background-color: #1a1a1a;
+  border-radius: 4px;
+  width: 100%;
 }
 
 
@@ -329,4 +341,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.group-result-icon {
+  margin: 0 10px;
 }

@@ -340,7 +340,7 @@ const RestEvaluationComponent = () => {
         rule: evaluation.rule,
         value: evaluation.value,
       }));
-      const response = await evaluateTest(apiResponse.data, checks, "text", authFetch);
+      const response = await evaluateTest(apiResponse.body, checks, "text", authFetch);
 
       if (response && response.test_result) {
         setTabs(prevTabs => {

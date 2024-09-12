@@ -86,6 +86,13 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
       return acc;
     }, {});
 
+    let processedParams = params.reduce((acc, param) => {
+      if (param.key && param.value) {
+        acc[param.key] = param.value;
+      }
+      return acc;
+    }, {});
+
   const sendRequest = async () => {
     setIsLoading(true);
     setResponse(null);
@@ -94,7 +101,7 @@ const APIRequestForm = ({ onApiResponse, setOutputValue, onFullApiResponse, init
       const axiosResponse = await sendApiRequest({
         method,
         url,
-        params,
+        params: processedParams,
         headers: processedHeaders,
         body
       });

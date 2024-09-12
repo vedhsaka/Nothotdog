@@ -9,12 +9,6 @@ export const sendApiRequest = async ({
 }) => {
     try {
         const urlWithParams = new URL(url);
-        params.forEach((param) => {
-          if (param.key && param.value) {
-            urlWithParams.searchParams.append(param.key, param.value);
-          }
-        });
-
        const requestConfig = {
         method: method,
         url: urlWithParams.toString(),
