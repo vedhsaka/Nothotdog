@@ -205,10 +205,6 @@
     display: none;
   }
   
-  .json-line:hover .set-output-btn {
-    display: inline;
-  }
-  
 
   /* css/ApiConnections.css */
 
@@ -337,10 +333,16 @@
   align-items: center;
 }
 
-.json-line:hover .set-output-btn {
-  display: inline;
+.json-line .set-output-btn {
+  display: none;
 }
-.json-line:hover {
+
+/* This will show the button only if there's no child json-line */
+.json-line:hover:not(:has(.json-line)) .set-output-btn {
+  display: inline-block; /* or your preferred display property */
+}
+
+.json-line:hover:not(:has(.json-line)) {
   background-color: #e4e4f5;
 }
 
@@ -385,6 +387,7 @@
 .json-line {
   position: relative;
   padding-left: 20px;
+  line-height: 1.8;
 }
 
 .json-key {
@@ -413,9 +416,6 @@
   cursor: pointer;
 }
 
-.json-line:hover > .set-output-btn {
-  display: inline-block;
-}
 .tab-actions {
   display: flex;
   gap: 15px;
