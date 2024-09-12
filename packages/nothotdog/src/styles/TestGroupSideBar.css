@@ -1,5 +1,5 @@
 .test-group-sidebar {
-  width: 280px;
+  width: 330px;
   background-color: #000408;
   color: #e0e0e0;
   padding: 20px;
@@ -27,16 +27,11 @@
   padding: 0;
 }
 
-/* .group-item {
+.group-item {
   margin-bottom: 20px;
   background-color: #0a0e14;
-  border-radius: 8px;
+  border-radius: 2px;
   overflow: hidden;
-  transition: box-shadow 0.3s ease;
-} */
-
-.group-item {
-  border: 2px solid transparent;
   transition: border-color 0.3s ease;
 }
 
@@ -81,7 +76,7 @@
   transform: rotate(90deg);
 }
 
-.group-item, .voice-item {
+ .voice-item {
   padding: 10px;
   margin-bottom: 5px;
 }
@@ -265,6 +260,7 @@
 } */
 
 .voice-item {
+  border: none;
   border-left: 4px solid transparent;
   transition: border-color 0.3s ease, background-color 0.3s ease;
 }
@@ -272,11 +268,13 @@
 .voice-item.pass {
   border-left-color: #4CAF50;
   background-color: rgba(76, 175, 80, 0.1);
+  width: 100%;
 }
 
 .voice-item.fail {
   border-left-color: #f44336;
   background-color: rgba(244, 67, 54, 0.1);
+  border-radius: 4px;
 }
 
 
