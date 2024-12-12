@@ -100,9 +100,6 @@ export default function ToolsPage() {
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-semibold">Manual Testing</h2>
-          <Badge variant="outline" className="bg-black/40 text-emerald-400 border-emerald-400/30">
-            Draft
-          </Badge>
         </div>
         <div className="flex gap-2">
           <Input

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash, Check, X, Save } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { TestCard } from "@/components/common/TestCard";
 
 interface GeneratedTestCase {
   id: string;
-  sourceTestId: string;  // Links back to the original test case
+  sourceTestId: string;
   category?: string;
   input: string | { query: string };
   description: string;
@@ -30,7 +30,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     expectedOutput: string;
   } | null>(null);
 
-  // Load saved variations when a test is selected
   useEffect(() => {
     if (selectedTest) {
       const savedVariations = JSON.parse(localStorage.getItem('testVariations') || '{}');
@@ -171,98 +170,72 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {generatedCases.map((testCase) => (
-          <div key={testCase.id} className="p-4 bg-black/20 rounded-lg">
-            {testCase.isEditing ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-zinc-400">Test Scenario:</label>
-                  <Textarea
-                    value={editingCase?.input || ''}
-                    onChange={(e) => setEditingCase(prev => ({
-                      ...prev!,
-                      input: e.target.value
-                    }))}
-                    placeholder="Describe the test scenario..."
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-400">Expected Behavior:</label>
-                  <Textarea
-                    value={editingCase?.expectedOutput || ''}
-                    onChange={(e) => setEditingCase(prev => ({
-                      ...prev!,
-                      expectedOutput: e.target.value
-                    }))}
-                    placeholder="Describe expected behavior..."
-                    className="mt-1"
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setGeneratedCases(prev =>
-                        prev.map(tc =>
-                          tc.id === testCase.id ? { ...tc, isEditing: false } : tc
-                        )
-                      );
-                      setEditingCase(null);
-                    }}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => saveEdit(testCase.id)}
-                  >
-                    <Check className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                </div>
-              </div>
-            ) : (
+          testCase.isEditing ? (
+            <div key={testCase.id} className="space-y-4">
               <div>
-                <div className="flex justify-between mb-2">
-                  <Badge>{testCase.category || 'Test Case'}</Badge>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => startEditing(testCase)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => deleteTestCase(testCase.id)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium mb-1">Test Scenario</p>
-                    <p className="text-sm text-zinc-400">
-                    {typeof testCase.input === 'object' && 'query' in testCase.input 
-                        ? testCase.input.query 
-                        : String(testCase.input)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium mb-1">Description</p>
-                    <p className="text-sm text-zinc-400">
-                      {testCase.description}
-                    </p>
-                  </div>
-                </div>
+                <label className="text-sm text-zinc-400">Test Scenario:</label>
+                <Textarea
+                  value={editingCase?.input || ''}
+                  onChange={(e) => setEditingCase(prev => ({
+                    ...prev!,
+                    input: e.target.value
+                  }))}
+                  placeholder="Describe the test scenario..."
+                  className="mt-1"
+                />
               </div>
-            )}
-          </div>
+              <div>
+                <label className="text-sm text-zinc-400">Expected Behavior:</label>
+                <Textarea
+                  value={editingCase?.expectedOutput || ''}
+                  onChange={(e) => setEditingCase(prev => ({
+                    ...prev!,
+                    expectedOutput: e.target.value
+                  }))}
+                  placeholder="Describe expected behavior..."
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setGeneratedCases(prev =>
+                      prev.map(tc =>
+                        tc.id === testCase.id ? { ...tc, isEditing: false } : tc
+                      )
+                    );
+                    setEditingCase(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => saveEdit(testCase.id)}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <TestCard
+              key={testCase.id}
+              title="Test Scenario"
+              category={testCase.category}
+              description={typeof testCase.input === 'object' ? testCase.input.query : String(testCase.input)}
+              onEdit={() => startEditing(testCase)}
+              onDelete={() => deleteTestCase(testCase.id)}
+            >
+              <div>
+                <p className="text-sm font-medium mb-1">Description</p>
+                <p className="text-sm text-zinc-400">
+                  {testCase.description}
+                </p>
+              </div>
+            </TestCard>
+          )
         ))}
 
         {!selectedTest && (

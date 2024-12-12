@@ -40,7 +40,7 @@ export default function Sidebar() {
         <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
           NotHotDog
         </h1>
-        <p className="text-zinc-500 text-sm">v0.1</p>
+        <p className="text-zinc-500 text-sm">(BETA)</p>
       </div>
 
       <nav className="space-y-2">
