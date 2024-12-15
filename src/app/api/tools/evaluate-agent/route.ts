@@ -19,16 +19,16 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { agentEndpoint, testCases } = validateEvaluateAgentRequest(body)
-    
     const results = await Promise.all(testCases.map(async (testCase: any) => {
-      const startTime = Date.now()
-      
+    const startTime = Date.now()
+    const body =  JSON.stringify({ input: testCase.input })  
+
       try {
         // Test the agent
         const agentResponse = await fetch(agentEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: testCase.input })
+          body
         })
         
         const agentData = await agentResponse.json()

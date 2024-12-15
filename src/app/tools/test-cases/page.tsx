@@ -27,10 +27,19 @@ interface GeneratedTestCase {
   input: {
     query: string;
   } | string;
-  description: string;
+  scenario: string;
   expectedOutput: string;
   isEditing: boolean;
 }
+
+
+// interface GeneratedTestCase {
+//   id: string;
+//   sourceTestId: string;
+//   scenario: string;    // Plain English description of the test case
+//   expectedOutput: string;  // Plain English description of expected behavior
+// }
+
 
 export default function TestCasesPage() {
   const [agentCases, setAgentCases] = useState<AgentCase[]>([]);
@@ -85,7 +94,7 @@ export default function TestCasesPage() {
       id: crypto.randomUUID(),
       input: { query: '' },
       expectedOutput: '',
-      description: '',
+      scenario: '',
       isEditing: true,
       category: 'Custom'
     };
@@ -95,7 +104,7 @@ export default function TestCasesPage() {
 
   const startEditing = (testCase: GeneratedTestCase) => {
     setEditingCase({
-      input: typeof testCase.input === 'object' ? testCase.input.query : testCase.input,
+      input: typeof testCase.scenario,
       expectedOutput: testCase.expectedOutput
     });
     setGeneratedTestCases(prev =>

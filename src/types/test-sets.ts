@@ -74,3 +74,10 @@ export interface TestSet {
     error?: string;
     matchScore?: number;
   }
+
+  export interface GeneratedTestCase {
+    input: Record<string, string>;
+    description: string;
+    category?: string;
+    sourceTestId?: string;
+  }
