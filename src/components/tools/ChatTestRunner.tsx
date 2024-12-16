@@ -350,7 +350,7 @@ export function ChatTestRunner() {
     const savedTests = JSON.parse(localStorage.getItem('savedTests') || '[]');
     if (!savedTests.length) return;
   
-    const referenceTest = savedTests[2];
+    const referenceTest = savedTests[0];
     const savedVariations = JSON.parse(localStorage.getItem('testVariations') || '{}');
     
     const newRuns = Object.entries(savedVariations).map(([sourceId, testCases]) => ({

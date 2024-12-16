@@ -13,7 +13,7 @@ export default function Sidebar() {
   
   const navItems = [
     {
-      label: 'Dashboard',
+      label: 'Configuration',
       icon: Home,
       href: '/tools'
     },
