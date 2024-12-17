@@ -1,2 +1,2 @@
 # NotHotDog
-Let AI test your AI agents
+Simulation, Evaluation, and Experimentation Platform for AI Agents
