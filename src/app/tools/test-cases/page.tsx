@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Save, Trash, Edit, Check, X, Plus } from 'lucide-react';
 import { ResponseTime } from '@/components/tools/ResponseTime';
 import { TestCaseVariations } from '@/components/tools/TestCaseVariations';
+import { TestRun, TestChat } from '@/types/runs';
 
 interface AgentCase {
   id: string;
@@ -40,6 +41,158 @@ interface GeneratedTestCase {
 //   expectedOutput: string;  // Plain English description of expected behavior
 // }
 
+
+function TestRunsDashboard() {
+  const [runs, setRuns] = useState<TestRun[]>([]);
+  const [selectedRun, setSelectedRun] = useState<TestRun | null>(null);
+  const [selectedChat, setSelectedChat] = useState<TestChat | null>(null);
+
+  useEffect(() => {
+    const savedRuns = JSON.parse(localStorage.getItem('testRuns') || '[]');
+    setRuns(savedRuns);
+  }, []);
+
+  if (selectedChat) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => setSelectedChat(null)}>
+            ← Back to Run
+          </Button>
+          <div className="flex-1" />
+          <Badge variant="outline" className="bg-green-500/10">
+            {selectedChat.metrics.correct} Correct
+          </Badge>
+          <Badge variant="outline" className="bg-red-500/10">
+            {selectedChat.metrics.incorrect} Incorrect
+          </Badge>
+        </div>
+        
+        <div className="space-y-4">
+          {selectedChat.messages.map((message) => (
+            <Card key={message.id} className="bg-black/20 border-zinc-800">
+              <CardContent className="pt-4">
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-zinc-400">{message.role === 'user' ? 'Input' : 'Response'}</p>
+                    <p className="mt-1">{message.content}</p>
+                    {message.role === 'assistant' && (
+                      <div className="mt-2 flex items-center gap-2">
+                        {message.isCorrect ? (
+                          <Badge variant="outline" className="bg-green-500/10">Correct</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-red-500/10">Incorrect</Badge>
+                        )}
+                        {message.explanation && (
+                          <p className="text-sm text-zinc-400">{message.explanation}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedRun) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => setSelectedRun(null)}>
+            ← Back to Runs
+          </Button>
+          <div className="flex-1" />
+          <Badge variant="outline" className="bg-green-500/10">
+            {selectedRun.metrics.passed} Passed
+          </Badge>
+          <Badge variant="outline" className="bg-red-500/10">
+            {selectedRun.metrics.failed} Failed
+          </Badge>
+        </div>
+
+        <div className="grid gap-4">
+          {selectedRun.chats.map((chat) => (
+            <Card 
+              key={chat.id} 
+              className="bg-black/20 border-zinc-800 cursor-pointer hover:bg-black/30"
+              onClick={() => setSelectedChat(chat)}
+            >
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">{chat.name}</h3>
+                    <p className="text-sm text-zinc-400">
+                      {chat.messages.length} messages
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="bg-green-500/10">
+                      {chat.metrics.correct} Correct
+                    </Badge>
+                    <Badge variant="outline" className="bg-red-500/10">
+                      {chat.metrics.incorrect} Incorrect
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Test Runs</h2>
+        <Badge variant="outline" className="bg-black/40">
+          {runs.length} Runs
+        </Badge>
+      </div>
+
+      <div className="grid gap-4">
+        {runs.map((run) => (
+          <Card 
+            key={run.id} 
+            className="bg-black/20 border-zinc-800 cursor-pointer hover:bg-black/30"
+            onClick={() => setSelectedRun(run)}
+          >
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">{run.name}</h3>
+                  <p className="text-sm text-zinc-400">
+                    {new Date(run.timestamp).toLocaleString()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge>{run.status}</Badge>
+                  <Badge variant="outline" className="bg-green-500/10">
+                    {run.metrics.passed} Passed
+                  </Badge>
+                  <Badge variant="outline" className="bg-red-500/10">
+                    {run.metrics.failed} Failed
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        {runs.length === 0 && (
+          <div className="text-center py-8 text-zinc-500">
+            No test runs yet. Generate and run some tests to get started.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function TestCasesPage() {
   const [agentCases, setAgentCases] = useState<AgentCase[]>([]);
