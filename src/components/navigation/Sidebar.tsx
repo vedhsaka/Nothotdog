@@ -18,7 +18,7 @@ export default function Sidebar() {
       href: '/tools'
     },
     {
-      label: 'Test Sets',
+      label: 'Scenarios',
       icon: BookOpen,
       href: '/tools/test-cases'
     },

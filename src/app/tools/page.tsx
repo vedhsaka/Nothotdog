@@ -78,6 +78,7 @@ export default function ToolsPage() {
 
   const saveTest = () => {
     const testCase = {
+      id: crypto.randomUUID(),
       name: testName,
       agentEndpoint,
       headers: getHeaders(),

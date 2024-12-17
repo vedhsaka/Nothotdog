@@ -151,11 +151,11 @@ export default function TestCasesPage() {
     setGeneratedTestCases([]);
   };
 
-  const deleteAgentCase = (timestamp: string) => {
-    const updatedCases = agentCases.filter(test => test.timestamp !== timestamp);
+  const deleteAgentCase = (id: string) => {
+    const updatedCases = agentCases.filter(test => test.id !== id);
     localStorage.setItem('savedTests', JSON.stringify(updatedCases));
     setAgentCases(updatedCases);
-    if (selectedCase?.timestamp === timestamp) {
+    if (selectedCase?.id === id) {
       setSelectedCase(null);
     }
   };
@@ -177,9 +177,9 @@ export default function TestCasesPage() {
             <div className="space-y-2">
               {agentCases.map((test) => (
                 <div 
-                  key={test.timestamp}
+                  key={test.id}
                   className={`p-4 rounded-lg cursor-pointer transition-colors ${
-                    selectedCase?.timestamp === test.timestamp 
+                    selectedCase?.id === test.id 
                       ? 'bg-black/60 border border-zinc-700' 
                       : 'bg-black/20 hover:bg-black/30'
                   }`}
@@ -199,7 +199,7 @@ export default function TestCasesPage() {
                         size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
-                          deleteAgentCase(test.timestamp);
+                          deleteAgentCase(test.id);
                         }}
                       >
                         <Trash className="h-4 w-4" />

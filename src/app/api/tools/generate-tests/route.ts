@@ -1,57 +1,7 @@
-// import { NextResponse } from 'next/server'
-// import { anthropic, MODEL } from '@/lib/claude'
-// import { validateGenerateTestsRequest } from '@/lib/validations'
-
-// interface GeneratedTestCase {
-//   input: Record<string, string>;
-//   description: string;
-//   category: string;
-// }
-
-// function getMessage(content: any): string {
-//   if (!content || !content[0]) {
-//     throw new Error('Invalid message content')
-//   }
-
-//   const block = content[0]
-//   if (block.type !== 'text') {
-//     throw new Error(`Unexpected content type: ${block.type}`)
-//   }
-
-//   return block.text
-// }
-
-// function extractJSON(text: string): any {
-//     // Find the last complete closing brace
-//     const lastBraceIndex = text.lastIndexOf('}');
-//     if (lastBraceIndex === -1) {
-//       throw new Error('No valid JSON structure found');
-//     }
-  
-//     // Find the last complete test case closing brace and bracket
-//     let truncatedText = text.substring(0, lastBraceIndex + 1) + ']';
-    
-//     // Find the start of the array
-//     const arrayStart = truncatedText.indexOf('[');
-//     if (arrayStart === -1) {
-//       throw new Error('No array start found');
-//     }
-  
-//     truncatedText = truncatedText.substring(arrayStart);
-  
-//     try {
-//       return JSON.parse(truncatedText);
-//     } catch (e) {
-//       throw new Error('Failed to parse truncated JSON');
-//     }
-//   }
-
-
-
 import { NextResponse } from 'next/server'
 import { anthropic, MODEL } from '@/lib/claude'
 import { validateGenerateTestsRequest } from '@/lib/validations'
-import type { GeneratedTestCase } from '@/types/test-sets'
+import { jsonrepair } from 'jsonrepair'
 
 function getMessage(content: any): string {
   if (!content || !content[0]) {
@@ -68,31 +18,59 @@ function getMessage(content: any): string {
 
 function extractJSON(text: string): any {
   try {
+    // Find the array start
     const jsonStart = text.indexOf('[');
-    const jsonEnd = text.lastIndexOf(']');
-    if (jsonStart === -1 || jsonEnd === -1) {
-      throw new Error('No valid JSON array found');
+    if (jsonStart === -1) {
+      const objStart = text.indexOf('{');
+      if (objStart === -1) {
+        console.warn('No JSON structure found');
+        return { evaluations: [] };
+      }
+      text = text.slice(objStart);
+    } else {
+      text = text.slice(jsonStart);
     }
-    const jsonText = text.substring(jsonStart, jsonEnd + 1);
-    return JSON.parse(jsonText);
+    
+    // Repair and parse the JSON
+    const repaired = jsonrepair(text);
+    const parsed = JSON.parse(repaired);
+    
+    // If we got an array directly, wrap it
+    if (Array.isArray(parsed)) {
+      return { evaluations: parsed };
+    }
+    
+    return parsed;
   } catch (e) {
-    console.error('JSON extraction failed:', e);
-    throw new Error('Failed to parse JSON from response');
+    console.warn('JSON extraction failed:', e);
+    return { evaluations: [] };
   }
 }
 
+interface Evaluation {
+  scenario: string;
+  expectedOutput: string;
+}
+
+function isValidEvaluation(evaluation: any): evaluation is Evaluation {
+  return (
+    evaluation &&
+    typeof evaluation === 'object' &&
+    typeof evaluation.scenario === 'string' &&
+    evaluation.scenario.trim().length > 0 &&
+    typeof evaluation.expectedOutput === 'string' &&
+    evaluation.expectedOutput.trim().length > 0
+  );
+}
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { inputExample, agentDescription } = validateGenerateTestsRequest(body)
 
-    // Parse input example to understand the format
-    const exampleFormat = JSON.parse(inputExample)
-
     const message = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 1024,
+      max_tokens: 2048,
       messages: [{
         role: "user",
         content: `Generate diverse test cases for an API. 
@@ -142,108 +120,62 @@ Create 20+ varied test cases that maintain this exact input format structure but
 - Time zone edge cases
 - Historical vs current queries
 
-Return only a JSON array where each test case object has:
-- input: Exactly matching the format of the example
-- description: Explaining what the test is checking
-- category: The type of test case
-Do not include expectedOutput.`
+Return only a JSON object in this exact format, ensuring all fields are non-null strings:
+{
+  "evaluations": [
+    {
+      "scenario": "Plain English description of what we're testing",
+      "expectedOutput": "Plain English description of what the agent should do/respond with"
+    }
+  ]
+}
+
+Each evaluation MUST have both scenario and expectedOutput as non-empty strings.`
       }]
     })
 
     const responseText = getMessage(message.content)
-    let testCases = extractJSON(responseText)
+    
+    let evaluations = extractJSON(responseText);
 
-    // Validate each test case maintains the input format
-    testCases = testCases.map((testCase: GeneratedTestCase) => {
-      // Ensure format matches exactly
-      const formattedInput: Record<string, string> = {}
-      Object.keys(inputFormat).forEach(key => {
-        formattedInput[key] = testCase.input[key] || ''
-      })
-      return {
-        ...testCase,
-        input: formattedInput
+    // Validate the structure and filter out invalid entries
+    if (!evaluations?.evaluations || !Array.isArray(evaluations.evaluations)) {
+      evaluations = { evaluations: [] };
+    }
+
+    const validEvaluations = evaluations.evaluations
+      .filter(isValidEvaluation)
+      .map((evaluation: Evaluation) => ({
+        scenario: evaluation.scenario.trim(),
+        expectedOutput: evaluation.expectedOutput.trim()
+      }));
+
+    if (validEvaluations.length === 0) {
+      throw new Error('No valid evaluations generated');
+    }
+
+    console.log(`Filtered ${evaluations.evaluations.length - validEvaluations.length} invalid evaluations`);
+
+    return NextResponse.json({ 
+      testCases: validEvaluations.map((evaluation: Evaluation) => ({
+        id: crypto.randomUUID(),
+        scenario: evaluation.scenario,
+        expectedOutput: evaluation.expectedOutput
+      })),
+      stats: {
+        total: evaluations.evaluations.length,
+        valid: validEvaluations.length,
+        filtered: evaluations.evaluations.length - validEvaluations.length
       }
     })
-
-    return NextResponse.json({ testCases })
   } catch (error) {
     console.error('Test generation error:', error)
     return NextResponse.json(
       { 
-        error: 'Failed to generate test cases',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        testCases: []
+        error: 'Failed to generate evaluations',
+        details: error instanceof Error ? error.message : 'Unknown error'
       }, 
       { status: 500 }
     )
   }
 }
-
-
-// export async function POST(req: Request) {
-//   try {
-//     const body = await req.json()
-//     const { inputExample } = validateGenerateTestsRequest(body)
-
-//     // Parse input example to understand the format
-//     const inputFormat = JSON.parse(inputExample)
-
-//     const message = await anthropic.messages.create({
-//       model: MODEL,
-//       max_tokens: 1024,
-//       messages: [{
-//         role: "user",
-//         content: `Generate test cases for a weather API. Here's an example query format:
-// ${inputExample}
-
-// Create a variety of test scenarios that check different aspects of the weather API.
-// Each test case should include:
-// 1. A plain English description of what we're testing
-// 2. The expected behavior/output in plain English
-
-// Return ONLY a JSON array where each object has:
-// - scenario: Plain English description of what we're testing
-// - expectedOutput: Plain English description of what should happen
-
-// Example format:
-// [
-//   {
-//     "scenario": "Basic weather query for a major city",
-//     "expectedOutput": "Should return current temperature (both C and F), conditions, humidity, wind speed and direction, pressure, and visibility for the specified city"
-//   }
-// ]
-
-// Include test cases for:
-// 1. Standard location queries
-// 2. Edge cases (e.g., remote locations, special characters)
-// 3. Error cases (invalid locations, malformed queries)
-// 4. Time/date variations
-// 5. Location ambiguity
-// 6. Extreme weather conditions`
-//       }]
-//     })
-
-//     const responseText = getMessage(message.content)
-//     let testCases = extractJSON(responseText)
-
-//     // Validate the structure of test cases
-//     testCases = testCases.map((testCase: any) => ({
-//       id: crypto.randomUUID(),
-//       scenario: testCase.scenario,
-//       expectedOutput: testCase.expectedOutput
-//     }))
-
-//     return NextResponse.json({ testCases })
-//   } catch (error) {
-//     console.error('Test generation error:', error)
-//     return NextResponse.json(
-//       { 
-//         error: 'Failed to generate test cases',
-//         details: error instanceof Error ? error.message : 'Unknown error',
-//         testCases: []
-//       }, 
-//       { status: 500 }
-//     )
-//   }
-// }

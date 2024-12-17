@@ -94,7 +94,7 @@ export function TestCaseGenerator({ onTestCasesGenerated, agentDescription }: Pr
         
         {testCases.length > 0 && (
           <div className="mt-4 space-y-2">
-            <h3 className="font-medium">Generated Test Cases:</h3>
+            <h3 className="font-medium">Generated Scenarios:</h3>
             <div className="max-h-60 overflow-y-auto space-y-2">
               {testCases.map((testCase, index) => (
                 <div key={index} className="p-3 bg-black/60 rounded-lg">

@@ -4,11 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash } from 'lucide-react';
 
-interface GeneratedTestCase {
+interface TestCase {
   id: string;
   sourceTestId: string;
-  scenario: string;    // Plain English description of the test case
-  expectedOutput: string;  // Plain English description of expected behavior
+  scenario: string;
+  expectedOutput: string;
+}
+
+interface TestVariation {
+  id: string;
+  sourceTestId: string;
+  timestamp: string;
+  cases: TestCase[];
 }
 
 interface EditingState {
@@ -18,21 +25,24 @@ interface EditingState {
 
 interface TestCaseVariationsProps {
   selectedTest: {
-    timestamp: string;
+    id: string;
     input: string;
     expectedOutput: string;
   } | null;
 }
 
 export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
-  const [generatedCases, setGeneratedCases] = useState<GeneratedTestCase[]>([]);
+  const [generatedCases, setGeneratedCases] = useState<TestCase[]>([]);
   const [editingState, setEditingState] = useState<EditingState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedTest) {
       const savedVariations = JSON.parse(localStorage.getItem('testVariations') || '{}');
-      setGeneratedCases(savedVariations[selectedTest.timestamp] || []);
+      const testVariations = savedVariations[selectedTest.id] || [];
+      // Get the most recent variation's cases, if any
+      const latestVariation = testVariations[testVariations.length - 1];
+      setGeneratedCases(latestVariation?.cases || []);
     }
   }, [selectedTest]);
 
@@ -58,31 +68,43 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
       if (data.testCases) {
         const newCases = data.testCases.map((tc: any) => ({
           id: crypto.randomUUID(),
-          sourceTestId: selectedTest.timestamp,
+          sourceTestId: selectedTest.id,
           scenario: tc.scenario,
           expectedOutput: tc.expectedOutput || ''
         }));
 
         setGeneratedCases(newCases);
-        saveVariations(selectedTest.timestamp, newCases);
+        saveVariations(selectedTest.id, newCases);
       }
     } catch (error) {
       console.error('Failed to generate test cases:', error);
     }
   };
 
-  const saveVariations = (testId: string, cases: GeneratedTestCase[]) => {
+  const saveVariations = (testId: string, cases: TestCase[]) => {
+    if (!selectedTest) return;
+    
     const savedVariations = JSON.parse(localStorage.getItem('testVariations') || '{}');
-    savedVariations[testId] = cases;
+    const testVariations = savedVariations[testId] || [];
+    
+    const variation: TestVariation = {
+      id: crypto.randomUUID(),
+      sourceTestId: testId,
+      timestamp: new Date().toISOString(),
+      cases: cases
+    };
+    
+    // Add new variation to the test's variations array
+    savedVariations[testId] = [...testVariations, variation];
     localStorage.setItem('testVariations', JSON.stringify(savedVariations));
   };
 
   const addNewTestCase = () => {
     if (!selectedTest) return;
     
-    const newCase: GeneratedTestCase = {
+    const newCase: TestCase = {
       id: crypto.randomUUID(),
-      sourceTestId: selectedTest.timestamp,
+      sourceTestId: selectedTest.id,
       scenario: '',
       expectedOutput: ''
     };
@@ -95,7 +117,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     setGeneratedCases([...generatedCases, newCase]);
   };
 
-  const startEditing = (testCase: GeneratedTestCase) => {
+  const startEditing = (testCase: TestCase) => {
     setEditingId(testCase.id);
     setEditingState({
       scenario: testCase.scenario,
@@ -117,7 +139,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     );
     
     setGeneratedCases(updatedCases);
-    saveVariations(selectedTest.timestamp, updatedCases);
+    saveVariations(selectedTest.id, updatedCases);
     setEditingId(null);
     setEditingState(null);
   };
@@ -127,14 +149,14 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     
     const updatedCases = generatedCases.filter(tc => tc.id !== id);
     setGeneratedCases(updatedCases);
-    saveVariations(selectedTest.timestamp, updatedCases);
+    saveVariations(selectedTest.id, updatedCases);
   };
 
   return (
     <Card className="bg-black/40 border-zinc-800">
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle>Generated Test Cases</CardTitle>
+          <CardTitle>Generated Scenarios</CardTitle>
           <div className="flex gap-2">
             {selectedTest && (
               generatedCases.length > 0 ? (
@@ -151,7 +173,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                   onClick={generateTestCases}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Generate Tests
+                  Generate Scenarios
                 </Button>
               )
             )}
