@@ -168,15 +168,30 @@ export function TestRunsDashboard() {
     setRuns(prev => [newRun, ...prev]);
 
     const updateRunInState = (updatedRun: TestRun) => {
-      setRuns(prev => prev.map(run => 
-        run.id === updatedRun.id ? updatedRun : run
-      ));
+      // Update React state
+      setRuns(prev => {
+        const existingRunIndex = prev.findIndex(run => run.id === updatedRun.id);
+        if (existingRunIndex === -1) {
+          return [updatedRun, ...prev];
+        }
+        return prev.map(run => run.id === updatedRun.id ? updatedRun : run);
+      });
       
-      // Update in localStorage
+      // Update localStorage
       const existingRuns = JSON.parse(localStorage.getItem('testRuns') || '[]');
-      const updatedRuns = existingRuns.map((run: TestRun) => 
-        run.id === updatedRun.id ? updatedRun : run
-      );
+      const existingRunIndex = existingRuns.findIndex((run: TestRun) => run.id === updatedRun.id);
+      
+      let updatedRuns;
+      if (existingRunIndex === -1) {
+        // New run - add to start
+        updatedRuns = [updatedRun, ...existingRuns];
+      } else {
+        // Update existing run
+        updatedRuns = existingRuns.map((run: TestRun) => 
+          run.id === updatedRun.id ? updatedRun : run
+        );
+      }
+      
       localStorage.setItem('testRuns', JSON.stringify(updatedRuns));
     };
 
