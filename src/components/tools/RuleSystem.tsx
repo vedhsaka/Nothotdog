@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Rule } from './types';
+import { v4 as uuidv4 } from 'uuid';
 
 interface RuleSystemProps {
   response: any;
@@ -15,7 +16,13 @@ export function RuleSystem({ response, rules, onRuleChange }: RuleSystemProps) {
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
 
   const addRule = (path: string) => {
-    onRuleChange([...rules, { path, condition: '=', value: '' }]);
+    const newRule: Rule = {
+      id: uuidv4(),
+      path,
+      condition: '=',
+      value: '',
+    };
+    onRuleChange([...rules, newRule]);
   };
 
   const removeRule = (index: number) => {

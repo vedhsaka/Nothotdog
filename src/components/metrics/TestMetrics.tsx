@@ -8,6 +8,9 @@ interface TestMetricsProps {
 }
 
 export function TestMetrics({ run }: TestMetricsProps) {
+  // Calculate overall success rate
+  const overallSuccess = run.metrics.total > 0 ? (run.metrics.passed / run.metrics.total) : 0;
+
   return (
     <Card className="bg-black/40 border-zinc-800">
       <CardHeader>
@@ -17,9 +20,9 @@ export function TestMetrics({ run }: TestMetricsProps) {
         <div className="space-y-6">
           <div>
             <h3 className="text-sm font-medium mb-2">Overall Success Rate</h3>
-            <Progress value={run.metrics.overallSuccess * 100} className="h-2" />
+            <Progress value={overallSuccess * 100} className="h-2" />
             <span className="text-sm text-zinc-400 mt-1">
-              {(run.metrics.overallSuccess * 100).toFixed(1)}%
+              {(overallSuccess * 100).toFixed(1)}%
             </span>
           </div>
 

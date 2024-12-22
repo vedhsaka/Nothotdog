@@ -1,15 +1,23 @@
+interface Metrics {
+  total: number;
+  passed: number;
+  failed: number;
+  chats: number;
+  sentimentScores?: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+}
+
 export interface TestRun {
   id: string;
   name: string;
   timestamp: string;
   status: TestRunStatus;
-  metrics: {
-    total: number;
-    passed: number;
-    failed: number;
-    chats: number;
-  };
+  metrics: Metrics;
   chats: TestChat[];
+  results: Array<{ scenarioId: string; responseTime: number }>;
 }
 
 export type TestRunStatus = 'pending' | 'running' | 'completed' | 'failed';

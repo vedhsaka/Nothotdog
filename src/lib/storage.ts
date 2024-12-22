@@ -1,5 +1,8 @@
 export interface StoredTestSet {
   id: string;
+  name: string;
+  description: string;
+  scenarios: Array<{ id: string; name: string }>;
   agentId: string;
   agentName: string;
   agentDescription?: string;

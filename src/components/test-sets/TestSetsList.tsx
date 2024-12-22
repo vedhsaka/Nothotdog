@@ -7,7 +7,18 @@ export function TestSetsList() {
   const [testSets, setTestSets] = useState<TestSet[]>([]);
 
   useEffect(() => {
-    setTestSets(TestSetStorage.getAll());
+    const storedTestSets = TestSetStorage.getAll();
+    const transformedTestSets = storedTestSets.map(storedTestSet => ({
+      id: storedTestSet.id,
+      name: storedTestSet.name || 'Default Name',
+      description: storedTestSet.description || 'Default Description',
+      scenarios: storedTestSet.scenarios || [],
+      agentId: storedTestSet.agentId,
+      agentName: storedTestSet.agentName,
+      evaluations: storedTestSet.evaluations,
+      createdAt: storedTestSet.createdAt
+    }));
+    setTestSets(transformedTestSets);
   }, []);
 
   return (

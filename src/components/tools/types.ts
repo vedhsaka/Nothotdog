@@ -54,7 +54,7 @@ export interface TestCase {
   export interface Rule {
     id: string;
     path: string;
-    operator: '=' | '>' | '<' | '>=' | '<=' | 'contains' | 'startsWith' | 'endsWith' | 'null' | 'not_null' | '!=' | 'not_contains' | 'starts_with' | 'ends_with' | 'matches' | 'has_key' | 'array_contains' | 'array_length';
+    condition: '=' | '>' | '<' | '>=' | '<=' | 'contains' | 'startsWith' | 'endsWith';
     value: string;
     isValid?: boolean;
   }
