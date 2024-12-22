@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TestRun, TestChat } from '@/types/runs';
+import { TestScenario } from './types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -200,7 +201,7 @@ export function TestRunsDashboard() {
       const completedChats = new Map<string, TestChat>();
 
       // Run scenarios in parallel
-      const scenarioPromises = scenarios.map(async (scenario) => {
+      const scenarioPromises = scenarios.map(async (scenario: TestScenario) => {
         const chat: TestChat = {
           id: uuidv4(),
           name: scenario.scenario,

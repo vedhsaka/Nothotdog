@@ -89,7 +89,7 @@ export default function ToolsPage() {
     // Convert headers object to array format
     const headerArray = Object.entries(savedTest.headers)
       .filter(([key]) => key !== 'Content-Type')
-      .map(([key, value]) => ({ key, value }));
+      .map(([key, value]) => ({ key, value: value as string }));
     
     setHeaders(headerArray.length ? headerArray : [{ key: '', value: '' }]);
     setIsConfigExpanded(true);
@@ -464,7 +464,7 @@ export default function ToolsPage() {
                               value={rule.operator}
                               onChange={(e) => {
                                 const newRules = [...rules];
-                                newRules[index] = { ...rule, operator: e.target.value };
+                                newRules[index] = { ...rule, operator: e.target.value as Rule['operator'] };
                                 setRules(newRules);
                               }}
                               className="bg-black/40 border border-zinc-800 text-sm py-1 px-2 rounded-md hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-zinc-700"
