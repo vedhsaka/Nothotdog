@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server'
 import { anthropic, MODEL } from '@/lib/claude'
 import { validateAnalyzeResultsRequest } from '@/lib/validations'
