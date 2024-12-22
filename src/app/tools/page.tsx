@@ -394,7 +394,7 @@ export default function ToolsPage() {
                                     setRules(prev => [...prev, {
                                       id: crypto.randomUUID(),
                                       path: fullPath,
-                                      operator: typeof value === 'number' ? '=' : 'contains',
+                                      condition: typeof value === 'number' ? '=' : 'contains',
                                       value: cleanValue,
                                       isValid: false
                                     }]);
@@ -461,10 +461,10 @@ export default function ToolsPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <select 
-                              value={rule.operator}
+                              value={rule.condition}
                               onChange={(e) => {
                                 const newRules = [...rules];
-                                newRules[index] = { ...rule, operator: e.target.value as Rule['operator'] };
+                                newRules[index] = { ...rule, condition: e.target.value as Rule['condition'] };
                                 setRules(newRules);
                               }}
                               className="bg-black/40 border border-zinc-800 text-sm py-1 px-2 rounded-md hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-zinc-700"
@@ -486,7 +486,7 @@ export default function ToolsPage() {
                               <option value="array_contains">array contains</option>
                               <option value="array_length">array length</option>
                             </select>
-                            {!['null', 'not_null'].includes(rule.operator) && (
+                            {!['null', 'not_null'].includes(rule.condition) && (
                               <input
                                 type="text"
                                 value={rule.value}

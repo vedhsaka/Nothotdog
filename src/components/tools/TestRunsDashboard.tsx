@@ -162,7 +162,8 @@ export function TestRunsDashboard() {
         failed: 0,
         chats: scenarios.length
       },
-      chats: []
+      chats: [],
+      results: []
     };
 
     // Add run to state immediately to show it in the UI
