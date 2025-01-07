@@ -1,35 +1,23 @@
 export const runtime = 'edge';
 
 import { NextResponse } from 'next/server'
-import { anthropic, MODEL } from '@/lib/claude'
+import { LLMFactory, ClaudeModel } from '@/services/llm'
 import { validateEvaluateAgentRequest } from '@/lib/validations'
-
-function getMessage(content: any): string {
-  if (!content || !content[0]) {
-    throw new Error('Invalid message content')
-  }
-
-  const block = content[0]
-  if (block.type !== 'text') {
-    throw new Error(`Unexpected content type: ${block.type}`)
-  }
-
-  return block.text
-}
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { agentEndpoint, testCases } = validateEvaluateAgentRequest(body)
+    const { agentEndpoint, headers, testCases } = validateEvaluateAgentRequest(body)
+
     const results = await Promise.all(testCases.map(async (testCase: any) => {
-    const startTime = Date.now()
-    const body =  JSON.stringify({ input: testCase.input })  
+      const startTime = Date.now()
+      const body = JSON.stringify({ input: testCase.input })
 
       try {
         // Test the agent
         const agentResponse = await fetch(agentEndpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...headers },
           body
         })
         
@@ -38,23 +26,17 @@ export async function POST(req: Request) {
         const responseTime = endTime - startTime
 
         // Use Claude to evaluate the response
-        const evaluationMessage = await anthropic.messages.create({
-          model: MODEL,
-          max_tokens: 1024,
-          messages: [{
-            role: "user",
-            content: `Evaluate if this output matches the expected output and explain why:
+        const llm = LLMFactory.getInstance('claude', { model: ClaudeModel.SONNET3_5 });
+        const response = await llm.complete(`Evaluate if this output matches the expected output and explain why:
 Expected: ${JSON.stringify(testCase.expectedOutput)}
 Actual: ${JSON.stringify(agentData.output)}
 
 Return response as JSON with properties:
 - isCorrect (boolean)
 - explanation (string)
-- matchScore (number between 0-100)`
-          }]
-        })
+- matchScore (number between 0-100)`);
 
-        const evaluation = JSON.parse(getMessage(evaluationMessage.content))
+        const evaluation = JSON.parse(response.content)
         
         return {
           testCase,
@@ -78,27 +60,11 @@ Return response as JSON with properties:
       }
     }))
 
-    // Calculate metrics
-    const totalTests = results.length
-    const successfulTests = results.filter(r => r.isCorrect).length
-    const averageResponseTime = results.reduce((acc, r) => acc + r.responseTime, 0) / totalTests
-    const averageMatchScore = results.reduce((acc, r) => acc + r.matchScore, 0) / totalTests
-    const accuracy = (successfulTests / totalTests) * 100
-
-    return NextResponse.json({
-      results,
-      metrics: {
-        accuracy,
-        averageResponseTime,
-        averageMatchScore,
-        totalTests,
-        successfulTests
-      }
-    })
+    return NextResponse.json({ results })
   } catch (error) {
     console.error('Evaluation error:', error)
     return NextResponse.json(
-      { error: 'Failed to evaluate agent' }, 
+      { error: 'Failed to evaluate agent' },
       { status: 500 }
     )
   }
