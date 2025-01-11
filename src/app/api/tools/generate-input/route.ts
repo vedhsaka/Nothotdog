@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 
 import { NextResponse } from 'next/server'
-import { anthropic } from '@/lib/claude'
+import { anthropic } from '../../../../lib/claude'
 
 export async function POST(req: Request) {
   try {
@@ -53,7 +53,6 @@ Return ONLY the generated input, nothing else.`
       { 
         error: 'Failed to generate input',
         details: error instanceof Error ? error.message : 'Unknown error',
-        // Add more debug info
         timestamp: new Date().toISOString()
       },
       { status: 500 }

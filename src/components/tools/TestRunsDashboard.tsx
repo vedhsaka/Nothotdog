@@ -14,70 +14,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Play, ChevronDown, ChevronUp } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { toolsApi } from '@/lib/api/tools';
 
-async function validateResponse(agentResponse: any, expectedOutput: string): Promise<{ isCorrect: boolean; explanation: string }> {
-  try {
-    // Call the validation endpoint to check if response matches expected output semantically
-    const response = await fetch('/api/tools/validate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        actualResponse: typeof agentResponse === 'object' ? JSON.stringify(agentResponse) : agentResponse,
-        expectedOutput
-      })
-    });
+const generateInputFromScenario = async (scenario: string, inputFormat: string) => {
+  return toolsApi.generateInput(scenario, inputFormat);
+};
 
-    if (!response.ok) {
-      throw new Error('Validation request failed');
-    }
-
-    const validation = await response.json();
-    return {
-      isCorrect: validation.isCorrect,
-      explanation: validation.explanation
-    };
-  } catch (error) {
-    console.error('Validation error:', error);
-    return {
-      isCorrect: false,
-      explanation: 'Error during validation: ' + (error instanceof Error ? error.message : 'Unknown error')
-    };
-  }
-}
-
-async function generateInputFromScenario(scenario: string, originalInput: any): Promise<string> {
-  try {
-    const response = await fetch('/api/tools/generate-input', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        scenario,
-        inputFormat: typeof originalInput === 'string' ? originalInput : JSON.stringify(originalInput)
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.details || 'Input generation failed');
-    }
-
-    const { input } = await response.json();
-    if (!input) {
-      throw new Error('No input generated');
-    }
-
-    return input;
-  } catch (error) {
-    console.error('Input generation error:', error);
-    console.error('Scenario:', scenario);
-    console.error('Original input:', originalInput);
-    throw error;
-  }
-}
+const validateResponse = async (response: any, expectedOutput: string) => {
+  return toolsApi.validateResponse(response, expectedOutput);
+};
 
 function CollapsibleJson({ content }: { content: string }) {
   // Try to parse and format JSON if possible
