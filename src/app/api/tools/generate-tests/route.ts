@@ -1,9 +1,22 @@
 export const runtime = 'edge';
 
 import { NextResponse } from 'next/server'
-import { LLMFactory, ClaudeModel } from '@/services/llm'
+import { anthropic, MODEL } from '@/lib/claude'
 import { validateGenerateTestsRequest } from '@/lib/validations'
 import { jsonrepair } from 'jsonrepair'
+
+function getMessage(content: any): string {
+  if (!content || !content[0]) {
+    throw new Error('Invalid message content')
+  }
+
+  const block = content[0]
+  if (block.type !== 'text') {
+    throw new Error(`Unexpected content type: ${block.type}`)
+  }
+
+  return block.text
+}
 
 function extractJSON(text: string): any {
   try {
@@ -36,13 +49,33 @@ function extractJSON(text: string): any {
   }
 }
 
+interface Evaluation {
+  scenario: string;
+  expectedOutput: string;
+}
+
+function isValidEvaluation(evaluation: any): evaluation is Evaluation {
+  return (
+    evaluation &&
+    typeof evaluation === 'object' &&
+    typeof evaluation.scenario === 'string' &&
+    evaluation.scenario.trim().length > 0 &&
+    typeof evaluation.expectedOutput === 'string' &&
+    evaluation.expectedOutput.trim().length > 0
+  );
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { inputExample, agentDescription } = validateGenerateTestsRequest(body)
 
-    const llm = LLMFactory.getInstance('claude', { model: ClaudeModel.SONNET3_5 });
-    const response = await llm.complete(`Generate diverse test cases for an API. 
+    const message = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 2048,
+      messages: [{
+        role: "user",
+        content: `Generate diverse test cases for an API. 
 ${agentDescription ? `Context: ${agentDescription}` : 'Context derived from example input below:'}
 
 Input Format Example: ${inputExample}
@@ -99,15 +132,52 @@ Return only a JSON object in this exact format, ensuring all fields are non-null
   ]
 }
 
-Each evaluation MUST have both scenario and expectedOutput as non-empty strings.`);
+Each evaluation MUST have both scenario and expectedOutput as non-empty strings.`
+      }]
+    })
 
-    const tests = extractJSON(response.content);
-    return NextResponse.json(tests);
+    const responseText = getMessage(message.content)
+    
+    let evaluations = extractJSON(responseText);
+
+    // Validate the structure and filter out invalid entries
+    if (!evaluations?.evaluations || !Array.isArray(evaluations.evaluations)) {
+      evaluations = { evaluations: [] };
+    }
+
+    const validEvaluations = evaluations.evaluations
+      .filter(isValidEvaluation)
+      .map((evaluation: Evaluation) => ({
+        scenario: evaluation.scenario.trim(),
+        expectedOutput: evaluation.expectedOutput.trim()
+      }));
+
+    if (validEvaluations.length === 0) {
+      throw new Error('No valid evaluations generated');
+    }
+
+    console.log(`Filtered ${evaluations.evaluations.length - validEvaluations.length} invalid evaluations`);
+
+    return NextResponse.json({ 
+      testCases: validEvaluations.map((evaluation: Evaluation) => ({
+        id: crypto.randomUUID(),
+        scenario: evaluation.scenario,
+        expectedOutput: evaluation.expectedOutput
+      })),
+      stats: {
+        total: evaluations.evaluations.length,
+        valid: validEvaluations.length,
+        filtered: evaluations.evaluations.length - validEvaluations.length
+      }
+    })
   } catch (error) {
-    console.error('Test generation error:', error);
+    console.error('Test generation error:', error)
     return NextResponse.json(
-      { error: 'Failed to generate tests' },
+      { 
+        error: 'Failed to generate evaluations',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, 
       { status: 500 }
-    );
+    )
   }
 }
