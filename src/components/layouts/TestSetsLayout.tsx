@@ -1,6 +1,6 @@
 import React from 'react';
-import Sidebar from '../navigation/Sidebar';
-import { Header } from '../navigation/Header';
+import Sidebar from '@/components/navigation/Sidebar';
+import { Header } from '@/components/navigation/Header';
 
 interface TestSetsLayoutProps {
   children: React.ReactNode;

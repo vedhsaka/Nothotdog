@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Activity } from 'lucide-react'
 import { TestCase, EvaluationResult } from './types'
 import { formatPercentage, formatDuration } from '@/lib/utils'
+import { agentTestApi } from '@/lib/api/agentTest'
 
 interface Props {
   testCases: TestCase[]
@@ -20,18 +21,9 @@ export function AgentEvaluator({ testCases, onEvaluationComplete, agentEndpoint,
   const runEvaluation = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/tools/evaluate-agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          agentEndpoint, 
-          headers,
-          testCases 
-        })
-      })
-      const data = await response.json()
-      setEvaluationResults(data.results)
-      onEvaluationComplete(data.results)
+      const response = await agentTestApi.evaluateAgent(agentEndpoint, testCases, headers)
+      setEvaluationResults(response.results)
+      onEvaluationComplete(response.results)
     } catch (error) {
       console.error('Failed to evaluate agent:', error)
     }

@@ -3,9 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { TestRun } from '@/types/ui';
 import { TestChat } from '@/types/chat';
 import { SavedTest, TestScenario } from '@/types/test';
-import { toolsService } from '@/services/api/tools';
 import { useTestRuns } from './useTestRuns';
 import { storageService } from '@/services/storage/localStorage';
+import { agentTestApi } from '@/lib/api/agentTest';
 
 export function useTestExecution() {
   const { addRun, updateRun } = useTestRuns();
@@ -74,7 +74,6 @@ export function useTestExecution() {
       }
     };
 
-    // Add initial message
     chat.messages.push({
       id: uuidv4(),
       role: 'user',
@@ -86,14 +85,13 @@ export function useTestExecution() {
 
     try {
       // Generate input
-      const generatedInput = await toolsService.generateInput(scenario.scenario, test.input);
-      chat.messages[0].content = generatedInput;
+      const input = await agentTestApi.generateInput(scenario.scenario, test.input);
+      chat.messages[0].content = input;
       updateChatState(chat, run, completedChats);
 
-      // Execute test
-      const response = await toolsService.evaluateAgent(test.agentEndpoint, JSON.parse(generatedInput), test.headers);
+      // Evaluate agent
+      const response = await agentTestApi.evaluateAgent(test.agentEndpoint, JSON.parse(input), test.headers);
 
-      // Add response message
       chat.messages.push({
         id: uuidv4(),
         role: 'assistant',
@@ -105,9 +103,8 @@ export function useTestExecution() {
       updateChatState(chat, run, completedChats);
       
       // Validate response
-      const validation = await toolsService.validateResponse(response, scenario.expectedOutput);
-      
-      // Update metrics
+      const validation = await agentTestApi.validateResponse(response, scenario.expectedOutput);
+
       chat.messages[1] = {
         ...chat.messages[1],
         isCorrect: validation.isCorrect,

@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
-import { anthropic, MODEL } from '../../../../lib/claude';
+import { anthropic, MODEL } from '@/lib/claude';
 
 function getMessage(content: any): string {
   if (!content || !content[0]) {

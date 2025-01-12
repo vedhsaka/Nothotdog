@@ -1,8 +1,8 @@
 export const runtime = 'edge';
 
 import { NextResponse } from 'next/server'
-import { anthropic, MODEL } from '../../../../lib/claude'
-import { validateAnalyzeResultsRequest } from '../../../../lib/validations'
+import { anthropic, MODEL } from '@/lib/claude'
+import { validateAnalyzeResultsRequest } from '@/lib/validations'
 
 function getMessage(content: any): string {
   if (!content || !content[0]) {

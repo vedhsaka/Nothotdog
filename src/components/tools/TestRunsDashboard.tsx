@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TestRun, TestChat } from '@/types/runs';
@@ -14,14 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Play, ChevronDown, ChevronUp } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { toolsApi } from '@/lib/api/tools';
+import { agentTestApi } from '@/lib/api/agentTest';
 
 const generateInputFromScenario = async (scenario: string, inputFormat: string) => {
-  return toolsApi.generateInput(scenario, inputFormat);
+  return agentTestApi.generateInput(scenario, inputFormat);
 };
 
 const validateResponse = async (response: any, expectedOutput: string) => {
-  return toolsApi.validateResponse(response, expectedOutput);
+  return agentTestApi.validateResponse(response, expectedOutput);
 };
 
 function CollapsibleJson({ content }: { content: string }) {

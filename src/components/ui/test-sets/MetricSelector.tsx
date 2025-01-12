@@ -1,4 +1,3 @@
-import { Select } from '@/components/ui/select';
 import { TestScenario } from './types';
 
 interface MetricSelectorProps {

@@ -1,8 +1,8 @@
 export const runtime = 'edge';
 
 import { NextResponse } from 'next/server'
-import { anthropic, MODEL } from '../../../../lib/claude'
-import { validateGenerateTestsRequest } from '../../../../lib/validations'
+import { anthropic, MODEL } from '@/lib/claude'
+import { validateGenerateTestsRequest } from '@/lib/validations'
 import { jsonrepair } from 'jsonrepair'
 
 function getMessage(content: any): string {

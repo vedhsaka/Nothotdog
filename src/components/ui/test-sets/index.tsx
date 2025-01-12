@@ -1,6 +1,3 @@
-import React from 'react';
-import { TestSetCreator } from './TestSetCreator';
-
 export interface TestSet {
   id: string;
   name: string;

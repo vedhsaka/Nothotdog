@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 
 import { NextResponse } from 'next/server'
-import { anthropic } from '../../../../lib/claude'
+import { anthropic } from '@/lib/claude'
 
 export async function POST(req: Request) {
   try {

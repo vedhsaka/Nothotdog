@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { ApiError } from '@/services/api/config';
 
 interface ErrorState {
   message: string;
@@ -13,15 +12,6 @@ export function useErrorHandler() {
   const handleError = useCallback((error: unknown) => {
     console.error('Error caught:', error);
 
-    if (error instanceof ApiError) {
-      setError({
-        message: error.message,
-        type: 'error',
-        details: error.data
-      });
-      return;
-    }
-
     if (error instanceof Error) {
       setError({
         message: error.message,
@@ -32,7 +22,7 @@ export function useErrorHandler() {
     }
 
     setError({
-      message: 'An unexpected error occurred',
+      message: typeof error === 'string' ? error : 'An unexpected error occurred',
       type: 'error',
       details: error
     });
@@ -43,26 +33,12 @@ export function useErrorHandler() {
   }, []);
 
   const showWarning = useCallback((message: string, details?: unknown) => {
-    setError({
-      message,
-      type: 'warning',
-      details
-    });
+    setError({ message, type: 'warning', details });
   }, []);
 
   const showInfo = useCallback((message: string, details?: unknown) => {
-    setError({
-      message,
-      type: 'info',
-      details
-    });
+    setError({ message, type: 'info', details });
   }, []);
 
-  return {
-    error,
-    handleError,
-    clearError,
-    showWarning,
-    showInfo
-  };
+  return { error, handleError, clearError, showWarning, showInfo };
 } 
