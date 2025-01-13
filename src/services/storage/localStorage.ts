@@ -1,56 +1,38 @@
-import { TestRun } from '@/types/ui';
-import { SavedTest, TestVariations } from '@/types/test';
+import { ConversationContext, TestScenario, TestVariations, SavedTest } from '@/types/test';
 
 const STORAGE_KEYS = {
-  SAVED_TESTS: 'savedTests',
-  TEST_RUNS: 'testRuns',
   TEST_VARIATIONS: 'testVariations',
-  RULE_TEMPLATES: 'ruleTemplates'
+  RULE_TEMPLATES: 'ruleTemplates',
+  CONVERSATION_HISTORY: 'conversationHistory',
+  CONVERSATION_METRICS: 'conversationMetrics',
+  SAVED_TESTS: 'savedTests'
 } as const;
+
+interface ConversationResult {
+  scenarioId: string;
+  history: TestScenario['steps'];
+  context: ConversationContext;
+  metrics: {
+    totalTime: number;
+    averageResponseTime: number;
+    averageValidationScore: number;
+    averageContextRelevance: number;
+    completionRate: number;
+    successRate: number;
+  };
+  timestamp: string;
+}
 
 class LocalStorageService {
   private getItem<T>(key: string, defaultValue: T): T {
-    try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
-    } catch (error) {
-      console.error(`Error reading from localStorage: ${key}`, error);
-      return defaultValue;
-    }
+    if (typeof window === 'undefined') return defaultValue;
+    const item = window.localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
   }
 
-  private setItem(key: string, value: unknown): void {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-      console.error(`Error writing to localStorage: ${key}`, error);
-    }
-  }
-
-  getSavedTests(): SavedTest[] {
-    return this.getItem<SavedTest[]>(STORAGE_KEYS.SAVED_TESTS, []);
-  }
-
-  setSavedTests(tests: SavedTest[]): void {
-    this.setItem(STORAGE_KEYS.SAVED_TESTS, tests);
-  }
-
-  getTestRuns(): TestRun[] {
-    return this.getItem<TestRun[]>(STORAGE_KEYS.TEST_RUNS, []);
-  }
-
-  setTestRuns(runs: TestRun[]): void {
-    this.setItem(STORAGE_KEYS.TEST_RUNS, runs);
-  }
-
-  updateTestRun(updatedRun: TestRun): void {
-    const runs = this.getTestRuns();
-    const index = runs.findIndex(run => run.id === updatedRun.id);
-    
-    if (index !== -1) {
-      runs[index] = updatedRun;
-      this.setTestRuns(runs);
-    }
+  private setItem<T>(key: string, value: T): void {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(key, JSON.stringify(value));
   }
 
   getTestVariations(): TestVariations {
@@ -67,6 +49,80 @@ class LocalStorageService {
 
   setRuleTemplates(templates: Record<string, unknown>): void {
     this.setItem(STORAGE_KEYS.RULE_TEMPLATES, templates);
+  }
+
+  getSavedTests(): SavedTest[] {
+    return this.getItem<SavedTest[]>(STORAGE_KEYS.SAVED_TESTS, []);
+  }
+
+  setSavedTests(tests: SavedTest[]): void {
+    this.setItem(STORAGE_KEYS.SAVED_TESTS, tests);
+  }
+
+  // New methods for conversation storage
+  saveConversationResult(result: ConversationResult): void {
+    const history = this.getConversationHistory();
+    history.push(result);
+    this.setItem(STORAGE_KEYS.CONVERSATION_HISTORY, history);
+    
+    // Update aggregated metrics
+    const metrics = this.getConversationMetrics();
+    const scenarioMetrics = metrics[result.scenarioId] || {
+      runs: 0,
+      totalTime: 0,
+      totalResponseTime: 0,
+      totalValidationScore: 0,
+      totalContextRelevance: 0,
+      successfulRuns: 0
+    };
+
+    metrics[result.scenarioId] = {
+      runs: scenarioMetrics.runs + 1,
+      totalTime: scenarioMetrics.totalTime + result.metrics.totalTime,
+      totalResponseTime: scenarioMetrics.totalResponseTime + result.metrics.averageResponseTime,
+      totalValidationScore: scenarioMetrics.totalValidationScore + result.metrics.averageValidationScore,
+      totalContextRelevance: scenarioMetrics.totalContextRelevance + result.metrics.averageContextRelevance,
+      successfulRuns: scenarioMetrics.successfulRuns + (result.metrics.successRate >= 0.8 ? 1 : 0)
+    };
+
+    this.setItem(STORAGE_KEYS.CONVERSATION_METRICS, metrics);
+  }
+
+  getConversationHistory(): ConversationResult[] {
+    return this.getItem<ConversationResult[]>(STORAGE_KEYS.CONVERSATION_HISTORY, []);
+  }
+
+  getConversationMetrics(): Record<string, {
+    runs: number;
+    totalTime: number;
+    totalResponseTime: number;
+    totalValidationScore: number;
+    totalContextRelevance: number;
+    successfulRuns: number;
+  }> {
+    return this.getItem(STORAGE_KEYS.CONVERSATION_METRICS, {});
+  }
+
+  getScenarioHistory(scenarioId: string): ConversationResult[] {
+    return this.getConversationHistory().filter(result => result.scenarioId === scenarioId);
+  }
+
+  getScenarioMetrics(scenarioId: string) {
+    const metrics = this.getConversationMetrics()[scenarioId];
+    if (!metrics) return null;
+
+    return {
+      averageTime: metrics.totalTime / metrics.runs,
+      averageResponseTime: metrics.totalResponseTime / metrics.runs,
+      averageValidationScore: metrics.totalValidationScore / metrics.runs,
+      averageContextRelevance: metrics.totalContextRelevance / metrics.runs,
+      successRate: metrics.successfulRuns / metrics.runs
+    };
+  }
+
+  clearConversationHistory(): void {
+    this.setItem(STORAGE_KEYS.CONVERSATION_HISTORY, []);
+    this.setItem(STORAGE_KEYS.CONVERSATION_METRICS, {});
   }
 }
 

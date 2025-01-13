@@ -15,7 +15,6 @@ import {
   ChevronDown
 } from 'lucide-react'
 import { ResponseTime } from '@/components/tools/ResponseTime'
-import { RuleSystem } from '@/components/tools/RuleSystem'
 import { Rule } from '@/components/tools/types'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 

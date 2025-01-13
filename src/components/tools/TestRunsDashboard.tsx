@@ -4,24 +4,19 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TestRun, TestChat } from '@/types/runs';
-import { TestScenario } from './types';
+import { TestScenario } from '@/types/test';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Play, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, ChevronDown } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { agentTestApi } from '@/lib/api/agentTest';
+import { ConversationManager } from '@/services/conversation/ConversationManager';
 
-const generateInputFromScenario = async (scenario: string, inputFormat: string) => {
-  return agentTestApi.generateInput(scenario, inputFormat);
-};
-
-const validateResponse = async (response: any, expectedOutput: string) => {
-  return agentTestApi.validateResponse(response, expectedOutput);
-};
+// For debugging only
+console.log('API Key:', process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY);
 
 function CollapsibleJson({ content }: { content: string }) {
   // Try to parse and format JSON if possible
@@ -92,7 +87,16 @@ export function TestRunsDashboard() {
     const savedVariations = JSON.parse(localStorage.getItem('testVariations') || '{}');
     const testVariations = savedVariations[testId] || [];
     const latestVariation = testVariations[testVariations.length - 1];
-    const scenarios = latestVariation?.cases || [];
+    const scenarios = (latestVariation?.cases || []).map((scenario: { scenario: string, expectedOutput?: string }) => ({
+      ...scenario,
+      type: 'conversation' as const,
+      steps: [{
+        id: uuidv4(),
+        role: 'user' as const,
+        content: scenario.scenario,
+        expectedOutput: scenario.expectedOutput
+      }]
+    }));
 
     // Create a new test run
     const newRun: TestRun = {
@@ -110,42 +114,11 @@ export function TestRunsDashboard() {
       results: []
     };
 
-    // Add run to state immediately to show it in the UI
     setRuns(prev => [newRun, ...prev]);
 
-    const updateRunInState = (updatedRun: TestRun) => {
-      // Update React state
-      setRuns(prev => {
-        const existingRunIndex = prev.findIndex(run => run.id === updatedRun.id);
-        if (existingRunIndex === -1) {
-          return [updatedRun, ...prev];
-        }
-        return prev.map(run => run.id === updatedRun.id ? updatedRun : run);
-      });
-      
-      // Update localStorage
-      const existingRuns = JSON.parse(localStorage.getItem('testRuns') || '[]');
-      const existingRunIndex = existingRuns.findIndex((run: TestRun) => run.id === updatedRun.id);
-      
-      let updatedRuns;
-      if (existingRunIndex === -1) {
-        // New run - add to start
-        updatedRuns = [updatedRun, ...existingRuns];
-      } else {
-        // Update existing run
-        updatedRuns = existingRuns.map((run: TestRun) => 
-          run.id === updatedRun.id ? updatedRun : run
-        );
-      }
-      
-      localStorage.setItem('testRuns', JSON.stringify(updatedRuns));
-    };
-
     try {
-      // Create a Map to track completed chats
       const completedChats = new Map<string, TestChat>();
 
-      // Run scenarios in parallel
       const scenarioPromises = scenarios.map(async (scenario: TestScenario) => {
         const chat: TestChat = {
           id: uuidv4(),
@@ -157,111 +130,75 @@ export function TestRunsDashboard() {
           }
         };
 
-        // Add initial user message to show progress
-        chat.messages.push({
-          id: uuidv4(),
-          role: 'user',
-          content: 'Generating input...',
-          expectedOutput: scenario.expectedOutput
-        });
-
-        // Update UI immediately to show the chat started
-        completedChats.set(chat.id, chat);
-        newRun.chats = Array.from(completedChats.values());
-        updateRunInState({...newRun});
-
         try {
-          // Generate input
-          const generatedInput = await generateInputFromScenario(scenario.scenario, testToRun.input);
-          
-          // Update user message with generated input
-          chat.messages[0].content = generatedInput;
-          completedChats.set(chat.id, {...chat});
-          newRun.chats = Array.from(completedChats.values());
-          updateRunInState({...newRun});
-
-          // Make API call to the agent
-          const response = await fetch(testToRun.agentEndpoint, {
-            method: 'POST',
+          const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '';
+          console.log("apiKeyyyyy", apiKey);
+          const conversation = new ConversationManager({
+            ...testToRun,
             headers: {
               ...testToRun.headers,
-              'Content-Type': 'application/json'
-            },
-            body: generatedInput
+              'x-api-key': apiKey
+            }
           });
-
-          if (!response.ok) {
-            throw new Error(`Agent request failed: ${response.status}`);
-          }
-
-          const agentResponse = await response.json();
+          conversation.setConversation(scenario);
+          const result = await conversation.executeConversation();
           
-          // Add pending validation message
-          chat.messages.push({
-            id: uuidv4(),
-            role: 'assistant',
-            content: JSON.stringify(agentResponse, null, 2),
-            isCorrect: false,
-            explanation: 'Validating response...'
-          });
-          completedChats.set(chat.id, {...chat});
+          chat.messages = result.history.map(step => ({
+            id: step.id,
+            role: step.role,
+            content: step.role === 'assistant' ? step.response || '' : step.content,
+            isCorrect: (step.metrics?.validationScore ?? 0) >= 0.7,
+            explanation: step.metrics ? `Validation Score: ${step.metrics.validationScore ?? 0}` : undefined,
+            expectedOutput: step.expectedOutput
+          }));
+
+          chat.metrics.correct = result.success ? 1 : 0;
+          chat.metrics.incorrect = result.success ? 0 : 1;
+          
+          completedChats.set(chat.id, chat);
           newRun.chats = Array.from(completedChats.values());
-          updateRunInState({...newRun});
+          newRun.metrics.passed += result.success ? 1 : 0;
+          newRun.metrics.failed += result.success ? 0 : 1;
           
-          // Validate the response using LLM
-          const validation = await validateResponse(agentResponse, scenario.expectedOutput);
-          
-          // Update agent's response with validation results
-          chat.messages[1] = {
-            ...chat.messages[1],
-            isCorrect: validation.isCorrect,
-            explanation: validation.explanation
-          };
-
-          // Update metrics
-          if (validation.isCorrect) {
-            chat.metrics.correct += 1;
-            newRun.metrics.passed += 1;
-          } else {
-            chat.metrics.incorrect += 1;
-            newRun.metrics.failed += 1;
-          }
-
-          completedChats.set(chat.id, {...chat});
-          newRun.chats = Array.from(completedChats.values());
-          updateRunInState({...newRun});
+          setRuns(prev => prev.map(run => 
+            run.id === newRun.id ? {...newRun} : run
+          ));
 
         } catch (error) {
           console.error('Scenario test failed:', error);
           chat.messages.push({
             id: uuidv4(),
             role: 'assistant',
-            content: 'Error: Failed to get response from agent',
+            content: 'Error: Failed to execute conversation',
             isCorrect: false,
             explanation: 'Test execution failed'
           });
           chat.metrics.incorrect += 1;
           newRun.metrics.failed += 1;
           
-          completedChats.set(chat.id, {...chat});
+          completedChats.set(chat.id, chat);
           newRun.chats = Array.from(completedChats.values());
-          updateRunInState({...newRun});
+          setRuns(prev => prev.map(run => 
+            run.id === newRun.id ? {...newRun} : run
+          ));
         }
 
         return chat;
       });
 
-      // Wait for all scenarios to complete
       await Promise.all(scenarioPromises);
       
-      // Update final run status
       newRun.status = 'completed';
-      updateRunInState({...newRun});
+      setRuns(prev => prev.map(run => 
+        run.id === newRun.id ? {...newRun} : run
+      ));
       
     } catch (error) {
       console.error('Test run failed:', error);
       newRun.status = 'failed';
-      updateRunInState({...newRun});
+      setRuns(prev => prev.map(run => 
+        run.id === newRun.id ? {...newRun} : run
+      ));
     }
   };
 

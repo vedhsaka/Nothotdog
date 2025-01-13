@@ -8,16 +8,6 @@ interface GenerateInputResponse {
 }
 
 export const agentTestApi = {
-  async generateInput(scenario: string, inputFormat: string) {
-    const res = await fetch('/api/tools/generate-input', {
-      method: 'POST',
-      body: JSON.stringify({ scenario, inputFormat })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-    return data.input;
-  },
-
   async evaluateAgent(agentEndpoint: string, input: any, headers?: Record<string, string>) {
     const res = await fetch('/api/tools/evaluate-agent', {
       method: 'POST',
