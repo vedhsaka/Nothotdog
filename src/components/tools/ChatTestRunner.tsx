@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { MessageDisplay } from "@/components/common/MessageDisplay";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { TestRun } from '@/types/ui';
-import { TestChat } from '@/types/chat';
+import { ChatMessage } from '@/types/chat';
 import { useTestExecution } from '@/hooks/useTestExecution';
 
 interface ExtendedTestRun extends TestRun {
@@ -27,7 +27,7 @@ export function ChatTestRunner() {
   const [runs, setRuns] = useState<ExtendedTestRun[]>([]);
   const [selectedRun, setSelectedRun] = useState<ExtendedTestRun | null>(null);
   const [expandedMessages, setExpandedMessages] = useState<{[key: string]: boolean}>({});
-  const { executeTest, isExecuting, error } = useTestExecution();
+  const { executeTest, isExecuting, error, currentMessages, isTyping } = useTestExecution();
 
   useEffect(() => {
     loadTestRuns();
@@ -86,6 +86,35 @@ export function ChatTestRunner() {
       ...prev,
       [messageKey]: !prev[messageKey]
     }));
+  };
+
+  const renderCurrentMessages = () => {
+    if (!currentMessages.length) return null;
+
+    return (
+      <div className="current-conversation space-y-4">
+        {currentMessages.map((message: ChatMessage) => (
+          <MessageDisplay
+            key={message.id}
+            role={message.role}
+            content={message.content}
+            isCorrect={message.metrics?.validationScore ? message.metrics.validationScore >= 0.7 : undefined}
+            explanation={message.metrics?.validationScore 
+              ? `Validation Score: ${message.metrics.validationScore}` 
+              : undefined}
+            isExpanded={expandedMessages[message.id]}
+            onToggleExpand={() => toggleExpanded(message.id)}
+          />
+        ))}
+        {isTyping && (
+          <div className="flex items-center gap-2 p-4 bg-black/20 rounded">
+            <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse" />
+            <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse delay-150" />
+            <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse delay-300" />
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -150,13 +179,16 @@ export function ChatTestRunner() {
                         key={`${chatIndex}-${messageIndex}`}
                         role={message.role}
                         content={message.content}
-                        isCorrect={(message?.metrics?.validationScore ?? 0) >= 0.7}
-                        explanation={`Validation Score: ${message?.metrics?.validationScore ?? 'N/A'}`}
+                        isCorrect={message.metrics?.validationScore ? message.metrics.validationScore >= 0.7 : undefined}
+                        explanation={message.metrics?.validationScore 
+                          ? `Validation Score: ${message.metrics.validationScore}` 
+                          : undefined}
                         isExpanded={expandedMessages[`${chatIndex}-${messageIndex}`]}
                         onToggleExpand={() => toggleExpanded(`${chatIndex}-${messageIndex}`)}
                       />
                     ))
                   )}
+                  {renderCurrentMessages()}
                 </div>
               </div>
             ) : (

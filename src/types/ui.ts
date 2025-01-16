@@ -1,5 +1,5 @@
 import { TestMetrics } from './metrics';
-import { TestChat } from './chat';
+import { ChatMessage, TestChat } from './chat';
 
 export interface TestRun {
   id: string;
@@ -8,4 +8,5 @@ export interface TestRun {
   status: 'running' | 'completed' | 'failed';
   metrics: TestMetrics;
   chats: TestChat[];
+  currentMessages?: ChatMessage[];
 } 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { TestRun } from '@/types/ui';
-import { TestChat } from '@/types/chat';
+import { ChatMessage, TestChat } from '@/types/chat';
 import { useTestRuns } from './useTestRuns';
 import { storageService } from '@/services/storage/localStorage';
 import { ClaudeAgent } from '@/services/agents/claude/claudeAgent';
@@ -14,11 +14,14 @@ export type TestExecutionError = {
   details?: string;
 };
 
+
 export function useTestExecution() {
   const { addRun, updateRun } = useTestRuns();
   const [status, setStatus] = useState<TestExecutionStatus>('idle');
   const [error, setError] = useState<TestExecutionError | null>(null);
   const [progress, setProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 0 });
+  const [currentMessages, setCurrentMessages] = useState<ChatMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
 
   const executeTest = async (testId: string) => {
     setStatus('connecting');
@@ -82,17 +85,36 @@ export function useTestExecution() {
       setStatus('running');
 
       const completedChats = new Map<string, TestChat>();
-      
+
+      setCurrentMessages([]);
       for (const [index, scenario] of scenarios.entries()) {
         try {
           console.log(`Executing scenario ${index + 1}/${scenarios.length}:`, scenario);
+          
+          // New: Show typing indicator
+          setIsTyping(true);
+  
 
           const result = await agent.runTest(
             scenario.scenario,
             scenario.expectedOutput || ''
           );
-
+          const testMessage = result.conversation.humanMessage;
+          setCurrentMessages(prev => [...prev, {
+            id: uuidv4(),
+            role: 'user',
+            content: testMessage,
+            timestamp: new Date().toISOString()
+          }]);
           console.log('Test result:', result);
+
+          setIsTyping(false);
+          setCurrentMessages(prev => [...prev, {
+            id: uuidv4(),
+            role: 'assistant',
+            content: result.conversation.chatResponse,
+            timestamp: new Date().toISOString()
+          }]);
           
           const chat: TestChat = {
             id: uuidv4(),
@@ -169,6 +191,7 @@ export function useTestExecution() {
         updateRun({
           ...newRun,
           chats: Array.from(completedChats.values()),
+          currentMessages: currentMessages,
           status: completedChats.size === scenarios.length ? 'completed' : 'running'
         });
       }
@@ -199,6 +222,8 @@ export function useTestExecution() {
     status,
     error,
     progress,
-    isExecuting: status === 'connecting' || status === 'running'
+    isExecuting: status === 'connecting' || status === 'running',
+    currentMessages,
+    isTyping
   };
 }
