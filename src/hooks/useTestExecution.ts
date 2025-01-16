@@ -4,7 +4,8 @@ import { TestRun } from '@/types/ui';
 import { TestChat } from '@/types/chat';
 import { useTestRuns } from './useTestRuns';
 import { storageService } from '@/services/storage/localStorage';
-import { ClaudeAgent } from '@/services/agents/claude';
+import { ClaudeAgent } from '@/services/agents/claude/claudeAgent';
+import { Rule } from '@/services/agents/claude/types';
 
 export type TestExecutionStatus = 'idle' | 'connecting' | 'running' | 'completed' | 'failed';
 export type TestExecutionError = {
@@ -57,7 +58,7 @@ export function useTestExecution() {
         apiConfig: {
           inputFormat: JSON.parse(testToRun.input),
           outputFormat: JSON.parse(testToRun.expectedOutput),
-          rules: testToRun.rules.map(rule => ({ ...rule, isValid: rule.isValid ?? false }))
+          rules: testToRun.rules.map((rule: Rule) => ({ ...rule, isValid: rule.isValid ?? false }))
         }
       });
 

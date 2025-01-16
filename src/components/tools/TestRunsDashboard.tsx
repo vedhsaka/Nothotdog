@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Play, ChevronDown } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { ClaudeAgent } from '@/services/agents/claude';
-import { BaseMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
+import { ClaudeAgent } from '@/services/agents/claude/claudeAgent';
+import { TestMessage } from '@/services/agents/claude/types';
 
 function CollapsibleJson({ content }: { content: string }) {
   let formattedContent = content;
@@ -163,7 +163,7 @@ export function TestRunsDashboard() {
           );
 
           // Add all request and response messages
-          result.conversation.allMessages.forEach(msg => {
+          result.conversation.allMessages.forEach((msg: TestMessage) => {
             chat.messages.push(
               {
                 id: uuidv4(),
