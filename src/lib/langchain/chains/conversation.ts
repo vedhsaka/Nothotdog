@@ -2,7 +2,6 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { ChatAnthropic } from "@langchain/anthropic";
-import { ConversationStep } from "@/types/test";
 import { BufferMemory } from "langchain/memory";
 
 export class ConversationChain {

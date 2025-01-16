@@ -13,28 +13,33 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Play, ChevronDown } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { ConversationManager } from '@/services/conversation/ConversationManager';
-
-// For debugging only
-console.log('API Key:', process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY);
+import { ClaudeAgent } from '@/services/agents/claude';
+import { BaseMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 
 function CollapsibleJson({ content }: { content: string }) {
-  // Try to parse and format JSON if possible
   let formattedContent = content;
   try {
     if (typeof content === 'string' && (content.startsWith('{') || content.startsWith('['))) {
       const parsed = JSON.parse(content);
       formattedContent = JSON.stringify(parsed, null, 2);
+      return (
+        <pre className="font-mono text-sm p-4 rounded-lg overflow-x-auto whitespace-pre-wrap max-w-full">
+          {formattedContent}
+        </pre>
+      );
     }
+    return (
+      <div className="p-4 whitespace-pre-wrap text-sm max-w-full">
+        {content}
+      </div>
+    );
   } catch (e) {
-    // Keep original content if parsing fails
+    return (
+      <div className="p-4 whitespace-pre-wrap text-sm max-w-full">
+        {content}
+      </div>
+    );
   }
-
-  return (
-    <pre className="font-mono text-sm p-4 rounded-lg overflow-auto max-h-[200px]">
-      {formattedContent}
-    </pre>
-  );
 }
 
 export function TestRunsDashboard() {
@@ -74,7 +79,6 @@ export function TestRunsDashboard() {
   }, []);
 
   const runTest = async (testId: string) => {
-    // Find the test details and its variations from localStorage
     const allTests = JSON.parse(localStorage.getItem('savedTests') || '[]');
     const testToRun = allTests.find((t: any) => t.id === testId);
     
@@ -82,23 +86,30 @@ export function TestRunsDashboard() {
       console.error('Test not found');
       return;
     }
-
-    // Get all variations for this test
+  
+    const apiKey = testToRun.headers?.['x-api-key'] || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('API key not found');
+      return;
+    }
+  
+    const agent = new ClaudeAgent({
+      headers: {
+        ...testToRun.headers,
+      },
+      endpointUrl: testToRun.agentEndpoint,
+      apiConfig: {
+        inputFormat: JSON.parse(testToRun.input || '{}'),
+        outputFormat: JSON.parse(testToRun.output || '{}'),
+        rules: testToRun.rules || []
+      }
+    });
+  
     const savedVariations = JSON.parse(localStorage.getItem('testVariations') || '{}');
     const testVariations = savedVariations[testId] || [];
     const latestVariation = testVariations[testVariations.length - 1];
-    const scenarios = (latestVariation?.cases || []).map((scenario: { scenario: string, expectedOutput?: string }) => ({
-      ...scenario,
-      type: 'conversation' as const,
-      steps: [{
-        id: uuidv4(),
-        role: 'user' as const,
-        content: scenario.scenario,
-        expectedOutput: scenario.expectedOutput
-      }]
-    }));
-
-    // Create a new test run
+    const scenarios = latestVariation?.cases || [];
+  
     const newRun: TestRun = {
       id: uuidv4(),
       name: testToRun.name,
@@ -113,15 +124,16 @@ export function TestRunsDashboard() {
       chats: [],
       results: []
     };
-
+  
     setRuns(prev => [newRun, ...prev]);
-
+  
     try {
       const completedChats = new Map<string, TestChat>();
-
+  
       const scenarioPromises = scenarios.map(async (scenario: TestScenario) => {
+        const chatId = uuidv4();
         const chat: TestChat = {
-          id: uuidv4(),
+          id: chatId,
           name: scenario.scenario,
           messages: [],
           metrics: {
@@ -129,45 +141,67 @@ export function TestRunsDashboard() {
             incorrect: 0
           }
         };
-
+      
+        // Create a new agent for this scenario
+        const scenarioAgent = new ClaudeAgent({
+          headers: {
+            ...testToRun.headers,
+          },
+          endpointUrl: testToRun.agentEndpoint,
+          apiConfig: {
+            inputFormat: JSON.parse(testToRun.input || '{}'),
+            outputFormat: JSON.parse(testToRun.output || '{}'),
+            rules: testToRun.rules || []
+          }
+        });
+      
         try {
-          const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '';
-          console.log("apiKeyyyyy", apiKey);
-          const conversation = new ConversationManager({
-            ...testToRun,
-            headers: {
-              ...testToRun.headers,
-              'x-api-key': apiKey
-            }
-          });
-          conversation.setConversation(scenario);
-          const result = await conversation.executeConversation();
-          
-          chat.messages = result.history.map(step => ({
-            id: step.id,
-            role: step.role,
-            content: step.role === 'assistant' ? step.response || '' : step.content,
-            isCorrect: (step.metrics?.validationScore ?? 0) >= 0.7,
-            explanation: step.metrics ? `Validation Score: ${step.metrics.validationScore ?? 0}` : undefined,
-            expectedOutput: step.expectedOutput
-          }));
+          // Make the API call
+          const result = await scenarioAgent.runTest(
+            scenario.scenario,
+            scenario.expectedOutput || ''
+          );
 
-          chat.metrics.correct = result.success ? 1 : 0;
-          chat.metrics.incorrect = result.success ? 0 : 1;
+          // Add all request and response messages
+          result.conversation.allMessages.forEach(msg => {
+            chat.messages.push(
+              {
+                id: uuidv4(),
+                chatId: chatId,
+                role: 'user',
+                content: JSON.stringify(msg.rawInput, null, 2),
+                isCorrect: true,
+                explanation: "API Request"
+              },
+              {
+                id: uuidv4(),
+                chatId: chatId,
+                role: 'assistant',
+                content: JSON.stringify(msg.rawOutput, null, 2),
+                isCorrect: result.validation.passedTest,
+                explanation: `Response Time: ${result.validation.metrics.responseTime}ms`
+              }
+            );
+          });
+      
+          // Update metrics and store chat
+          chat.metrics.correct = result.validation.passedTest ? 1 : 0;
+          chat.metrics.incorrect = result.validation.passedTest ? 0 : 1;
           
-          completedChats.set(chat.id, chat);
+          completedChats.set(chat.id, {...chat});
           newRun.chats = Array.from(completedChats.values());
-          newRun.metrics.passed += result.success ? 1 : 0;
-          newRun.metrics.failed += result.success ? 0 : 1;
+          newRun.metrics.passed += result.validation.passedTest ? 1 : 0;
+          newRun.metrics.failed += result.validation.passedTest ? 0 : 1;
           
           setRuns(prev => prev.map(run => 
             run.id === newRun.id ? {...newRun} : run
           ));
-
+      
         } catch (error) {
           console.error('Scenario test failed:', error);
           chat.messages.push({
             id: uuidv4(),
+            chatId: chatId,
             role: 'assistant',
             content: 'Error: Failed to execute conversation',
             isCorrect: false,
@@ -176,16 +210,16 @@ export function TestRunsDashboard() {
           chat.metrics.incorrect += 1;
           newRun.metrics.failed += 1;
           
-          completedChats.set(chat.id, chat);
+          completedChats.set(chat.id, {...chat});
           newRun.chats = Array.from(completedChats.values());
           setRuns(prev => prev.map(run => 
             run.id === newRun.id ? {...newRun} : run
           ));
         }
-
+      
         return chat;
       });
-
+  
       await Promise.all(scenarioPromises);
       
       newRun.status = 'completed';
@@ -220,37 +254,42 @@ export function TestRunsDashboard() {
           <p className="text-sm text-zinc-400">View conversation and responses</p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-[800px] mx-auto">
           {selectedChat.messages.map((message) => (
             <div key={message.id} className="space-y-2">
               {message.role === 'user' ? (
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center flex-shrink-0">
                     <span className="text-sm">👤</span>
                   </div>
-                  <div className="flex-1 overflow-hidden bg-zinc-800/50 rounded-lg">
-                    <CollapsibleJson content={message.content} />
-                  </div>
-                  <div className="w-8 flex-shrink-0" />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex items-start gap-3 justify-end">
-                    <div className="w-8 flex-shrink-0" />
-                    <div className="flex-1 overflow-hidden bg-black/20 rounded-lg">
+                  <div className="flex-1 overflow-hidden">
+                    <div className="bg-blue-500/20 rounded-lg">
                       <CollapsibleJson content={message.content} />
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm">🤖</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 overflow-hidden">
+                    <div className="bg-emerald-500/10 rounded-lg">
+                      <CollapsibleJson content={message.content} />
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge 
+                        variant={message.isCorrect ? "outline" : "destructive"} 
+                        className={message.isCorrect ? "bg-green-500/10" : "bg-red-500/10"}
+                      >
+                        {message.isCorrect ? "Correct" : "Incorrect"}
+                      </Badge>
+                      {message.explanation && (
+                        <span className="text-xs text-zinc-400">
+                          {message.explanation}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 justify-end mr-11">
-                    <Badge variant={message.isCorrect ? "outline" : "destructive"} className={message.isCorrect ? "bg-green-500/10" : "bg-red-500/10"}>
-                      {message.isCorrect ? "Correct" : "Incorrect"}
-                    </Badge>
-                    {message.explanation && (
-                      <span className="text-sm text-zinc-400">{message.explanation}</span>
-                    )}
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">🤖</span>
                   </div>
                 </div>
               )}
@@ -396,4 +435,4 @@ export function TestRunsDashboard() {
       </div>
     </div>
   );
-} 
+}

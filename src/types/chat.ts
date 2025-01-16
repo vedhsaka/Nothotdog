@@ -1,9 +1,8 @@
-import { ChatMetrics } from './metrics';
-
 export type MessageRole = 'user' | 'assistant';
 
 export interface Message {
   id: string;
+  chatId: string;
   role: MessageRole;
   content: string;
   expectedOutput?: string;
@@ -11,17 +10,35 @@ export interface Message {
   explanation?: string;
 }
 
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
-  metrics: {
-    responseTime: number;
-    validationScore: number;
-    contextRelevance: number;
+  metrics?: {
+    responseTime?: number;
+    validationScore?: number;
+    contextRelevance?: number;
   };
-  expectedOutput?: string;
+}
+
+export interface TestResult {
+  conversation: {
+    chatId: string;
+    messages: ChatMessage[];
+    rawInput: Record<string, any>;
+    rawOutput: Record<string, any>;
+    chatResponse: string;
+  };
+  validation: {
+    passedTest: boolean;
+    formatValid: boolean;
+    conditionMet: boolean;
+    metrics: {
+      responseTime: number;
+    };
+  };
 }
 
 export interface TestChat {
@@ -34,11 +51,11 @@ export interface TestChat {
     validationScores: number[];
     contextRelevance: number[];
     validationDetails?: {
+      customFailure?: boolean;
       containsFailures?: string[];
       notContainsFailures?: string[];
-      customFailure?: boolean;
-    } | null;
+    };
   };
   error?: string | null;
   timestamp: string;
-} 
+}

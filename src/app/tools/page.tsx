@@ -468,6 +468,7 @@ export default function ToolsPage() {
                               }}
                               className="bg-black/40 border border-zinc-800 text-sm py-1 px-2 rounded-md hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-zinc-700"
                             >
+                              <option value="chat">chat</option>
                               <option value="null">is null</option>
                               <option value="not_null">is not null</option>
                               <option value="=">=</option>
@@ -485,7 +486,7 @@ export default function ToolsPage() {
                               <option value="array_contains">array contains</option>
                               <option value="array_length">array length</option>
                             </select>
-                            {!['null', 'not_null'].includes(rule.condition) && (
+                            {!['null', 'not_null', 'chat'].includes(rule.condition) && (
                               <input
                                 type="text"
                                 value={rule.value}

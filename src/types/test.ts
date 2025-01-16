@@ -1,97 +1,58 @@
-export interface ConversationStep {
-  role: 'user' | 'assistant';
-  content: string;
-  expectedOutput?: string;
-  response?: string;
-  metrics?: {
-    responseTime: number;
-    validationScore: number;
-    contextRelevance: number;
-  };
-  validation?: {
-    criteria?: string;
-    stopOnFailure?: boolean;
-  };
-  branches?: {
-    condition: string;
-    steps: ConversationStep[];
-  }[];
-  validationPoints?: {
-    contains?: string[];
-    notContains?: string[];
-    custom?: (response: string) => boolean;
-    contextual?: {
-      previousMessages?: number;
-      pattern?: string;
-    };
-  };
-  branch?: {
-    condition: string;
-    nextStep: string;
-  }[];
-  id: string;
-  metadata?: {
-    timeout?: number;
-    retryCount?: number;
-    importance?: 'critical' | 'normal' | 'optional';
-  };
-}
-
-export interface ConversationContext {
-  variables: Record<string, any>;
-  messageHistory: ConversationStep[];
-  currentPath: string[];
-  metrics: {
-    responseTime: number[];
-    validationScores: number[];
-    contextRelevance: number[];
-    validationDetails?: {
-      containsFailures?: string[];
-      notContainsFailures?: string[];
-      customFailure?: boolean;
-    } | null;
-  };
-}
+import { TestRun } from '@/types/ui';
+import { TestChat } from '@/types/chat';
+import { ChatMetrics, TestMetrics } from '@/types/metrics';
 
 export interface TestScenario {
+  id: string;
   scenario: string;
-  type: 'conversation' | 'rule' | 'metric';
-  steps: ConversationStep[];
-  variables?: Record<string, any>;
-  validation?: {
-    criteria?: string;
-    stopOnFailure?: boolean;
-  };
-  expectedOutput?: string;
-  metadata?: {
-    description?: string;
-    tags?: string[];
-    timeout?: number;
-    success_criteria?: {
-      min_valid_responses?: number;
-      max_invalid_responses?: number;
-      required_context_score?: number;
-    };
-    expected_flow?: string[];
-  };
-  context?: ConversationContext;
+  expectedOutput: string;
 }
 
-export interface SavedTest {
-  id: string;
-  name: string;
-  agentEndpoint: string;
-  input: string;
-  headers: Record<string, string>;
+export function calculateChatMetrics(chat: TestChat): ChatMetrics {
+  return chat.messages.reduce(
+    (metrics, message) => {
+      if (message.role === 'assistant' && 'metrics' in message) {
+        if ((message.metrics?.validationScore ?? 0) >= 0.7) {
+          metrics.correct += 1;
+        } else {
+          metrics.incorrect += 1;
+        }
+      }
+      return metrics;
+    },
+    { correct: 0, incorrect: 0 }
+  );
 }
 
-export interface TestVariation {
-  id: string;
-  testId: string;
-  cases: TestScenario[];
-  createdAt: string;
+export function calculateRunMetrics(chats: TestChat[]): TestMetrics {
+  return chats.reduce(
+    (metrics, chat) => {
+      const chatMetrics = calculateChatMetrics(chat);
+      metrics.passed += chatMetrics.correct;
+      metrics.failed += chatMetrics.incorrect;
+      metrics.total = metrics.passed + metrics.failed;
+      metrics.chats = chats.length;
+      metrics.correct = metrics.passed;
+      metrics.incorrect = metrics.failed;
+      return metrics;
+    },
+    { total: 0, passed: 0, failed: 0, chats: 0, correct: 0, incorrect: 0 }
+  );
 }
 
-export interface TestVariations {
-  [testId: string]: TestVariation[];
+export function formatTimestamp(timestamp: string): string {
+  return new Date(timestamp).toLocaleString();
 }
+
+export function getStatusColor(status: TestRun['status']): string {
+  switch (status) {
+    case 'running':
+      return 'text-yellow-400';
+    case 'completed':
+      return 'text-green-400';
+    case 'failed':
+      return 'text-red-400';
+    default:
+      return 'text-gray-400';
+  }
+} 

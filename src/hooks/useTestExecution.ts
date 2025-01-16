@@ -4,8 +4,7 @@ import { TestRun } from '@/types/ui';
 import { TestChat } from '@/types/chat';
 import { useTestRuns } from './useTestRuns';
 import { storageService } from '@/services/storage/localStorage';
-import { ConversationManager } from '@/services/conversation/ConversationManager';
-import { TestScenario } from '@/types/test';
+import { ClaudeAgent } from '@/services/agents/claude';
 
 export type TestExecutionStatus = 'idle' | 'connecting' | 'running' | 'completed' | 'failed';
 export type TestExecutionError = {
@@ -27,6 +26,7 @@ export function useTestExecution() {
     
     try {
       const allTests = storageService.getSavedTests();
+      const rules = storageService.getRuleTemplates();
       console.log('All tests:', allTests);
       
       const testToRun = allTests.find(t => t.id === testId);
@@ -36,34 +36,30 @@ export function useTestExecution() {
         throw new Error('Test configuration not found');
       }
 
-      // Get API key from headers or environment
-      console.log("came here");
-      const apiKey = testToRun.headers?.['x-api-key'] || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
-      console.log("came here 2");
-      console.log(apiKey);
-      console.log('Using API key:', apiKey ? 'Found' : 'Not found');
-      
-      if (!apiKey) {
-        throw new Error('API key not found in test headers or environment. Please set NEXT_PUBLIC_ANTHROPIC_API_KEY in your .env file');
-      }
-
       const testVariations = storageService.getTestVariations();
-      console.log('Test variations:', testVariations);
-      
       const variations = testVariations[testId] || [];
-      console.log('Variations for test:', variations);
-      
       const latestVariation = variations[variations.length - 1];
-      console.log('Latest variation:', latestVariation);
       
       if (!latestVariation) {
         throw new Error('No test variations found');
       }
 
       const scenarios = latestVariation.cases || [];
-      console.log('Scenarios to run:', scenarios);
       
       setProgress({ completed: 0, total: scenarios.length });
+
+      // Initialize Claude Agent
+      const agent = new ClaudeAgent({
+        headers: {
+          ...testToRun.headers,
+        },
+        endpointUrl: testToRun.agentEndpoint,
+        apiConfig: {
+          inputFormat: JSON.parse(testToRun.input),
+          outputFormat: JSON.parse(testToRun.expectedOutput),
+          rules: testToRun.rules.map(rule => ({ ...rule, isValid: rule.isValid ?? false }))
+        }
+      });
 
       const newRun: TestRun = {
         id: uuidv4(),
@@ -89,79 +85,77 @@ export function useTestExecution() {
       for (const [index, scenario] of scenarios.entries()) {
         try {
           console.log(`Executing scenario ${index + 1}/${scenarios.length}:`, scenario);
-          
-          // Create conversation manager with the full test configuration
-          const conversation = new ConversationManager(testToRun);
-          
-          // Convert scenario to TestScenario format
-          const testScenario: TestScenario = {
-            scenario: scenario.scenario,
-            type: 'conversation',
-            steps: [{
-              id: uuidv4(),
-              role: 'user',
-              content: scenario.scenario,
-              validation: {
-                criteria: scenario.validation?.criteria || scenario.expectedOutput,
-                stopOnFailure: true
-              }
-            }],
-            metadata: {
-              description: `Test case for ${testToRun.name}`,
-              success_criteria: {
-                min_valid_responses: 1,
-                required_context_score: 0.7
-              }
-            }
-          };
 
-          console.log('Created test scenario:', testScenario);
-          
-          conversation.setConversation(testScenario);
-          console.log('Set conversation');
-          
-          const result = await conversation.executeConversation();
-          console.log('Conversation result:', result);
+          const result = await agent.runTest(
+            scenario.scenario,
+            scenario.expectedOutput || ''
+          );
+
+          console.log('Test result:', result);
           
           const chat: TestChat = {
             id: uuidv4(),
             scenario: scenario.scenario,
-            status: result.success ? 'passed' : 'failed',
-            messages: result.history.map(step => ({
-              id: step.id,
-              role: step.role,
-              content: step.role === 'assistant' ? step.response || '' : step.content,
+            status: result.validation.passedTest ? 'passed' : 'failed',
+            messages: [{
+              id: uuidv4(),
+              role: 'user',
+              content: result.conversation.humanMessage,
               timestamp: new Date().toISOString(),
               metrics: {
-                responseTime: step.metrics?.responseTime || 0,
-                validationScore: step.metrics?.validationScore || 0,
-                contextRelevance: step.metrics?.contextRelevance || 0
-              },
-              expectedOutput: step.expectedOutput
-            })),
+                responseTime: result.validation.metrics.responseTime,
+                validationScore: result.validation.passedTest ? 1 : 0,
+                contextRelevance: 1
+              }
+            }, {
+              id: uuidv4(),
+              role: 'assistant',
+              content: result.conversation.chatResponse,
+              timestamp: new Date().toISOString(),
+              metrics: {
+                responseTime: result.validation.metrics.responseTime,
+                validationScore: result.validation.passedTest ? 1 : 0,
+                contextRelevance: 1
+              }
+            }],
             metrics: {
-              responseTime: result.metrics.responseTime,
-              validationScores: result.metrics.validationScores,
-              contextRelevance: result.metrics.contextRelevance
+              responseTime: [result.validation.metrics.responseTime],
+              validationScores: [result.validation.passedTest ? 1 : 0],
+              contextRelevance: [1],
+              validationDetails: {
+                customFailure: !result.validation.passedTest,
+                containsFailures: [],
+                notContainsFailures: []
+              }
             },
             timestamp: new Date().toISOString()
           };
           
           completedChats.set(scenario.scenario, chat);
-          newRun.metrics.passed += result.success ? 1 : 0;
-          newRun.metrics.failed += result.success ? 0 : 1;
-          newRun.metrics.correct += result.success ? 1 : 0;
-          newRun.metrics.incorrect += result.success ? 0 : 1;
+          newRun.metrics.passed += result.validation.passedTest ? 1 : 0;
+          newRun.metrics.failed += result.validation.passedTest ? 0 : 1;
+          newRun.metrics.correct += result.validation.passedTest ? 1 : 0;
+          newRun.metrics.incorrect += result.validation.passedTest ? 0 : 1;
           
           setProgress(prev => ({ ...prev, completed: index + 1 }));
           
         } catch (error: any) {
+          console.error('Error in test execution:', error);
           const chat: TestChat = {
             id: uuidv4(),
             scenario: scenario.scenario,
             status: 'failed',
             messages: [],
-            metrics: { responseTime: [], validationScores: [], contextRelevance: [] },
+            metrics: { 
+              responseTime: [], 
+              validationScores: [], 
+              contextRelevance: [],
+              validationDetails: {
+                customFailure: true,
+                containsFailures: [],
+                notContainsFailures: []
+              }
+            },
             timestamp: new Date().toISOString(),
             error: error.message || 'Unknown error occurred'
           };
@@ -206,4 +200,4 @@ export function useTestExecution() {
     progress,
     isExecuting: status === 'connecting' || status === 'running'
   };
-} 
+}

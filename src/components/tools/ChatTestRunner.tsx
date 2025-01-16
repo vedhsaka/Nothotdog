@@ -150,9 +150,8 @@ export function ChatTestRunner() {
                         key={`${chatIndex}-${messageIndex}`}
                         role={message.role}
                         content={message.content}
-                        isCorrect={message.metrics.validationScore >= 0.7}
-                        explanation={`Validation Score: ${message.metrics.validationScore}`}
-                        expectedOutput={message.expectedOutput}
+                        isCorrect={(message?.metrics?.validationScore ?? 0) >= 0.7}
+                        explanation={`Validation Score: ${message?.metrics?.validationScore ?? 'N/A'}`}
                         isExpanded={expandedMessages[`${chatIndex}-${messageIndex}`]}
                         onToggleExpand={() => toggleExpanded(`${chatIndex}-${messageIndex}`)}
                       />
