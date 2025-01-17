@@ -2,7 +2,7 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server'
 import { anthropic, MODEL } from '@/lib/claude'
-import { validateEvaluateAgentRequest } from '@/lib/validations'
+import { validateTestRequest } from '@/lib/validations/testRequest'
 
 function getMessage(content: any): string {
   if (!content || !content[0]) {
@@ -20,16 +20,28 @@ function getMessage(content: any): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { agentEndpoint, testCases } = validateEvaluateAgentRequest(body)
+    const { agentEndpoint, testCases, headers } = body
+
+    // Get the saved test case to compare against
+    const savedTestCase = testCases[0]
+
+    // Validate request format
+    if (!validateTestRequest({ input: savedTestCase.input, headers }, { input: savedTestCase.input, headers: savedTestCase.headers })) {
+      return NextResponse.json(
+        { error: 'Invalid request format - headers or body structure does not match saved test' },
+        { status: 400 }
+      )
+    }
+
     const results = await Promise.all(testCases.map(async (testCase: any) => {
-    const startTime = Date.now()
-    const body =  JSON.stringify({ input: testCase.input })  
+      const startTime = Date.now()
+      const body = JSON.stringify({ input: testCase.input })
 
       try {
         // Test the agent
         const agentResponse = await fetch(agentEndpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...headers },
           body
         })
         

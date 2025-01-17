@@ -5,7 +5,16 @@ import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MessageDisplay } from "@/components/common/MessageDisplay";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { agentTestApi } from '@/lib/api/agentTest';
+import { TestRun } from '@/types/ui';
+import { ChatMessage } from '@/types/chat';
+import { useTestExecution } from '@/hooks/useTestExecution';
+
+interface ExtendedTestRun extends TestRun {
+  agentEndpoint: string;
+  headers: Record<string, string>;
+  testCases: TestCase[];
+  inputFormat?: string;
+}
 
 interface TestCase {
   id: string;
@@ -14,33 +23,11 @@ interface TestCase {
   sourceTestId: string;
 }
 
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-  expectedOutput?: string;
-  isCorrect?: boolean;
-  explanation?: string;
-}
-
-type TestRunStatus = 'pending' | 'running' | 'completed' | 'failed';
-
-interface TestRun {
-  id: string;
-  name: string;
-  timestamp: string;
-  status: TestRunStatus;
-  agentEndpoint: string;
-  headers: Record<string, string>;
-  testCases: TestCase[];
-  messages: ChatMessage[];
-  inputFormat?: string; // Reference format from manual testing
-}
-
 export function ChatTestRunner() {
-  const [runs, setRuns] = useState<TestRun[]>([]);
-  const [selectedRun, setSelectedRun] = useState<TestRun | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
+  const [runs, setRuns] = useState<ExtendedTestRun[]>([]);
+  const [selectedRun, setSelectedRun] = useState<ExtendedTestRun | null>(null);
   const [expandedMessages, setExpandedMessages] = useState<{[key: string]: boolean}>({});
+  const { executeTest, isExecuting, error, currentMessages, isTyping } = useTestExecution();
 
   useEffect(() => {
     loadTestRuns();
@@ -57,140 +44,81 @@ export function ChatTestRunner() {
       id: crypto.randomUUID(),
       name: `Test Run for ${sourceId}`,
       timestamp: new Date().toISOString(),
-      status: 'pending' as TestRunStatus,
+      status: 'running' as const,
       agentEndpoint: referenceTest.agentEndpoint,
       headers: referenceTest.headers,
-      inputFormat: referenceTest.input, // Store the exact input format as reference
+      inputFormat: referenceTest.input,
       testCases: (testCases as any[]).map(tc => ({
         id: tc.id,
         scenario: tc.scenario,
         expectedOutput: tc.expectedOutput,
         sourceTestId: tc.sourceTestId
       })),
-      messages: []
+      chats: [],
+      metrics: {
+        total: 0,
+        passed: 0,
+        failed: 0,
+        chats: 0,
+        correct: 0,
+        incorrect: 0
+      }
     }));
   
     setRuns(newRuns);
   };
 
-  const runTests = async (run: TestRun) => {
-    if (!run.agentEndpoint) {
-      console.error('Missing agent configuration');
+  const runTests = async (run: ExtendedTestRun) => {
+    if (!run.testCases[0]?.sourceTestId) {
+      console.error('Missing source test ID');
       return;
     }
-  
-    setIsRunning(true);
-    const updatedRun: TestRun = {
-      ...run,
-      status: 'running' as TestRunStatus,
-      messages: []
-    };
-    setSelectedRun(updatedRun);
-  
+
     try {
-      let conversation = '';
-  
-      for (const testCase of run.testCases) {
-  
-        // Step 1: Generate appropriate input for this scenario
-        const inputResponse = await fetch('/api/tools/validate-response', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            context: testCase.scenario,
-            mode: 'generate_input',
-            previousContext: conversation,
-            inputFormat: run.inputFormat
-          })
-        });
-  
-        if (!inputResponse.ok) {
-          throw new Error('Failed to generate input');
-        }
-  
-        const input = await inputResponse.json();
-  
-        // Add user message
-        const userMessage: ChatMessage = {
-          role: 'user',
-          content: input,
-          expectedOutput: testCase.expectedOutput
-        };
-        updatedRun.messages = [...updatedRun.messages, userMessage];
-        setSelectedRun({ ...updatedRun });
-  
-        try {
-          // Send request to agent
-          const response = await fetch(run.agentEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...run.headers
-            },
-            body: input
-          });
-  
-          if (!response.ok) {
-            throw new Error(`Agent request failed: ${response.statusText}`);
-          }
-  
-          const agentResponse = await response.json();
-  
-          // Update conversation context
-          conversation += `User: ${input}\nAssistant: ${agentResponse.output || agentResponse.response}\n`;
-  
-          // Validate response against expected output
-          const validation = await agentTestApi.validateResponse(response, testCase.expectedOutput);
-  
-          // Add assistant message with validation
-          const assistantMessage: ChatMessage = {
-            role: 'assistant',
-            content: agentResponse.response.text,
-            isCorrect: validation.isCorrect,
-            explanation: validation.explanation
-          };
-          updatedRun.messages = [...updatedRun.messages, assistantMessage];
-          setSelectedRun({ ...updatedRun });
-  
-        } catch (error) {
-          console.error('Test execution error:', error);
-          const errorMessage: ChatMessage = {
-            role: 'assistant',
-            content: `Error: ${error instanceof Error ? error.message : 'Failed to get response'}`,
-            isCorrect: false
-          };
-          updatedRun.messages = [...updatedRun.messages, errorMessage];
-          setSelectedRun({ ...updatedRun });
-        }
-      }
-  
-      updatedRun.status = 'completed' as TestRunStatus;
-      setSelectedRun(updatedRun);
-      setRuns(prev => prev.map(r => r.id === run.id ? updatedRun : r));
-  
-      // Save results
-      const savedRuns = JSON.parse(localStorage.getItem('testRuns') || '[]');
-      localStorage.setItem('testRuns', JSON.stringify([...savedRuns, updatedRun]));
-  
-    } catch (error) {
-      console.error('Run failed:', error);
-      updatedRun.status = 'failed' as TestRunStatus;
-      setSelectedRun(updatedRun);
-      setRuns(prev => prev.map(r => r.id === run.id ? updatedRun : r));
+      await executeTest(run.testCases[0].sourceTestId);
+    } catch (err) {
+      console.error('Failed to execute test:', err);
     }
-  
-    setIsRunning(false);
   };
 
-  const toggleExpanded = (messageIndex: number) => {
+  const toggleExpanded = (messageKey: string) => {
     setExpandedMessages(prev => ({
       ...prev,
-      [messageIndex]: !prev[messageIndex]
+      [messageKey]: !prev[messageKey]
     }));
   };
 
+  const renderCurrentMessages = () => {
+    if (!currentMessages.length) return null;
+
+    return (
+      <div className="current-conversation space-y-4">
+        {currentMessages.map((message: ChatMessage) => (
+          <MessageDisplay
+            key={message.id}
+            role={message.role}
+            content={message.content}
+            isCorrect={message.metrics?.validationScore ? message.metrics.validationScore >= 0.7 : undefined}
+            explanation={message.metrics?.validationScore 
+              ? `Validation Score: ${message.metrics.validationScore}` 
+              : undefined}
+            isExpanded={expandedMessages[message.id]}
+            onToggleExpand={() => toggleExpanded(message.id)}
+          />
+        ))}
+        {isTyping && (
+          <div className="flex items-center gap-2 p-4 bg-black/20 rounded">
+            <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse" />
+            <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse delay-150" />
+            <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse delay-300" />
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className="grid grid-cols-12 gap-6 p-6">
+    <div className="grid grid-cols-12 gap-4">
       <div className="col-span-3">
         <Card className="bg-black/40 border-zinc-800">
           <CardHeader>
@@ -202,30 +130,20 @@ export function ChatTestRunner() {
                 <div
                   key={run.id}
                   className={cn(
-                    "p-4 rounded-lg cursor-pointer transition-colors",
-                    selectedRun?.id === run.id 
-                      ? "bg-black/60 border border-zinc-700" 
-                      : "bg-black/20 hover:bg-black/30"
+                    "p-2 rounded cursor-pointer hover:bg-black/20 transition-colors",
+                    selectedRun?.id === run.id && "bg-black/20"
                   )}
                   onClick={() => setSelectedRun(run)}
                 >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">{run.name}</h3>
-                      <p className="text-sm text-zinc-400 mt-1">
-                        {new Date(run.timestamp).toLocaleString()}
-                      </p>
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{run.name}</span>
                     <StatusBadge status={run.status} />
+                  </div>
+                  <div className="text-sm text-zinc-400 mt-1">
+                    {new Date(run.timestamp).toLocaleString()}
                   </div>
                 </div>
               ))}
-
-              {runs.length === 0 && (
-                <div className="text-center py-8 text-zinc-500">
-                  No test runs available. Create test cases first.
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -239,29 +157,38 @@ export function ChatTestRunner() {
               <Button 
                 size="sm"
                 onClick={() => runTests(selectedRun)}
-                disabled={isRunning}
+                disabled={isExecuting}
               >
                 <Play className="w-4 h-4 mr-2" />
-                {isRunning ? 'Running...' : 'Run Tests'}
+                {isExecuting ? 'Running...' : 'Run Tests'}
               </Button>
             )}
           </CardHeader>
           <CardContent>
+            {error && (
+              <div className="mb-4 p-4 bg-red-500/20 text-red-400 rounded">
+                {error.message}
+              </div>
+            )}
             {selectedRun ? (
               <div className="h-[600px] overflow-y-auto pr-4">
                 <div className="space-y-4">
-                  {selectedRun.messages.map((message, index) => (
-                    <MessageDisplay
-                      key={index}
-                      role={message.role}
-                      content={message.content}
-                      isCorrect={message.isCorrect}
-                      explanation={message.explanation}
-                      expectedOutput={message.expectedOutput}
-                      isExpanded={expandedMessages[index]}
-                      onToggleExpand={() => toggleExpanded(index)}
-                    />
-                  ))}
+                  {selectedRun.chats.flatMap((chat, chatIndex) => 
+                    chat.messages.map((message, messageIndex) => (
+                      <MessageDisplay
+                        key={`${chatIndex}-${messageIndex}`}
+                        role={message.role}
+                        content={message.content}
+                        isCorrect={message.metrics?.validationScore ? message.metrics.validationScore >= 0.7 : undefined}
+                        explanation={message.metrics?.validationScore 
+                          ? `Validation Score: ${message.metrics.validationScore}` 
+                          : undefined}
+                        isExpanded={expandedMessages[`${chatIndex}-${messageIndex}`]}
+                        onToggleExpand={() => toggleExpanded(`${chatIndex}-${messageIndex}`)}
+                      />
+                    ))
+                  )}
+                  {renderCurrentMessages()}
                 </div>
               </div>
             ) : (

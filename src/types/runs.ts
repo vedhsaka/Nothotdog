@@ -34,6 +34,7 @@ export interface TestChat {
 
 export interface TestMessage {
   id: string;
+  chatId: string;
   role: 'user' | 'assistant';
   content: string;
   expectedOutput?: string;

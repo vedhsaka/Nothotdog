@@ -1,31 +1,69 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { TestRun } from '@/types/ui';
-import { TestChat } from '@/types/chat';
-import { SavedTest, TestScenario } from '@/types/test';
+import { ChatMessage, TestChat } from '@/types/chat';
 import { useTestRuns } from './useTestRuns';
 import { storageService } from '@/services/storage/localStorage';
-import { agentTestApi } from '@/lib/api/agentTest';
+import { ClaudeAgent } from '@/services/agents/claude/claudeAgent';
+import { Rule } from '@/services/agents/claude/types';
+
+export type TestExecutionStatus = 'idle' | 'connecting' | 'running' | 'completed' | 'failed';
+export type TestExecutionError = {
+  message: string;
+  code?: string;
+  details?: string;
+};
+
 
 export function useTestExecution() {
   const { addRun, updateRun } = useTestRuns();
-  const [isExecuting, setIsExecuting] = useState(false);
+  const [status, setStatus] = useState<TestExecutionStatus>('idle');
+  const [error, setError] = useState<TestExecutionError | null>(null);
+  const [progress, setProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 0 });
+  const [currentMessages, setCurrentMessages] = useState<ChatMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
 
   const executeTest = async (testId: string) => {
-    setIsExecuting(true);
+    setStatus('connecting');
+    setError(null);
+    setProgress({ completed: 0, total: 0 });
     
     try {
       const allTests = storageService.getSavedTests();
+      const rules = storageService.getRuleTemplates();
+      console.log('All tests:', allTests);
+      
       const testToRun = allTests.find(t => t.id === testId);
+      console.log('Test to run:', testToRun);
       
       if (!testToRun) {
-        throw new Error('Test not found');
+        throw new Error('Test configuration not found');
       }
 
       const testVariations = storageService.getTestVariations();
       const variations = testVariations[testId] || [];
       const latestVariation = variations[variations.length - 1];
-      const scenarios = latestVariation?.cases || [];
+      
+      if (!latestVariation) {
+        throw new Error('No test variations found');
+      }
+
+      const scenarios = latestVariation.cases || [];
+      
+      setProgress({ completed: 0, total: scenarios.length });
+
+      // Initialize Claude Agent
+      const agent = new ClaudeAgent({
+        headers: {
+          ...testToRun.headers,
+        },
+        endpointUrl: testToRun.agentEndpoint,
+        apiConfig: {
+          inputFormat: JSON.parse(testToRun.input),
+          outputFormat: JSON.parse(testToRun.expectedOutput),
+          rules: testToRun.rules.map((rule: Rule) => ({ ...rule, isValid: rule.isValid ?? false }))
+        }
+      });
 
       const newRun: TestRun = {
         id: uuidv4(),
@@ -44,121 +82,148 @@ export function useTestExecution() {
       };
 
       addRun(newRun);
+      setStatus('running');
 
       const completedChats = new Map<string, TestChat>();
-      await Promise.all(scenarios.map(scenario => executeScenario(scenario, testToRun, newRun, completedChats)));
 
-      newRun.status = 'completed';
-      updateRun(newRun);
-      
-    } catch (error) {
-      console.error('Test execution failed:', error);
-    } finally {
-      setIsExecuting(false);
-    }
-  };
+      setCurrentMessages([]);
+      for (const [index, scenario] of scenarios.entries()) {
+        try {
+          console.log(`Executing scenario ${index + 1}/${scenarios.length}:`, scenario);
+          
+          // New: Show typing indicator
+          setIsTyping(true);
+  
 
-  const executeScenario = async (
-    scenario: TestScenario, 
-    test: SavedTest, 
-    run: TestRun,
-    completedChats: Map<string, TestChat>
-  ) => {
-    const chat: TestChat = {
-      id: uuidv4(),
-      name: scenario.scenario,
-      messages: [],
-      metrics: {
-        correct: 0,
-        incorrect: 0
+          const result = await agent.runTest(
+            scenario.scenario,
+            scenario.expectedOutput || ''
+          );
+          const testMessage = result.conversation.humanMessage;
+          setCurrentMessages(prev => [...prev, {
+            id: uuidv4(),
+            role: 'user',
+            content: testMessage,
+            timestamp: new Date().toISOString()
+          }]);
+          console.log('Test result:', result);
+
+          setIsTyping(false);
+          setCurrentMessages(prev => [...prev, {
+            id: uuidv4(),
+            role: 'assistant',
+            content: result.conversation.chatResponse,
+            timestamp: new Date().toISOString()
+          }]);
+          
+          const chat: TestChat = {
+            id: uuidv4(),
+            scenario: scenario.scenario,
+            status: result.validation.passedTest ? 'passed' : 'failed',
+            messages: [{
+              id: uuidv4(),
+              role: 'user',
+              content: result.conversation.humanMessage,
+              timestamp: new Date().toISOString(),
+              metrics: {
+                responseTime: result.validation.metrics.responseTime,
+                validationScore: result.validation.passedTest ? 1 : 0,
+                contextRelevance: 1
+              }
+            }, {
+              id: uuidv4(),
+              role: 'assistant',
+              content: result.conversation.chatResponse,
+              timestamp: new Date().toISOString(),
+              metrics: {
+                responseTime: result.validation.metrics.responseTime,
+                validationScore: result.validation.passedTest ? 1 : 0,
+                contextRelevance: 1
+              }
+            }],
+            metrics: {
+              responseTime: [result.validation.metrics.responseTime],
+              validationScores: [result.validation.passedTest ? 1 : 0],
+              contextRelevance: [1],
+              validationDetails: {
+                customFailure: !result.validation.passedTest,
+                containsFailures: [],
+                notContainsFailures: []
+              }
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          completedChats.set(scenario.scenario, chat);
+          newRun.metrics.passed += result.validation.passedTest ? 1 : 0;
+          newRun.metrics.failed += result.validation.passedTest ? 0 : 1;
+          newRun.metrics.correct += result.validation.passedTest ? 1 : 0;
+          newRun.metrics.incorrect += result.validation.passedTest ? 0 : 1;
+          
+          setProgress(prev => ({ ...prev, completed: index + 1 }));
+          
+        } catch (error: any) {
+          console.error('Error in test execution:', error);
+          const chat: TestChat = {
+            id: uuidv4(),
+            scenario: scenario.scenario,
+            status: 'failed',
+            messages: [],
+            metrics: { 
+              responseTime: [], 
+              validationScores: [], 
+              contextRelevance: [],
+              validationDetails: {
+                customFailure: true,
+                containsFailures: [],
+                notContainsFailures: []
+              }
+            },
+            timestamp: new Date().toISOString(),
+            error: error.message || 'Unknown error occurred'
+          };
+          
+          completedChats.set(scenario.scenario, chat);
+          newRun.metrics.failed += 1;
+          newRun.metrics.incorrect += 1;
+        }
+
+        updateRun({
+          ...newRun,
+          chats: Array.from(completedChats.values()),
+          currentMessages: currentMessages,
+          status: completedChats.size === scenarios.length ? 'completed' : 'running'
+        });
       }
-    };
 
-    chat.messages.push({
-      id: uuidv4(),
-      role: 'user',
-      content: 'Generating input...',
-      expectedOutput: scenario.expectedOutput
-    });
-
-    updateChatState(chat, run, completedChats);
-
-    try {
-      // Generate input
-      const input = await agentTestApi.generateInput(scenario.scenario, test.input);
-      chat.messages[0].content = input;
-      updateChatState(chat, run, completedChats);
-
-      // Evaluate agent
-      const response = await agentTestApi.evaluateAgent(test.agentEndpoint, JSON.parse(input), test.headers);
-
-      chat.messages.push({
-        id: uuidv4(),
-        role: 'assistant',
-        content: JSON.stringify(response, null, 2),
-        isCorrect: false,
-        explanation: 'Validating response...'
+      setStatus('completed');
+      
+    } catch (error: any) {
+      console.error('Error executing test:', error);
+      setStatus('failed');
+      setError({
+        message: error.message || 'Test execution failed',
+        code: error.code,
+        details: error.stack
       });
-
-      updateChatState(chat, run, completedChats);
-      
-      // Validate response
-      const validation = await agentTestApi.validateResponse(response, scenario.expectedOutput);
-
-      chat.messages[1] = {
-        ...chat.messages[1],
-        isCorrect: validation.isCorrect,
-        explanation: validation.explanation
-      };
-
-      if (validation.isCorrect) {
-        chat.metrics.correct += 1;
-        run.metrics.passed += 1;
-      } else {
-        chat.metrics.incorrect += 1;
-        run.metrics.failed += 1;
-      }
-
-      updateChatState(chat, run, completedChats);
-
-    } catch (error) {
-      handleScenarioError(error, chat, run, completedChats);
+      throw error;
     }
   };
 
-  const updateChatState = (
-    chat: TestChat, 
-    run: TestRun, 
-    completedChats: Map<string, TestChat>
-  ) => {
-    completedChats.set(chat.id, {...chat});
-    run.chats = Array.from(completedChats.values());
-    updateRun({...run});
-  };
-
-  const handleScenarioError = (
-    error: unknown,
-    chat: TestChat,
-    run: TestRun,
-    completedChats: Map<string, TestChat>
-  ) => {
-    console.error('Scenario failed:', error);
-    chat.messages.push({
-      id: uuidv4(),
-      role: 'assistant',
-      content: 'Error: Failed to get response from agent',
-      isCorrect: false,
-      explanation: error instanceof Error ? error.message : 'Unknown error'
-    });
-
-    chat.metrics.incorrect += 1;
-    run.metrics.failed += 1;
-    
-    updateChatState(chat, run, completedChats);
+  const resetState = () => {
+    setStatus('idle');
+    setError(null);
+    setProgress({ completed: 0, total: 0 });
   };
 
   return {
     executeTest,
-    isExecuting
+    resetState,
+    status,
+    error,
+    progress,
+    isExecuting: status === 'connecting' || status === 'running',
+    currentMessages,
+    isTyping
   };
-} 
+}
