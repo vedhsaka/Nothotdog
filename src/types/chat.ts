@@ -12,6 +12,7 @@ export interface Message {
 
 
 export interface ChatMessage {
+  isCorrect: any;
   id: string;
   role: 'user' | 'assistant';
   content: string;

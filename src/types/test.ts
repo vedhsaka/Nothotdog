@@ -1,11 +1,49 @@
 import { TestRun } from '@/types/ui';
 import { TestChat } from '@/types/chat';
-import { ChatMetrics, TestMetrics } from '@/types/metrics';
+import { TestMetrics } from '@/types/metrics';
+import { ChatMetrics } from '@/types/metrics/validation';
+
+export interface ConversationContext {
+  variables: Record<string, any>;
+  messageHistory: any[];
+  currentPath: string[];
+  metrics: {
+    responseTime: number[];
+    validationScores: number[];
+    contextRelevance: number[];
+  };
+}
+
+export interface TestVariations {
+  [testId: string]: Array<{
+    id: string;
+    cases: TestScenario[];
+  }>;
+}
+
+export interface SavedTest {
+  id: string;
+  name: string;
+  agentEndpoint: string;
+  headers: Record<string, string>;
+  input?: string;
+  expectedOutput?: string;
+  rules: any[];
+}
 
 export interface TestScenario {
   id: string;
   scenario: string;
   expectedOutput: string;
+  steps: Array<{
+    input: string;
+    output: string;
+    metrics?: {
+      responseTime: number;
+      validationScore: number;
+      contextRelevance: number;
+    };
+  }>;
 }
 
 export function calculateChatMetrics(chat: TestChat): ChatMetrics {
