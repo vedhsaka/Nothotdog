@@ -11,10 +11,10 @@ NotHotDog is an open-source platform designed for comprehensive testing, evaluat
 - [Usage](#usage)
 - [Technologies](#technologies-used)
 - [Features](#features)
-- [API Documentation](#api-documentation)
 - [Contact](#contact)
 - [Acknowledgments](#acknowledgments)
-<!--- - [Screenshots](#screenshots) --->
+<!--- - [Screenshots](#screenshots) 
+- [API Documentation](#api-documentation)--->
 
 ## Installation
 
@@ -71,10 +71,11 @@ npm run dev
 - Radix UI
 - Recharts
 
-### AI Integration
-- Anthropic Claude 3 Models
-- LangChain
-- OpenAI-compatible API support
+### Supported LLMs
+- Anthropic
+- OpenAI
+- Deepseek
+- Gemini
 
 ### Testing & Validation
 - Zod Schema Validation
@@ -83,9 +84,9 @@ npm run dev
 
 ## Features
 
-- 🧪 Automated Test Case Generation
+- 🧪 Automated Test Case Generation with 50+ Parallel Runs
 - 📊 Comprehensive Metrics Dashboard
-- 🤖 Multi-Agent Support
+- 🤖 Personality Based Testing
 - 🔍 Detailed Response Validation
 - 📈 Performance Analytics
 - 🌐 Scenario-based Testing
@@ -94,7 +95,7 @@ npm run dev
 
 *(Placeholder for future screenshots)* --->
 
-## API Documentation
+<!--- ## API Documentation
 
 ### Test Generation Endpoint
 - **Endpoint:** `/api/tools/generate-tests`
@@ -123,7 +124,7 @@ npm run dev
 - Add more advanced AI model integrations
 - Expand validation rule complexity
 - Improve visualization capabilities
-- Create plugin architecture for custom metrics
+- Create plugin architecture for custom metrics --->
 
 ## Contributing
 
