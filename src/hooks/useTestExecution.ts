@@ -51,7 +51,7 @@ export function useTestExecution() {
       const scenarios = latestVariation.cases || [];
       
       setProgress({ completed: 0, total: scenarios.length });
-
+      
       // Initialize Claude Agent
       const agent = new ClaudeAgent({
         headers: {

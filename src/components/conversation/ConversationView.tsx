@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollArea } from "../ui/scroll-area";
-import { ConversationStep } from '@/types/test';
+import { ConversationStep } from '@/types/';
 import { cn } from '@/lib/utils';
 
 interface ConversationViewProps {

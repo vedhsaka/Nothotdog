@@ -10,6 +10,13 @@ import { ApiHandler } from './apiHandler';
 import { ConversationHandler } from './conversationHandler';
 import { ResponseValidator } from './validators';
 
+interface TestMessage {
+  humanMessage: string;
+  rawInput: Record<string, any>;
+  rawOutput: any;
+  chatResponse: string;
+}
+
 export class ClaudeAgent {
   private model: ChatAnthropic;
   private memory: BufferMemory;
@@ -76,7 +83,7 @@ ANALYSIS: <your analysis of the interaction>`],
       const testMessage = ConversationHandler.extractTestMessage(planResult);
       const conversationPlan = ConversationHandler.extractConversationPlan(planResult);
       
-      let allMessages = [];
+      let allMessages: TestMessage[] = [];
       let totalResponseTime = 0;
       let startTime = Date.now();
 
