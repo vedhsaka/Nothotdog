@@ -1,4 +1,5 @@
-import { ConversationContext, TestScenario, TestVariations, SavedTest } from '@/types/test';
+import { TestRun } from '@/types/runs';
+import { ConversationContext, TestScenario, TestVariations, SavedTest } from '@/types';
 
 const STORAGE_KEYS = {
   TEST_VARIATIONS: 'testVariations',
@@ -123,6 +124,14 @@ class LocalStorageService {
   clearConversationHistory(): void {
     this.setItem(STORAGE_KEYS.CONVERSATION_HISTORY, []);
     this.setItem(STORAGE_KEYS.CONVERSATION_METRICS, {});
+  }
+
+  getTestRuns(): TestRun[] {
+    return this.getItem<TestRun[]>('testRuns', []);
+  }
+  
+  setTestRuns(runs: TestRun[]): void {
+    this.setItem('testRuns', runs);
   }
 }
 

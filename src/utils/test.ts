@@ -1,20 +1,23 @@
-import { TestRun } from '@/types/ui';
+import { TestRun } from '@/types/runs';
 import { TestChat } from '@/types/chat';
 import { ChatMetrics, TestMetrics } from '@/types/metrics';
 
 export function calculateChatMetrics(chat: TestChat): ChatMetrics {
   return chat.messages.reduce(
-    (metrics, message) => {
-      if (message.role === 'assistant') {
-        if (message.isCorrect) {
-          metrics.correct += 1;
-        } else {
-          metrics.incorrect += 1;
-        }
-      }
-      return metrics;
-    },
-    { correct: 0, incorrect: 0 }
+    (metrics, message) => ({
+      correct: message.role === 'assistant' && message.isCorrect ? metrics.correct + 1 : metrics.correct,
+      incorrect: message.role === 'assistant' && !message.isCorrect ? metrics.incorrect + 1 : metrics.incorrect,
+      responseTime: metrics.responseTime || [],
+      validationScores: metrics.validationScores || [],
+      contextRelevance: metrics.contextRelevance || [],
+    }),
+    { 
+      correct: 0, 
+      incorrect: 0,
+      responseTime: [],
+      validationScores: [],
+      contextRelevance: []
+    }
   );
 }
 

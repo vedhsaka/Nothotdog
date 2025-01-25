@@ -9,13 +9,8 @@ import { ClaudeAgentConfig, TestResult } from './types';
 import { ApiHandler } from './apiHandler';
 import { ConversationHandler } from './conversationHandler';
 import { ResponseValidator } from './validators';
-
-interface TestMessage {
-  humanMessage: string;
-  rawInput: Record<string, any>;
-  rawOutput: any;
-  chatResponse: string;
-}
+import { TestMessage } from "@/types/runs";
+import { v4 as uuidv4 } from 'uuid';
 
 export class ClaudeAgent {
   private model: ChatAnthropic;
@@ -93,11 +88,23 @@ ANALYSIS: <your analysis of the interaction>`],
       let chatResponse = ConversationHandler.extractChatResponse(apiResponse, this.config.apiConfig.rules);
       totalResponseTime += Date.now() - startTime;
       
+      const chatId = uuidv4();
+      // allMessages.push({
+      //   humanMessage: testMessage,
+      //   rawInput: formattedInput,
+      //   rawOutput: apiResponse,
+      //   chatResponse
+      // });
+
       allMessages.push({
-        humanMessage: testMessage,
-        rawInput: formattedInput,
-        rawOutput: apiResponse,
-        chatResponse
+        id: uuidv4(),
+        chatId: chatId,
+        role: 'user',
+        content: testMessage,
+        metrics: {
+          responseTime: totalResponseTime,
+          validationScore: 1
+        }
       });
 
       // Handle multi-turn conversation
@@ -131,12 +138,34 @@ ANALYSIS: <your analysis of the interaction>`],
             clearTimeout(timeoutId);
           }
 
+          const turnResponseTime = Date.now() - startTime
           totalResponseTime += Date.now() - startTime;
+          // allMessages.push({
+          //   humanMessage: followUpMessage,
+          //   rawInput: followUpInput,
+          //   rawOutput: apiResponse,
+          //   chatResponse
+          // });
           allMessages.push({
-            humanMessage: followUpMessage,
-            rawInput: followUpInput,
-            rawOutput: apiResponse,
-            chatResponse
+            id: uuidv4(),
+            chatId: chatId,
+            role: 'user',
+            content: followUpMessage,
+            metrics: {
+              responseTime: turnResponseTime,
+              validationScore: 1
+            }
+          });
+          // Add assistant message
+          allMessages.push({
+            id: uuidv4(),
+            chatId: chatId,
+            role: 'assistant',
+            content: chatResponse,
+            metrics: {
+              responseTime: turnResponseTime,
+              validationScore: 1
+            }
           });
         }
       }
@@ -145,6 +174,7 @@ ANALYSIS: <your analysis of the interaction>`],
       const formatValid = ResponseValidator.validateResponseFormat(apiResponse, this.config.apiConfig.outputFormat);
       const conditionMet = ResponseValidator.validateCondition(apiResponse, this.config.apiConfig.rules);
 
+      // ${allMessages.map(m => `Human: ${m.humanMessage}\nAssistant: ${m.chatResponse}`).join('\n\n')}
       // Final analysis
       const analysisResult = await chain.invoke({
         input: `Analyze if this conversation met our test expectations:
@@ -153,7 +183,7 @@ Original scenario: ${scenario}
 Expected behavior: ${expectedOutput}
 
 Conversation:
-${allMessages.map(m => `Human: ${m.humanMessage}\nAssistant: ${m.chatResponse}`).join('\n\n')}
+${allMessages.map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`).join('\n\n')}
 
 Consider that the response format was ${formatValid ? 'valid' : 'invalid'}
 and the condition was ${conditionMet ? 'met' : 'not met'}.

@@ -1,6 +1,6 @@
 import { BaseMemory } from "langchain/memory";
 import { ChatMessage } from "@langchain/core/messages";
-import { ConversationContext } from "@/types/test";
+import { ConversationContext } from "@/types/context";
 
 export class ConversationMemory extends BaseMemory {
   private context: ConversationContext;

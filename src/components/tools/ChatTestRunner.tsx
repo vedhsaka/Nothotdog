@@ -5,7 +5,7 @@ import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MessageDisplay } from "@/components/common/MessageDisplay";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { TestRun } from '@/types/ui';
+import { TestRun } from '@/types/runs';
 import { ChatMessage } from '@/types/chat';
 import { useTestExecution } from '@/hooks/useTestExecution';
 
@@ -62,7 +62,8 @@ export function ChatTestRunner() {
         chats: 0,
         correct: 0,
         incorrect: 0
-      }
+      },
+      results: []
     }));
   
     setRuns(newRuns);

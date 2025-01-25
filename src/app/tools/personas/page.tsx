@@ -3,13 +3,19 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { Persona } from "@/types/persona";
+import { ChattyExplorer } from '@/services/agents/personas/variants/chattyExplorer';
+
 
 interface PersonaSelection {
   endpointId: string;
   personas: string[];
 }
 
+
 export default function PersonasPage() {
+  const availablePersonas: Persona[] = [ChattyExplorer];
+  const currentEndpoint: string = ''; 
   const [selections, setSelections] = useLocalStorage<PersonaSelection[]>('persona-selections', []);
   
   const handleSelect = (endpointId: string, personaId: string) => {

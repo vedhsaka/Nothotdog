@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Trash} from 'lucide-react';
 import { ResponseTime } from '@/components/tools/ResponseTime';
 import { TestCaseVariations } from '@/components/tools/TestCaseVariations';
-import { TestRun, TestChat } from '@/types/runs';
+import { TestRun } from '@/types/runs';
+import { TestChat } from '@/types/chat';
 
 interface AgentCase {
   id: string;

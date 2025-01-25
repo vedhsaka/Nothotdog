@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TestRun, TestChat } from '@/types/runs';
+import { TestRun, TestMessage } from '@/types/runs';
+import { TestChat } from '@/types/chat'
 import { TestScenario } from '@/types/test';
 import {
   DropdownMenu,
@@ -14,7 +15,6 @@ import {
 import { Play, ChevronDown } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { ClaudeAgent } from '@/services/agents/claude/claudeAgent';
-import { TestMessage } from '@/services/agents/claude/types';
 
 function CollapsibleJson({ content }: { content: string }) {
   let formattedContent = content;
@@ -119,7 +119,9 @@ export function TestRunsDashboard() {
         total: scenarios.length,
         passed: 0,
         failed: 0,
-        chats: scenarios.length
+        chats: scenarios.length,
+        correct: 0,
+        incorrect: 0
       },
       chats: [],
       results: []
@@ -135,12 +137,23 @@ export function TestRunsDashboard() {
         const chat: TestChat = {
           id: chatId,
           name: scenario.scenario,
+          scenario: scenario.scenario,
+          status: 'running',
           messages: [],
           metrics: {
             correct: 0,
-            incorrect: 0
-          }
-        };
+            incorrect: 0,
+            responseTime: [],
+            validationScores: [],
+            contextRelevance: [],
+            validationDetails: {
+              customFailure: false,
+              containsFailures: [],
+              notContainsFailures: []
+            }
+          },
+          timestamp: new Date().toISOString()
+         };
       
         // Create a new agent for this scenario
         const scenarioAgent = new ClaudeAgent({
@@ -163,26 +176,37 @@ export function TestRunsDashboard() {
           );
 
           // Add all request and response messages
-          result.conversation.allMessages.forEach((msg: TestMessage) => {
-            chat.messages.push(
-              {
-                id: uuidv4(),
-                chatId: chatId,
-                role: 'user',
-                content: JSON.stringify(msg.rawInput, null, 2),
-                isCorrect: true,
-                explanation: "API Request"
-              },
-              {
-                id: uuidv4(),
-                chatId: chatId,
-                role: 'assistant',
-                content: JSON.stringify(msg.rawOutput, null, 2),
-                isCorrect: result.validation.passedTest,
-                explanation: `Response Time: ${result.validation.metrics.responseTime}ms`
-              }
-            );
-          });
+          // result.conversation.allMessages.forEach((msg: TestMessage) => {
+          //   chat.messages.push(
+          //     {
+          //       id: uuidv4(),
+          //       chatId: chatId,
+          //       role: 'user',
+          //       content: JSON.stringify(msg.rawInput, null, 2),
+          //       isCorrect: true,
+          //       explanation: "API Request"
+          //     },
+          //     {
+          //       id: uuidv4(),
+          //       chatId: chatId,
+          //       role: 'assistant',
+          //       content: JSON.stringify(msg.rawOutput, null, 2),
+          //       isCorrect: result.validation.passedTest,
+          //       explanation: `Response Time: ${result.validation.metrics.responseTime}ms`
+          //     }
+          //   );
+          // });
+
+          messages: result.conversation.allMessages.map(msg => ({
+            id: uuidv4(),
+            chatId: chatId,
+            role: 'user',
+            content: msg.content,
+            isCorrect: true,
+            metrics: {
+              responseTime: result.validation.metrics.responseTime
+            }
+          }))
       
           // Update metrics and store chat
           chat.metrics.correct = result.validation.passedTest ? 1 : 0;
@@ -255,7 +279,7 @@ export function TestRunsDashboard() {
         </div>
 
         <div className="space-y-6 max-w-[800px] mx-auto">
-          {selectedChat.messages.map((message) => (
+          {selectedChat.messages.map((message: TestMessage) => (
             <div key={message.id} className="space-y-2">
               {message.role === 'user' ? (
                 <div className="flex items-start gap-3">

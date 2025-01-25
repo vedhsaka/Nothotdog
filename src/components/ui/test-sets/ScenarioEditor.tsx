@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { X, Plus } from 'lucide-react';
-import { ConversationStep, TestScenario } from '@/types/test';
+import { TestScenario } from '@/types/test';
+import { ConversationStep } from '@/types'
 
 interface ScenarioEditorProps {
   scenario: TestScenario;

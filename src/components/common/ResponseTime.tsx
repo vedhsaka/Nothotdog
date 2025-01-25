@@ -1,7 +1,7 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { MetricsDisplayProps } from '@/types/metrics';
+import { MetricsDisplayProps } from '@/types/props';
 
 type ResponseTimeProps = Omit<MetricsDisplayProps, 'variant' | 'label'> & {
   time: number;

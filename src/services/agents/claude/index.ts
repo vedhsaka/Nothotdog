@@ -4,5 +4,4 @@ export type {
   TestResult,
   Rule,
   ApiConfig,
-  TestMessage
 } from './types';

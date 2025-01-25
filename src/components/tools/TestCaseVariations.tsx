@@ -3,6 +3,7 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash } from 'lucide-react';
+import { TestVariation } from '@/types/variations';
 
 interface TestCase {
   id: string;
@@ -11,12 +12,12 @@ interface TestCase {
   expectedOutput: string;
 }
 
-interface TestVariation {
-  id: string;
-  sourceTestId: string;
-  timestamp: string;
-  cases: TestCase[];
-}
+// interface TestVariation {
+//   id: string;
+//   sourceTestId: string;
+//   timestamp: string;
+//   cases: TestCase[];
+// }
 
 interface EditingState {
   scenario: string;
@@ -89,6 +90,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     
     const variation: TestVariation = {
       id: crypto.randomUUID(),
+      testId: selectedTest.id,
       sourceTestId: testId,
       timestamp: new Date().toISOString(),
       cases: cases

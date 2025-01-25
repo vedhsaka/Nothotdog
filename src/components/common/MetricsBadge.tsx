@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { MetricsDisplayProps } from '@/types/metrics';
+import { MetricsDisplayProps } from '@/types/props';
 
 export function MetricsBadge({ label, value, variant = 'neutral', className }: MetricsDisplayProps) {
   const variantClasses = {

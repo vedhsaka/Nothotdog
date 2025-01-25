@@ -1,5 +1,5 @@
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
-import { ConversationContext } from "@/types/test";
+import { ConversationContext } from "@/types/context";
 
 export const createConversationPrompt = (systemPrompt: string) => {
   return ChatPromptTemplate.fromMessages([

@@ -1,4 +1,4 @@
-import { TestScenario } from './types';
+import { TestScenario } from '@/types';
 
 interface MetricSelectorProps {
   scenario: TestScenario;

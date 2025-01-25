@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TestVariation, TestVariations } from '@/types/test';
+import { TestVariation, TestVariations } from '@/types/variations';
 import { storageService } from '@/services/storage/localStorage';
 
 export function useTestVariations(testId?: string) {

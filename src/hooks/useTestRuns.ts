@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TestRun } from '@/types/ui';
+import { TestRun } from '@/types/runs';
 import { storageService } from '@/services/storage/localStorage';
 
 export function useTestRuns() {

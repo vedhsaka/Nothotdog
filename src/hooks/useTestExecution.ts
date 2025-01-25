@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { TestRun } from '@/types/ui';
+import { TestRun } from '@/types/runs';
 import { ChatMessage, TestChat } from '@/types/chat';
 import { useTestRuns } from './useTestRuns';
 import { storageService } from '@/services/storage/localStorage';
@@ -59,8 +59,8 @@ export function useTestExecution() {
         },
         endpointUrl: testToRun.agentEndpoint,
         apiConfig: {
-          inputFormat: JSON.parse(testToRun.input),
-          outputFormat: JSON.parse(testToRun.expectedOutput),
+          inputFormat: testToRun.input ? JSON.parse(testToRun.input) : {},
+          outputFormat: testToRun.expectedOutput ? JSON.parse(testToRun.expectedOutput) : {},
           rules: testToRun.rules.map((rule: Rule) => ({ ...rule, isValid: rule.isValid ?? false }))
         }
       });
@@ -78,7 +78,8 @@ export function useTestExecution() {
           correct: 0,
           incorrect: 0
         },
-        chats: []
+        chats: [],
+        results: []
       };
 
       addRun(newRun);
@@ -104,7 +105,11 @@ export function useTestExecution() {
             id: uuidv4(),
             role: 'user',
             content: testMessage,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            metrics: {
+              responseTime: result.validation.metrics.responseTime,
+              validationScore: result.validation.passedTest ? 1 : 0
+            }
           }]);
           console.log('Test result:', result);
 
@@ -113,35 +118,41 @@ export function useTestExecution() {
             id: uuidv4(),
             role: 'assistant',
             content: result.conversation.chatResponse,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            metrics: {
+              responseTime: result.validation.metrics.responseTime,
+              validationScore: result.validation.passedTest ? 1 : 0
+            }
           }]);
           
+          const chatId = uuidv4();
           const chat: TestChat = {
-            id: uuidv4(),
+            id: chatId,
+            name: scenario.scenario,
             scenario: scenario.scenario,
             status: result.validation.passedTest ? 'passed' : 'failed',
             messages: [{
               id: uuidv4(),
+              chatId: chatId,
               role: 'user',
               content: result.conversation.humanMessage,
-              timestamp: new Date().toISOString(),
               metrics: {
                 responseTime: result.validation.metrics.responseTime,
-                validationScore: result.validation.passedTest ? 1 : 0,
-                contextRelevance: 1
+                validationScore: result.validation.passedTest ? 1 : 0
               }
             }, {
               id: uuidv4(),
+              chatId: chatId,
               role: 'assistant',
               content: result.conversation.chatResponse,
-              timestamp: new Date().toISOString(),
               metrics: {
                 responseTime: result.validation.metrics.responseTime,
-                validationScore: result.validation.passedTest ? 1 : 0,
-                contextRelevance: 1
+                validationScore: result.validation.passedTest ? 1 : 0
               }
             }],
             metrics: {
+              correct: result.validation.passedTest ? 1 : 0,
+              incorrect: result.validation.passedTest? 0 : 1,
               responseTime: [result.validation.metrics.responseTime],
               validationScores: [result.validation.passedTest ? 1 : 0],
               contextRelevance: [1],
@@ -166,10 +177,13 @@ export function useTestExecution() {
           console.error('Error in test execution:', error);
           const chat: TestChat = {
             id: uuidv4(),
+            name: scenario.scenario,
             scenario: scenario.scenario,
             status: 'failed',
             messages: [],
             metrics: { 
+              correct: 0,
+              incorrect: 1,
               responseTime: [], 
               validationScores: [], 
               contextRelevance: [],
@@ -191,7 +205,6 @@ export function useTestExecution() {
         updateRun({
           ...newRun,
           chats: Array.from(completedChats.values()),
-          currentMessages: currentMessages,
           status: completedChats.size === scenarios.length ? 'completed' : 'running'
         });
       }

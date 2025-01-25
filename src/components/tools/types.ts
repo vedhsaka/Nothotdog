@@ -45,11 +45,11 @@ export interface TestCase {
     analyzing: boolean
   }
 
-  export interface TestScenario {
-    scenario: string;
-    expectedOutput: string;
-    cases?: string[];
-  }
+  // export interface TestScenario {
+  //   scenario: string;
+  //   expectedOutput: string;
+  //   cases?: string[];
+  // }
 
   export interface Rule {
     id: string;

@@ -3,7 +3,8 @@ import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { TestSet, TestScenario } from './types';
+import { TestSet } from './types';
+import { TestScenario } from '@/types/test';
 import { ScenarioEditor } from './ScenarioEditor';
 
 export function TestSetCreator() {
@@ -18,6 +19,7 @@ export function TestSetCreator() {
       ...prev,
       scenarios: [...prev.scenarios, {
         id: crypto.randomUUID(),
+        scenario: '',
         input: '',
         expectedOutput: '',
         type,

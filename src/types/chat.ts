@@ -1,3 +1,5 @@
+import { TestMessage } from "./runs";
+
 export type MessageRole = 'user' | 'assistant';
 
 export interface Message {
@@ -12,11 +14,11 @@ export interface Message {
 
 
 export interface ChatMessage {
-  isCorrect: any;
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
+  isCorrect? : boolean;
   metrics?: {
     responseTime?: number;
     validationScore?: number;
@@ -44,10 +46,13 @@ export interface TestResult {
 
 export interface TestChat {
   id: string;
+  name: string;
   scenario: string;
   status: 'running' | 'passed' | 'failed';
-  messages: ChatMessage[];
+  messages: TestMessage[];
   metrics: {
+    correct: number;
+    incorrect: number;
     responseTime: number[];
     validationScores: number[];
     contextRelevance: number[];

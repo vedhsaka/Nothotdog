@@ -1,3 +1,5 @@
+import { TestScenario } from "@/types/test";
+
 export interface TestSet {
   id: string;
   name: string;
@@ -7,14 +9,14 @@ export interface TestSet {
   updatedAt: Date;
 }
 
-export interface TestScenario {
-  id: string;
-  input: string;
-  expectedOutput: string;
-  type: 'transcript' | 'rule' | 'metric';
-  metrics?: {
-    sentimentAnalysis?: number;
-    responseQuality?: number;
-    hallucination?: number;
-  };
-}
+// export interface TestScenario {
+//   id: string;
+//   input: string;
+//   expectedOutput: string;
+//   type: 'transcript' | 'rule' | 'metric';
+//   metrics?: {
+//     sentimentAnalysis?: number;
+//     responseQuality?: number;
+//     hallucination?: number;
+//   };
+// }
