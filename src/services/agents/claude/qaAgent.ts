@@ -1,35 +1,42 @@
-import { ChatAnthropic } from "@langchain/anthropic";
 import { BufferMemory } from "langchain/memory";
 import { BaseMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
-import { ClaudeAgentConfig, TestResult } from './types';
+import { QaAgentConfig, TestResult } from './types';
 import { ApiHandler } from './apiHandler';
 import { ConversationHandler } from './conversationHandler';
 import { ResponseValidator } from './validators';
 import { TestMessage } from "@/types/runs";
 import { v4 as uuidv4 } from 'uuid';
+import { ModelFactory } from "@/services/llm/modelfactory";
+import { AnthropicModel } from "@/services/llm/enums";
 
-export class ClaudeAgent {
-  private model: ChatAnthropic;
+export class QaAgent {
+  private model;
   private memory: BufferMemory;
-  private config: ClaudeAgentConfig;
+  private config: QaAgentConfig;
   private prompt: ChatPromptTemplate;
 
-  constructor(config: ClaudeAgentConfig) {
+  constructor(config: QaAgentConfig) {
     this.config = config;
 
-    if (!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY) {
+    const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+    if (!apiKey) {
       throw new Error('NEXT_PUBLIC_ANTHROPIC_API_KEY is not set');
     }
 
-    this.model = new ChatAnthropic({
-      anthropicApiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY,
-      modelName: "claude-3-sonnet-20240229",
-      temperature: 0.7,
-    });
+    // this.model = new ChatAnthropic({
+    //   anthropicApiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY,
+    //   modelName: "claude-3-sonnet-20240229",
+    //   temperature: 0.7,
+    // });
+
+    this.model = ModelFactory.createLangchainModel(
+      config.modelId || AnthropicModel.Sonnet3_5,
+      apiKey
+    )
 
     this.memory = new BufferMemory({
       returnMessages: true,

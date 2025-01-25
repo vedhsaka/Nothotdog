@@ -1,22 +1,13 @@
 export const runtime = 'edge';
 
-import { NextResponse } from 'next/server'
-import { anthropic, MODEL } from '@/lib/claude'
-import { validateGenerateTestsRequest } from '@/lib/validations'
-import { jsonrepair } from 'jsonrepair'
-
-function getMessage(content: any): string {
-  if (!content || !content[0]) {
-    throw new Error('Invalid message content')
-  }
-
-  const block = content[0]
-  if (block.type !== 'text') {
-    throw new Error(`Unexpected content type: ${block.type}`)
-  }
-
-  return block.text
-}
+import { NextResponse } from 'next/server';
+import { validateGenerateTestsRequest } from '@/lib/validations';
+import { jsonrepair } from 'jsonrepair';
+import { AnthropicModel } from '@/services/llm/enums';
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { RunnableSequence } from "@langchain/core/runnables";
+import { StringOutputParser } from "@langchain/core/output_parsers";
+import { ModelFactory } from '@/services/llm/modelfactory';
 
 function extractJSON(text: string): any {
   try {
@@ -65,20 +56,11 @@ function isValidEvaluation(evaluation: any): evaluation is Evaluation {
   );
 }
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json()
-    const { inputExample, agentDescription } = validateGenerateTestsRequest(body)
+const generateTestsTemplate = ChatPromptTemplate.fromMessages([
+  ["user", `Generate diverse test cases for an API. 
+{context}
 
-    const message = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 2048,
-      messages: [{
-        role: "user",
-        content: `Generate diverse test cases for an API. 
-${agentDescription ? `Context: ${agentDescription}` : 'Context derived from example input below:'}
-
-Input Format Example: ${inputExample}
+Input Format Example: {inputExample}
 
 Create 20+ varied test cases that maintain this exact input format structure but test different scenarios. Include:
 
@@ -123,22 +105,44 @@ Create 20+ varied test cases that maintain this exact input format structure but
 - Historical vs current queries
 
 Return only a JSON object in this exact format, ensuring all fields are non-null strings:
-{
+{{
   "evaluations": [
-    {
+    {{
       "scenario": "Plain English description of what we're testing",
       "expectedOutput": "Plain English description of what the agent should do/respond with"
-    }
+    }}
   ]
-}
+}}
 
-Each evaluation MUST have both scenario and expectedOutput as non-empty strings.`
-      }]
-    })
+Each evaluation MUST have both scenario and expectedOutput as non-empty strings.`]
+]);
 
-    const responseText = getMessage(message.content)
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { inputExample, agentDescription } = validateGenerateTestsRequest(body);
+
+    if (!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY) {
+      throw new Error('API key not configured');
+    }
+
+    const model = ModelFactory.createLangchainModel(
+      AnthropicModel.Sonnet3_5,
+      process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
+    );
+
+    const chain = RunnableSequence.from([
+      generateTestsTemplate,
+      model,
+      new StringOutputParser(),
+    ]);
+
+    const response = await chain.invoke({
+      context: agentDescription ? `Context: ${agentDescription}` : 'Context derived from example input below:',
+      inputExample
+    });
     
-    let evaluations = extractJSON(responseText);
+    let evaluations = extractJSON(response);
 
     // Validate the structure and filter out invalid entries
     if (!evaluations?.evaluations || !Array.isArray(evaluations.evaluations)) {
@@ -169,15 +173,15 @@ Each evaluation MUST have both scenario and expectedOutput as non-empty strings.
         valid: validEvaluations.length,
         filtered: evaluations.evaluations.length - validEvaluations.length
       }
-    })
+    });
   } catch (error) {
-    console.error('Test generation error:', error)
+    console.error('Test generation error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to generate evaluations',
         details: error instanceof Error ? error.message : 'Unknown error'
       }, 
       { status: 500 }
-    )
+    );
   }
 }

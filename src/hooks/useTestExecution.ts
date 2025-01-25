@@ -4,8 +4,9 @@ import { TestRun } from '@/types/runs';
 import { ChatMessage, TestChat } from '@/types/chat';
 import { useTestRuns } from './useTestRuns';
 import { storageService } from '@/services/storage/localStorage';
-import { ClaudeAgent } from '@/services/agents/claude/claudeAgent';
+import { QaAgent } from '@/services/agents/claude/qaAgent';
 import { Rule } from '@/services/agents/claude/types';
+import { AnthropicModel } from '@/services/llm/enums';
 
 export type TestExecutionStatus = 'idle' | 'connecting' | 'running' | 'completed' | 'failed';
 export type TestExecutionError = {
@@ -53,10 +54,11 @@ export function useTestExecution() {
       setProgress({ completed: 0, total: scenarios.length });
       
       // Initialize Claude Agent
-      const agent = new ClaudeAgent({
+      const agent = new QaAgent({
         headers: {
           ...testToRun.headers,
         },
+        modelId: AnthropicModel.Sonnet3_5,
         endpointUrl: testToRun.agentEndpoint,
         apiConfig: {
           inputFormat: testToRun.input ? JSON.parse(testToRun.input) : {},

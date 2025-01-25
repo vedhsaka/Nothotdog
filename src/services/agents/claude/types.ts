@@ -14,7 +14,8 @@ export interface Rule {
     rules: Rule[];
   }
   
-  export interface ClaudeAgentConfig {
+  export interface QaAgentConfig {
+    modelId: string;
     headers: Record<string, string>;
     endpointUrl: string;
     apiConfig: ApiConfig;

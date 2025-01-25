@@ -1,25 +1,21 @@
 export const runtime = 'edge';
 
+import { ModelFactory } from '@/services/llm/modelfactory';
+import { AnthropicModel } from '@/services/llm/enums';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { RunnableSequence } from '@langchain/core/runnables';
 import { NextResponse } from 'next/server'
-import { anthropic } from '@/lib/claude'
+import { JsonOutputParser } from '@langchain/core/output_parsers';
 
-export async function POST(req: Request) {
-  try {
-    const { actualResponse, expectedOutput } = await req.json()
-
-    const message = await anthropic.messages.create({
-      model: "claude-3-sonnet-20240229",
-      max_tokens: 1024,
-      messages: [{
-        role: "user",
-        content: `You are a test validation system. Compare if the actual response matches the expected output semantically.
+const validationTemplate = ChatPromptTemplate.fromMessages([
+  ["user", `You are a test validation system. Compare if the actual response matches the expected output semantically.
 The responses don't need to match exactly, but they should convey the same meaning and information.
 
 Expected Output:
-${expectedOutput}
+{expectedOutput}
 
 Actual Response:
-${actualResponse}
+{actualResponse}
 
 Respond in this exact JSON format:
 {
@@ -31,13 +27,38 @@ Focus on semantic meaning rather than exact wording. Consider:
 1. Core information/intent matches
 2. Key details are present
 3. No contradictions
-4. Similar level of specificity`
-      }]
-    })
+4. Similar level of specificity`]
+]);
 
-    const validation = JSON.parse(message.content[0].type === 'text' ? message.content[0].text : '{}')
 
-    return NextResponse.json(validation)
+export async function POST(req: Request) {
+  try {
+    const { actualResponse, expectedOutput } = await req.json()
+    if (!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY) {
+      throw new Error('API key not configured');
+    }
+
+    const model = ModelFactory.createLangchainModel(
+      AnthropicModel.Sonnet3_5, 
+      process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
+    );
+
+
+    const chain = RunnableSequence.from([
+      validationTemplate,
+      model,
+      new JsonOutputParser<{
+        isCorrect: boolean;
+        explanation: string;
+      }>()
+    ]);
+
+    const validation = await chain.invoke({
+      expectedOutput,
+      actualResponse
+    });
+
+    return NextResponse.json(validation);
   } catch (error) {
     console.error('Validation error:', error)
     return NextResponse.json(

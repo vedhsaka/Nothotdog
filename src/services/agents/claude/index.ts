@@ -1,6 +1,6 @@
-export { ClaudeAgent } from './claudeAgent';
+export { QaAgent } from './claudeAgent';
 export type { 
-  ClaudeAgentConfig,
+  QaAgentConfig,
   TestResult,
   Rule,
   ApiConfig,

@@ -1,50 +1,67 @@
 export const runtime = 'edge';
 
-import { NextResponse } from 'next/server'
-import { anthropic, MODEL } from '@/lib/claude'
-import { validateAnalyzeResultsRequest } from '@/lib/validations'
+import { NextResponse } from 'next/server';
+import { validateAnalyzeResultsRequest } from '@/lib/validations';
+import { AnthropicModel } from '@/services/llm/enums';
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { RunnableSequence } from "@langchain/core/runnables";
+import { JsonOutputParser } from "@langchain/core/output_parsers";
+import { ModelFactory } from '@/services/llm/modelfactory';
 
-function getMessage(content: any): string {
-  if (!content || !content[0]) {
-    throw new Error('Invalid message content')
-  }
-
-  const block = content[0]
-  if (block.type !== 'text') {
-    throw new Error(`Unexpected content type: ${block.type}`)
-  }
-
-  return block.text
+interface AnalysisResult {
+  categorizedResults: Record<string, {
+    successRate: number;
+    averageResponseTime: number;
+  }>;
+  insights: string[];
+  summary: {
+    overallSuccess: number;
+    averageResponseTime: number;
+    performance: string;
+  };
+  improvements: string[];
 }
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json()
-    const { results } = validateAnalyzeResultsRequest(body)
-
-    const analysisMessage = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 1024,
-      messages: [{
-        role: "user",
-        content: `Analyze these test results and provide insights:
-${JSON.stringify(results, null, 2)}
-
+const analysisTemplate = ChatPromptTemplate.fromMessages([
+  ["user", `Analyze these test results and provide insights:
+{results}
 Return the analysis as JSON with:
 1. categorizedResults: Results grouped by test category with success rates and response times
 2. insights: Array of strings with key findings and recommendations
 3. summary: Overall metrics and performance assessment
-4. improvements: Specific suggestions for improvement`
-      }]
-    })
+4. improvements: Specific suggestions for improvement`]
+]);
 
-    const analysis = JSON.parse(getMessage(analysisMessage.content))
-    return NextResponse.json(analysis)
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { results } = validateAnalyzeResultsRequest(body);
+
+    if (!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY) {
+      throw new Error('API key not configured');
+    }
+
+    const model = ModelFactory.createLangchainModel(
+      AnthropicModel.Sonnet3_5,
+      process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
+    );
+
+    const analysisChain = RunnableSequence.from([
+      analysisTemplate,
+      model,
+      new JsonOutputParser<AnalysisResult>()
+    ]);
+
+    const analysis = await analysisChain.invoke({
+      results: JSON.stringify(results, null, 2)
+    });
+
+    return NextResponse.json(analysis);
   } catch (error) {
-    console.error('Analysis error:', error)
+    console.error('Analysis error:', error);
     return NextResponse.json(
-      { error: 'Failed to analyze results' }, 
+      { error: 'Failed to analyze results' },
       { status: 500 }
-    )
+    );
   }
 }

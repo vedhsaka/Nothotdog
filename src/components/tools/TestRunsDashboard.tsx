@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Play, ChevronDown } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { ClaudeAgent } from '@/services/agents/claude/claudeAgent';
+import { QaAgent } from '@/services/agents/claude/qaAgent';
+import { AnthropicModel } from '@/services/llm/enums';
 
 function CollapsibleJson({ content }: { content: string }) {
   let formattedContent = content;
@@ -93,10 +94,11 @@ export function TestRunsDashboard() {
       return;
     }
   
-    const agent = new ClaudeAgent({
+    const agent = new QaAgent({
       headers: {
         ...testToRun.headers,
       },
+      modelId: AnthropicModel.Sonnet3_5,
       endpointUrl: testToRun.agentEndpoint,
       apiConfig: {
         inputFormat: JSON.parse(testToRun.input || '{}'),
@@ -156,10 +158,11 @@ export function TestRunsDashboard() {
          };
       
         // Create a new agent for this scenario
-        const scenarioAgent = new ClaudeAgent({
+        const scenarioAgent = new QaAgent({
           headers: {
             ...testToRun.headers,
           },
+          modelId: AnthropicModel.Sonnet3_5,
           endpointUrl: testToRun.agentEndpoint,
           apiConfig: {
             inputFormat: JSON.parse(testToRun.input || '{}'),

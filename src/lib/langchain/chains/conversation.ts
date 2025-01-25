@@ -1,14 +1,16 @@
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
-import { ChatAnthropic } from "@langchain/anthropic";
 import { BufferMemory } from "langchain/memory";
+import { ModelFactory } from '@/services/llm/modelfactory';
+import { AnthropicModel } from '@/services/llm/enums';
+import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 
 export class ConversationChain {
-  private model: ChatAnthropic;
+  private model: BaseChatModel;
   private memory: BufferMemory;
   private prompt: ChatPromptTemplate;
-  
+
   constructor(apiKey: string) {
     console.log('Initializing ConversationChain');
     if (!apiKey) {
@@ -16,11 +18,10 @@ export class ConversationChain {
     }
     console.log('API key provided:', apiKey ? 'Yes' : 'No');
 
-    this.model = new ChatAnthropic({
-      modelName: "claude-3-sonnet-20240229",
-      anthropicApiKey: apiKey,
-      temperature: 0.7
-    });
+    this.model = ModelFactory.createLangchainModel(
+      AnthropicModel.Sonnet3_5,
+      apiKey
+    );
 
     this.memory = new BufferMemory({
       returnMessages: true,
@@ -33,13 +34,12 @@ export class ConversationChain {
       ["system", "You are a helpful AI assistant focused on having natural conversations while maintaining context."],
       ["human", "{input}"],
     ]);
-    
+
     console.log('ConversationChain initialized');
   }
 
   async call(input: string): Promise<string> {
     console.log('Calling ConversationChain with input:', input);
-    
     try {
       const chain = RunnableSequence.from([
         {
@@ -75,4 +75,4 @@ export class ConversationChain {
     console.log('Resetting ConversationChain memory');
     await this.memory.clear();
   }
-} 
+}
