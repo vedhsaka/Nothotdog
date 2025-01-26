@@ -3,6 +3,9 @@ import { BaseMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
+import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatOpenAI } from "@langchain/openai";
+import { TokenTextSplitter } from "langchain/text_splitter";
 
 import { QaAgentConfig, TestResult } from './types';
 import { ApiHandler } from './apiHandler';
@@ -10,33 +13,43 @@ import { ConversationHandler } from './conversationHandler';
 import { ResponseValidator } from './validators';
 import { TestMessage } from "@/types/runs";
 import { v4 as uuidv4 } from 'uuid';
-import { ModelFactory } from "@/services/llm/modelfactory";
-import { AnthropicModel } from "@/services/llm/enums";
+import { LLMProvider, AnthropicModel, OpenAIModel } from '@/services/llm/enums';
 
 export class QaAgent {
   private model;
   private memory: BufferMemory;
   private config: QaAgentConfig;
   private prompt: ChatPromptTemplate;
+  private tokenLimiter: TokenTextSplitter;
 
   constructor(config: QaAgentConfig) {
-    this.config = config;
+  this.config = config;
+  this.tokenLimiter = new TokenTextSplitter({
+    encodingName: "cl100k_base",
+    chunkSize: config.maxTokens || 4000,
+    chunkOverlap: 0
+  });
 
-    const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      throw new Error('NEXT_PUBLIC_ANTHROPIC_API_KEY is not set');
+    const apiKey = this.getApiKey(config.provider);
+
+    switch (config.provider) {
+      case LLMProvider.Anthropic:
+        this.model = new ChatAnthropic({
+          anthropicApiKey: apiKey,
+          modelName: config.modelName || AnthropicModel.Sonnet3_5,
+          temperature: config.temperature || 0.7,
+        });
+        break;
+      case LLMProvider.OpenAI:
+        this.model = new ChatOpenAI({
+          openAIApiKey: apiKey,
+          modelName: config.modelName || OpenAIModel.GPT3_5Turbo,
+          temperature: config.temperature || 0.7,
+        });
+        break;
+      default:
+        throw new Error(`Unsupported LLM provider: ${config.provider}`);
     }
-
-    // this.model = new ChatAnthropic({
-    //   anthropicApiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY,
-    //   modelName: "claude-3-sonnet-20240229",
-    //   temperature: 0.7,
-    // });
-
-    this.model = ModelFactory.createLangchainModel(
-      config.modelId || AnthropicModel.Sonnet3_5,
-      apiKey
-    )
 
     this.memory = new BufferMemory({
       returnMessages: true,
@@ -45,41 +58,40 @@ export class QaAgent {
     });
 
     this.prompt = ChatPromptTemplate.fromMessages([
-      ["system", `You are an API tester that engages in natural human-like conversations. Your goal is to test scenarios through organic dialogue that feels authentic and unpredictable.
-
-You should:
-1. Start conversations naturally - use greetings, small talk, or indirect questions
-2. Vary your conversation style:
-   - Sometimes be brief and direct
-   - Sometimes engage in longer dialogues with multiple turns
-   - Occasionally go off-topic or include irrelevant details
-   - Use different personality traits (casual, formal, chatty, etc.)
-3. Include realistic human behaviors:
-   - Typos and corrections
-   - Incomplete thoughts
-   - Follow-up questions
-   - Topic changes
-   - Emotional expressions (excitement, confusion, frustration)
-
-Format your responses as:
-TEST_MESSAGE: <your natural human message>
-CONVERSATION_PLAN: <optional - include if you plan multiple turns>
-ANALYSIS: <your analysis of the interaction>`],
+      ["system", `You are an API tester that engages in natural human-like conversations. Your goal is to test scenarios through organic dialogue that feels authentic and unpredictable.`],
       ["human", "{input}"]
     ]);
   }
 
+  private getApiKey(provider: LLMProvider): string {
+    switch (provider) {
+      case LLMProvider.Anthropic:
+        return process.env.ANTHROPIC_API_KEY || '';
+      case LLMProvider.OpenAI:
+        return process.env.OPENAI_API_KEY || '';
+      default:
+        throw new Error(`No API key found for provider: ${provider}`);
+    }
+  }
+
+  private async limitTokens(text: string): Promise<string> {
+    const chunks = await this.tokenLimiter.splitText(text);
+    return chunks[0];
+  }
+
   async runTest(scenario: string, expectedOutput: string): Promise<TestResult> {
     try {
+      const limitedScenario = await this.limitTokens(scenario);
+      const limitedExpectedOutput = await this.limitTokens(expectedOutput);
+
       const chain = RunnableSequence.from([
         this.prompt,
         this.model,
         new StringOutputParser()
       ]);
 
-      // Generate initial conversation plan
       const planResult = await chain.invoke({
-        input: `Test this scenario: ${scenario}\nExpected behavior: ${expectedOutput}\n\nPlan and start a natural conversation to test this scenario.`
+        input: `Test this scenario: ${limitedScenario}\nExpected behavior: ${limitedExpectedOutput}\n\nPlan and start a natural conversation to test this scenario.`
       });
 
       const testMessage = ConversationHandler.extractTestMessage(planResult);
@@ -89,20 +101,12 @@ ANALYSIS: <your analysis of the interaction>`],
       let totalResponseTime = 0;
       let startTime = Date.now();
 
-      // Initial message
       const formattedInput = ApiHandler.formatInput(testMessage, this.config.apiConfig.inputFormat);
       let apiResponse = await ApiHandler.callEndpoint(this.config.endpointUrl, this.config.headers, formattedInput);
       let chatResponse = ConversationHandler.extractChatResponse(apiResponse, this.config.apiConfig.rules);
       totalResponseTime += Date.now() - startTime;
       
       const chatId = uuidv4();
-      // allMessages.push({
-      //   humanMessage: testMessage,
-      //   rawInput: formattedInput,
-      //   rawOutput: apiResponse,
-      //   chatResponse
-      // });
-
       allMessages.push({
         id: uuidv4(),
         chatId: chatId,
@@ -114,7 +118,6 @@ ANALYSIS: <your analysis of the interaction>`],
         }
       });
 
-      // Handle multi-turn conversation
       if (conversationPlan && conversationPlan.length > 0) {
         for (const plannedTurn of conversationPlan) {
           const followUpResult = await chain.invoke({
@@ -147,12 +150,7 @@ ANALYSIS: <your analysis of the interaction>`],
 
           const turnResponseTime = Date.now() - startTime
           totalResponseTime += Date.now() - startTime;
-          // allMessages.push({
-          //   humanMessage: followUpMessage,
-          //   rawInput: followUpInput,
-          //   rawOutput: apiResponse,
-          //   chatResponse
-          // });
+          
           allMessages.push({
             id: uuidv4(),
             chatId: chatId,
@@ -163,7 +161,7 @@ ANALYSIS: <your analysis of the interaction>`],
               validationScore: 1
             }
           });
-          // Add assistant message
+          
           allMessages.push({
             id: uuidv4(),
             chatId: chatId,
@@ -177,25 +175,11 @@ ANALYSIS: <your analysis of the interaction>`],
         }
       }
 
-      // Validate and analyze
       const formatValid = ResponseValidator.validateResponseFormat(apiResponse, this.config.apiConfig.outputFormat);
       const conditionMet = ResponseValidator.validateCondition(apiResponse, this.config.apiConfig.rules);
 
-      // ${allMessages.map(m => `Human: ${m.humanMessage}\nAssistant: ${m.chatResponse}`).join('\n\n')}
-      // Final analysis
       const analysisResult = await chain.invoke({
-        input: `Analyze if this conversation met our test expectations:
-
-Original scenario: ${scenario}
-Expected behavior: ${expectedOutput}
-
-Conversation:
-${allMessages.map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`).join('\n\n')}
-
-Consider that the response format was ${formatValid ? 'valid' : 'invalid'}
-and the condition was ${conditionMet ? 'met' : 'not met'}.
-
-Did the interaction meet our expectations? Explain why or why not.`
+        input: `Analyze if this conversation met our test expectations:\n\nOriginal scenario: ${limitedScenario}\nExpected behavior: ${limitedExpectedOutput}\n\nConsider that the response format was ${formatValid ? 'valid' : 'invalid'} and the condition was ${conditionMet ? 'met' : 'not met'}.\n\nDid the interaction meet our expectations?`
       });
 
       await this.memory.saveContext(
