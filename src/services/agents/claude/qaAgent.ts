@@ -91,8 +91,14 @@ ANALYSIS: <your analysis of the interaction>`],
 
       // Initial message
       const formattedInput = ApiHandler.formatInput(testMessage, this.config.apiConfig.inputFormat);
-      let apiResponse = await ApiHandler.callEndpoint(this.config.endpointUrl, this.config.headers, formattedInput);
+      // let apiResponse = await ApiHandler.callEndpoint(this.config.endpointUrl, this.config.headers, formattedInput);
+      let apiResponse = await ApiHandler.callEndpoint(
+        this.config.endpointUrl, 
+        this.config.headers, 
+        formattedInput
+      );
       let chatResponse = ConversationHandler.extractChatResponse(apiResponse, this.config.apiConfig.rules);
+
       totalResponseTime += Date.now() - startTime;
       
       const chatId = uuidv4();
@@ -114,6 +120,18 @@ ANALYSIS: <your analysis of the interaction>`],
         }
       });
 
+      allMessages.push({
+        id: uuidv4(),
+        chatId: chatId,
+        role: 'assistant',
+        content: chatResponse,
+        metrics: {
+          responseTime: totalResponseTime,
+          validationScore: 1
+        }
+
+      });
+
       // Handle multi-turn conversation
       if (conversationPlan && conversationPlan.length > 0) {
         for (const plannedTurn of conversationPlan) {
@@ -125,15 +143,12 @@ ANALYSIS: <your analysis of the interaction>`],
           startTime = Date.now();
           
           const followUpInput = ApiHandler.formatInput(followUpMessage, this.config.apiConfig.inputFormat);
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
 
           try {
             apiResponse = await ApiHandler.callEndpoint(
               this.config.endpointUrl,
               this.config.headers,
               followUpInput,
-              controller.signal
             );
             chatResponse = ConversationHandler.extractChatResponse(apiResponse, this.config.apiConfig.rules);
           } catch (error) {
@@ -141,8 +156,6 @@ ANALYSIS: <your analysis of the interaction>`],
               throw new Error('API request timed out after 10 seconds');
             }
             throw error;
-          } finally {
-            clearTimeout(timeoutId);
           }
 
           const turnResponseTime = Date.now() - startTime
