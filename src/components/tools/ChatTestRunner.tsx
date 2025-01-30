@@ -90,31 +90,39 @@ export function ChatTestRunner() {
   };
 
   const renderCurrentMessages = () => {
-    if (!currentMessages.length) return null;
-
+    if (!currentMessages.length && !isTyping) return null;
+  
     return (
-      <div className="current-conversation space-y-4">
-        {currentMessages.map((message: ChatMessage) => (
-          <MessageDisplay
-            key={message.id}
-            role={message.role}
-            content={message.content}
-            isCorrect={message.metrics?.validationScore ? message.metrics.validationScore >= 0.7 : undefined}
-            explanation={message.metrics?.validationScore 
-              ? `Validation Score: ${message.metrics.validationScore}` 
-              : undefined}
-            isExpanded={expandedMessages[message.id]}
-            onToggleExpand={() => toggleExpanded(message.id)}
-          />
-        ))}
-        {isTyping && (
-          <div className="flex items-center gap-2 p-4 bg-black/20 rounded">
-            <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse" />
-            <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse delay-150" />
-            <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse delay-300" />
+      <Card className="mb-4 border-emerald-500/20 bg-emerald-900/10">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <CardTitle className="text-sm text-emerald-400">Current Execution</CardTitle>
           </div>
-        )}
-      </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {currentMessages.map((message: ChatMessage) => (
+            <MessageDisplay
+              key={message.id}
+              role={message.role}
+              content={message.content}
+              isCorrect={message.metrics?.validationScore ? message.metrics.validationScore >= 0.7 : undefined}
+              explanation={message.metrics?.validationScore 
+                ? `Response Time: ${message.metrics.responseTime}ms | Score: ${(message.metrics.validationScore * 100).toFixed(0)}%` 
+                : undefined}
+              isExpanded={expandedMessages[message.id]}
+              onToggleExpand={() => toggleExpanded(message.id)}
+            />
+          ))}
+          {isTyping && (
+            <div className="flex items-center gap-2 p-4 bg-black/20 rounded">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse delay-150" />
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse delay-300" />
+            </div>
+          )}
+        </CardContent>
+      </Card>
     );
   };
 

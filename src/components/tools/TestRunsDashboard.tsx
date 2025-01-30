@@ -81,6 +81,7 @@ export function TestRunsDashboard() {
 
   const runTest = async (testId: string) => {
     const allTests = JSON.parse(localStorage.getItem('savedTests') || '[]');
+    const ruleTemplates = JSON.parse(localStorage.getItem('ruleTemplates') || '{}');
     const testToRun = allTests.find((t: any) => t.id === testId);
     
     if (!testToRun) {
@@ -93,20 +94,10 @@ export function TestRunsDashboard() {
       console.error('API key not found');
       return;
     }
-  
-    const agent = new QaAgent({
-      headers: {
-        ...testToRun.headers,
-      },
-      modelId: AnthropicModel.Sonnet3_5,
-      endpointUrl: testToRun.agentEndpoint,
-      apiConfig: {
-        inputFormat: JSON.parse(testToRun.input || '{}'),
-        outputFormat: JSON.parse(testToRun.output || '{}'),
-        rules: testToRun.rules || []
-      }
-    });
-  
+    const templateRules = ruleTemplates[testToRun.name] || [];
+    const combinedRules = [...templateRules, ...(testToRun.rules || [])];
+    console.log('Combined rules:', combinedRules);
+    
     const savedVariations = JSON.parse(localStorage.getItem('testVariations') || '{}');
     const testVariations = savedVariations[testId] || [];
     const latestVariation = testVariations[testVariations.length - 1];
@@ -167,7 +158,7 @@ export function TestRunsDashboard() {
           apiConfig: {
             inputFormat: JSON.parse(testToRun.input || '{}'),
             outputFormat: JSON.parse(testToRun.output || '{}'),
-            rules: testToRun.rules || []
+            rules: combinedRules
           }
         });
       
