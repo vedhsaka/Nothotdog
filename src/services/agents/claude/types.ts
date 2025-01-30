@@ -21,13 +21,7 @@ export interface Rule {
     apiConfig: ApiConfig;
   }
   
-  // export interface TestMessage {
-  //   humanMessage: string;
-  //   rawInput: Record<string, any>;
-  //   rawOutput: Record<string, any>;
-  //   chatResponse: string;
-  // }
-  
+
   export interface TestResult {
     conversation: {
       humanMessage: string;

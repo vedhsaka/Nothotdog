@@ -133,25 +133,6 @@ export function useTestExecution() {
             name: scenario.scenario,
             scenario: scenario.scenario,
             status: result.validation.passedTest ? 'passed' : 'failed',
-            // messages: [{
-            //   id: uuidv4(),
-            //   chatId: chatId,
-            //   role: 'user',
-            //   content: result.conversation.humanMessage,
-            //   metrics: {
-            //     responseTime: result.validation.metrics.responseTime,
-            //     validationScore: result.validation.passedTest ? 1 : 0
-            //   }
-            // }, {
-            //   id: uuidv4(),
-            //   chatId: chatId,
-            //   role: 'assistant',
-            //   content: result.conversation.chatResponse,
-            //   metrics: {
-            //     responseTime: result.validation.metrics.responseTime,
-            //     validationScore: result.validation.passedTest ? 1 : 0
-            //   }
-            // }],
             messages: result.conversation.allMessages,
             metrics: {
               correct: result.validation.passedTest ? 1 : 0,

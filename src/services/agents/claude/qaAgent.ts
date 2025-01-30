@@ -102,12 +102,6 @@ ANALYSIS: <your analysis of the interaction>`],
       totalResponseTime += Date.now() - startTime;
       
       const chatId = uuidv4();
-      // allMessages.push({
-      //   humanMessage: testMessage,
-      //   rawInput: formattedInput,
-      //   rawOutput: apiResponse,
-      //   chatResponse
-      // });
 
       allMessages.push({
         id: uuidv4(),
@@ -160,12 +154,6 @@ ANALYSIS: <your analysis of the interaction>`],
 
           const turnResponseTime = Date.now() - startTime
           totalResponseTime += Date.now() - startTime;
-          // allMessages.push({
-          //   humanMessage: followUpMessage,
-          //   rawInput: followUpInput,
-          //   rawOutput: apiResponse,
-          //   chatResponse
-          // });
           allMessages.push({
             id: uuidv4(),
             chatId: chatId,
@@ -194,7 +182,6 @@ ANALYSIS: <your analysis of the interaction>`],
       const formatValid = ResponseValidator.validateResponseFormat(apiResponse, this.config.apiConfig.outputFormat);
       const conditionMet = ResponseValidator.validateCondition(apiResponse, this.config.apiConfig.rules);
 
-      // ${allMessages.map(m => `Human: ${m.humanMessage}\nAssistant: ${m.chatResponse}`).join('\n\n')}
       // Final analysis
       const analysisResult = await chain.invoke({
         input: `Analyze if this conversation met our test expectations:
