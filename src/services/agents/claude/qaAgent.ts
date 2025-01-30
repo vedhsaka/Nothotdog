@@ -12,6 +12,7 @@ import { TestMessage } from "@/types/runs";
 import { v4 as uuidv4 } from 'uuid';
 import { ModelFactory } from "@/services/llm/modelfactory";
 import { AnthropicModel } from "@/services/llm/enums";
+import { SYSTEM_PROMPTS } from "@/services/prompts";
 
 export class QaAgent {
   private model;
@@ -27,12 +28,6 @@ export class QaAgent {
       throw new Error('NEXT_PUBLIC_ANTHROPIC_API_KEY is not set');
     }
 
-    // this.model = new ChatAnthropic({
-    //   anthropicApiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY,
-    //   modelName: "claude-3-sonnet-20240229",
-    //   temperature: 0.7,
-    // });
-
     this.model = ModelFactory.createLangchainModel(
       config.modelId || AnthropicModel.Sonnet3_5,
       apiKey
@@ -45,26 +40,7 @@ export class QaAgent {
     });
 
     this.prompt = ChatPromptTemplate.fromMessages([
-      ["system", `You are an API tester that engages in natural human-like conversations. Your goal is to test scenarios through organic dialogue that feels authentic and unpredictable.
-
-You should:
-1. Start conversations naturally - use greetings, small talk, or indirect questions
-2. Vary your conversation style:
-   - Sometimes be brief and direct
-   - Sometimes engage in longer dialogues with multiple turns
-   - Occasionally go off-topic or include irrelevant details
-   - Use different personality traits (casual, formal, chatty, etc.)
-3. Include realistic human behaviors:
-   - Typos and corrections
-   - Incomplete thoughts
-   - Follow-up questions
-   - Topic changes
-   - Emotional expressions (excitement, confusion, frustration)
-
-Format your responses as:
-TEST_MESSAGE: <your natural human message>
-CONVERSATION_PLAN: <optional - include if you plan multiple turns>
-ANALYSIS: <your analysis of the interaction>`],
+      ["system", SYSTEM_PROMPTS.API_TESTER],
       ["human", "{input}"]
     ]);
   }
