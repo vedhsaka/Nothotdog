@@ -60,13 +60,14 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { agentDescription, userDescription } = validateGenerateTestsRequest(body);
 
-    if (!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY) {
-      throw new Error('API key not configured');
+    const apiKey = localStorage.getItem('anthropic_api_key');
+    if (!apiKey) {
+      throw new Error('Anthropic API key not found. Please add your API key in settings.');
     }
 
     const model = ModelFactory.createLangchainModel(
       AnthropicModel.Sonnet3_5,
-      process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
+      apiKey
     );
 
     const context = `Agent Description: ${agentDescription || 'Not provided'}

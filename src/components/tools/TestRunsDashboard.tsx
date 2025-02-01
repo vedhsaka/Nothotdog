@@ -89,11 +89,6 @@ export function TestRunsDashboard() {
       return;
     }
   
-    const apiKey = testToRun.headers?.['x-api-key'] || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      console.error('API key not found');
-      return;
-    }
     const templateRules = ruleTemplates[testToRun.name] || [];
     const combinedRules = [...templateRules, ...(testToRun.rules || [])];
     

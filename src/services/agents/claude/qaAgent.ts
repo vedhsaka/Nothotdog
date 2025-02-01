@@ -27,9 +27,9 @@ export class QaAgent {
   constructor(config: QaAgentConfig) {
     this.config = config;
 
-    const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+    const apiKey = localStorage.getItem('anthropic_api_key');
     if (!apiKey) {
-      throw new Error('NEXT_PUBLIC_ANTHROPIC_API_KEY is not set');
+      throw new Error('Anthropic API key not found. Please add your API key in settings.');
     }
 
     this.model = ModelFactory.createLangchainModel(
