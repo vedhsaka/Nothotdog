@@ -13,6 +13,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { ModelFactory } from "@/services/llm/modelfactory";
 import { AnthropicModel } from "@/services/llm/enums";
 import { SYSTEM_PROMPTS } from "@/services/prompts";
+import { ChattyExplorer } from "../personas/variants/chattyExplorer";
+import { ImpatientUser } from "../personas/variants/impatientUser";
+import { DirectProfessional } from "../personas/variants/directProfessional";
+import { TechnicalExpert } from "../personas/variants/technicalExpert";
 
 export class QaAgent {
   private model;
@@ -39,8 +43,18 @@ export class QaAgent {
       inputKey: "input",
     });
 
+    const personas = {
+      [ChattyExplorer.id]: ChattyExplorer,
+      [DirectProfessional.id]: DirectProfessional,
+      [ImpatientUser.id]: ImpatientUser,
+      [TechnicalExpert.id]: TechnicalExpert
+    };
+  
+    const personaSystemPrompt = config.persona ? personas[config.persona].systemPrompt : undefined;
+  
+
     this.prompt = ChatPromptTemplate.fromMessages([
-      ["system", SYSTEM_PROMPTS.API_TESTER(config.persona?.systemPrompt)],
+      ["system", SYSTEM_PROMPTS.API_TESTER(personaSystemPrompt)],
       ["human", "{input}"]
     ]);
   }

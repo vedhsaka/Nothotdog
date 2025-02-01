@@ -14,7 +14,8 @@ const EvaluationSchema = z.object({
 
 const GenerateTestsRequestSchema = z.object({
   inputExample: z.string(),
-  agentDescription: z.string().optional().default('')
+  agentDescription: z.string().optional().default(''),
+  userDescription: z.string().optional().default('')
 })
 
 const EvaluateAgentRequestSchema = z.object({

@@ -158,7 +158,7 @@ export function TestRunsDashboard() {
             inputFormat: JSON.parse(testToRun.input || '{}'),
             outputFormat: JSON.parse(testToRun.output || '{}'),
             rules: combinedRules
-          }
+          },
         });
       
         try {

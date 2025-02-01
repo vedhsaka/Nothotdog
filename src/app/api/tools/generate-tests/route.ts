@@ -4,9 +4,6 @@ import { NextResponse } from 'next/server';
 import { validateGenerateTestsRequest } from '@/lib/validations';
 import { jsonrepair } from 'jsonrepair';
 import { AnthropicModel } from '@/services/llm/enums';
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { RunnableSequence } from "@langchain/core/runnables";
-import { StringOutputParser } from "@langchain/core/output_parsers";
 import { ModelFactory } from '@/services/llm/modelfactory';
 import { TEST_CASES_PROMPT } from '@/services/prompts';
 
@@ -57,14 +54,11 @@ function isValidEvaluation(evaluation: any): evaluation is Evaluation {
   );
 }
 
-const generateTestsTemplate = ChatPromptTemplate.fromMessages([
-  ["user", TEST_CASES_PROMPT]
-]);
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { inputExample, agentDescription } = validateGenerateTestsRequest(body);
+    const { agentDescription, userDescription } = validateGenerateTestsRequest(body);
 
     if (!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY) {
       throw new Error('API key not configured');
@@ -75,18 +69,19 @@ export async function POST(req: Request) {
       process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
     );
 
-    const chain = RunnableSequence.from([
-      generateTestsTemplate,
-      model,
-      new StringOutputParser(),
-    ]);
+    const context = `Agent Description: ${agentDescription || 'Not provided'}
+User Description: ${userDescription || 'Not provided'}`;
 
-    const response = await chain.invoke({
-      context: agentDescription ? `Context: ${agentDescription}` : 'Context derived from example input below:',
-      inputExample
-    });
-    
-    let evaluations = extractJSON(response);
+    const prompt = TEST_CASES_PROMPT
+      .replace('{context}', context)
+
+      const response = await model.invoke([{
+        role: 'user',
+        content: prompt as string
+       }]);
+      
+      let evaluations = extractJSON(response.content as string);
+
 
     // Validate the structure and filter out invalid entries
     if (!evaluations?.evaluations || !Array.isArray(evaluations.evaluations)) {
