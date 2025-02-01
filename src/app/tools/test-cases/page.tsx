@@ -23,10 +23,8 @@ interface AgentCase {
 }
 
 export default function TestCasesPage() {
-  const [selectedPersonas, setSelectedPersonas] = useLocalStorage<string[]>("selectedPersonas", []);
   const [agentCases, setAgentCases] = useState<AgentCase[]>([]);
   const [selectedCase, setSelectedCase] = useState<AgentCase | null>(null);
-  const [selectedEndpoint, setSelectedEndpoint] = useState<string>("");
 
 
   useEffect(() => {
@@ -35,16 +33,10 @@ export default function TestCasesPage() {
     setAgentCases(cases);
   }, []);
 
-  const handlePersonaChange = (personaIds: string[]) => {
-    setSelectedPersonas(personaIds);
-  };
-
   const handleCaseSelect = (test: AgentCase) => {
     setSelectedCase(test);
-    setSelectedEndpoint(test.agentEndpoint);
   };
   
-
 
   const deleteAgentCase = (id: string) => {
     const updatedCases = agentCases.filter(test => test.id !== id);
@@ -117,10 +109,9 @@ export default function TestCasesPage() {
       <div className="col-span-4">
         <TestCaseVariations selectedTest={selectedCase} />
       </div>
-      <div className="col-span-4">
+      <div className="col-span-4">`
       <PersonaSelector 
-          selectedEndpoint={selectedEndpoint} // Add this state if not present
-          onPersonaChange={handlePersonaChange}
+          selectedTest={selectedCase?.id || ''} 
         />
       </div>
     </div>

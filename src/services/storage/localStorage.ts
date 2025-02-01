@@ -136,17 +136,15 @@ class LocalStorageService {
     this.setItem('testRuns', runs);
   }
 
-  getPersonaMappings(): Record<string, PersonaMapping> {
-    return this.getItem(STORAGE_KEYS.PERSONA_MAPPINGS, {});
+  getPersonaMappings(): PersonaMappings {
+    return this.getItem<PersonaMappings>(STORAGE_KEYS.PERSONA_MAPPINGS, {});
   }
   
   setPersonaMapping(mapping: PersonaMapping) {
     const mappings = this.getPersonaMappings();
-    mappings[mapping.endpointId] = mapping;
+    mappings[mapping.testId] = mapping;
     this.setItem(STORAGE_KEYS.PERSONA_MAPPINGS, mappings);
   }
-  
-  
 }
 
 export const storageService = new LocalStorageService(); 

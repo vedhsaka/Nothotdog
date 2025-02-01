@@ -9,43 +9,39 @@ import { DirectProfessional } from '@/services/agents/personas/variants/directPr
 import { ImpatientUser } from '@/services/agents/personas/variants/impatientUser';
 import { TechnicalExpert } from '@/services/agents/personas/variants/technicalExpert';
 import { storageService } from '@/services/storage/localStorage';
-import { PersonaMapping } from '@/types/persona-mapping';
+import { PersonaMapping, PersonaMappings } from '@/types/persona-mapping';
 
 
 const PERSONAS = [ChattyExplorer, DirectProfessional, ImpatientUser, TechnicalExpert];
 
 interface PersonaSelectorProps {
-  selectedEndpoint: string;
-  onPersonaChange: (personaIds: string[]) => void;
-}
+    selectedTest: string;
+  }
 
 
-export default function PersonaSelector({ selectedEndpoint, onPersonaChange }: PersonaSelectorProps) {
-
-
-  const [mappings, setMappings] = useState<Record<string, PersonaMapping>>(
-    storageService.getPersonaMappings()
-  );
-
-  const selectedPersonas = mappings[selectedEndpoint]?.personaIds || [];
-
-  const handlePersonaSelect = (personaId: string) => {
-    const newSelected = selectedPersonas.includes(personaId) 
-      ? selectedPersonas.filter(id => id !== personaId)
-      : [...selectedPersonas, personaId];
-      
-    const mapping: PersonaMapping = {
-      id: uuidv4(),
-      endpointId: selectedEndpoint,
-      personaIds: newSelected,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+export default function PersonaSelector({ selectedTest }: PersonaSelectorProps) {
+    const [mappings, setMappings] = useState<PersonaMappings>(
+        storageService.getPersonaMappings()
+      );
     
-    storageService.setPersonaMapping(mapping);
-    setMappings({...mappings, [selectedEndpoint]: mapping});
-    onPersonaChange(newSelected);
-  };
+      const selectedPersonas = mappings[selectedTest]?.personaIds || [];
+    
+      const handlePersonaSelect = (personaId: string) => {
+        const newSelected = selectedPersonas.includes(personaId) 
+          ? selectedPersonas.filter(id => id !== personaId)
+          : [...selectedPersonas, personaId];
+          
+        const mapping: PersonaMapping = {
+          id: uuidv4(),
+          testId: selectedTest,
+          personaIds: newSelected,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        storageService.setPersonaMapping(mapping);
+        setMappings({...mappings, [selectedTest]: mapping});
+      };
 
   return (
     <Card className="bg-black/40 border-zinc-800 h-full">
