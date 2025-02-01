@@ -40,7 +40,7 @@ export class QaAgent {
     });
 
     this.prompt = ChatPromptTemplate.fromMessages([
-      ["system", SYSTEM_PROMPTS.API_TESTER],
+      ["system", SYSTEM_PROMPTS.API_TESTER(config.persona?.systemPrompt)],
       ["human", "{input}"]
     ]);
   }

@@ -19,6 +19,7 @@ export interface Rule {
     headers: Record<string, string>;
     endpointUrl: string;
     apiConfig: ApiConfig;
+    persona?: string;
   }
   
 
