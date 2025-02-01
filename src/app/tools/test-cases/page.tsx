@@ -26,6 +26,7 @@ export default function TestCasesPage() {
   const [selectedPersonas, setSelectedPersonas] = useLocalStorage<string[]>("selectedPersonas", []);
   const [agentCases, setAgentCases] = useState<AgentCase[]>([]);
   const [selectedCase, setSelectedCase] = useState<AgentCase | null>(null);
+  const [selectedEndpoint, setSelectedEndpoint] = useState<string>("");
 
 
   useEffect(() => {
@@ -34,14 +35,15 @@ export default function TestCasesPage() {
     setAgentCases(cases);
   }, []);
 
-  const handlePersonaSelect = (personaId: string) => {
-    setSelectedPersonas(prev => {
-      if (prev.includes(personaId)) {
-        return prev.filter(id => id !== personaId);
-      }
-      return [...prev, personaId];
-    });
+  const handlePersonaChange = (personaIds: string[]) => {
+    setSelectedPersonas(personaIds);
   };
+
+  const handleCaseSelect = (test: AgentCase) => {
+    setSelectedCase(test);
+    setSelectedEndpoint(test.agentEndpoint);
+  };
+  
 
 
   const deleteAgentCase = (id: string) => {
@@ -116,9 +118,9 @@ export default function TestCasesPage() {
         <TestCaseVariations selectedTest={selectedCase} />
       </div>
       <div className="col-span-4">
-        <PersonaSelector 
-          selectedPersonas={selectedPersonas  ?? []}
-          onSelectPersona={handlePersonaSelect}
+      <PersonaSelector 
+          selectedEndpoint={selectedEndpoint} // Add this state if not present
+          onPersonaChange={handlePersonaChange}
         />
       </div>
     </div>
