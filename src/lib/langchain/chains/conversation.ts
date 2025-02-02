@@ -5,6 +5,7 @@ import { BufferMemory } from "langchain/memory";
 import { ModelFactory } from '@/services/llm/modelfactory';
 import { AnthropicModel } from '@/services/llm/enums';
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import { SYSTEM_PROMPTS } from "@/services/prompts";
 
 export class ConversationChain {
   private model: BaseChatModel;
@@ -31,7 +32,7 @@ export class ConversationChain {
     });
 
     this.prompt = ChatPromptTemplate.fromMessages([
-      ["system", "You are a helpful AI assistant focused on having natural conversations while maintaining context."],
+      ["system", SYSTEM_PROMPTS.CONVERSATION_ASSISTANT],
       ["human", "{input}"],
     ]);
 

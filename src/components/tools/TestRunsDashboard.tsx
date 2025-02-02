@@ -81,6 +81,7 @@ export function TestRunsDashboard() {
 
   const runTest = async (testId: string) => {
     const allTests = JSON.parse(localStorage.getItem('savedTests') || '[]');
+    const ruleTemplates = JSON.parse(localStorage.getItem('ruleTemplates') || '{}');
     const testToRun = allTests.find((t: any) => t.id === testId);
     
     if (!testToRun) {
@@ -88,25 +89,9 @@ export function TestRunsDashboard() {
       return;
     }
   
-    const apiKey = testToRun.headers?.['x-api-key'] || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      console.error('API key not found');
-      return;
-    }
-  
-    const agent = new QaAgent({
-      headers: {
-        ...testToRun.headers,
-      },
-      modelId: AnthropicModel.Sonnet3_5,
-      endpointUrl: testToRun.agentEndpoint,
-      apiConfig: {
-        inputFormat: JSON.parse(testToRun.input || '{}'),
-        outputFormat: JSON.parse(testToRun.output || '{}'),
-        rules: testToRun.rules || []
-      }
-    });
-  
+    const templateRules = ruleTemplates[testToRun.name] || [];
+    const combinedRules = [...templateRules, ...(testToRun.rules || [])];
+    
     const savedVariations = JSON.parse(localStorage.getItem('testVariations') || '{}');
     const testVariations = savedVariations[testId] || [];
     const latestVariation = testVariations[testVariations.length - 1];
@@ -167,8 +152,8 @@ export function TestRunsDashboard() {
           apiConfig: {
             inputFormat: JSON.parse(testToRun.input || '{}'),
             outputFormat: JSON.parse(testToRun.output || '{}'),
-            rules: testToRun.rules || []
-          }
+            rules: combinedRules
+          },
         });
       
         try {
@@ -178,38 +163,16 @@ export function TestRunsDashboard() {
             scenario.expectedOutput || ''
           );
 
-          // Add all request and response messages
-          // result.conversation.allMessages.forEach((msg: TestMessage) => {
-          //   chat.messages.push(
-          //     {
-          //       id: uuidv4(),
-          //       chatId: chatId,
-          //       role: 'user',
-          //       content: JSON.stringify(msg.rawInput, null, 2),
-          //       isCorrect: true,
-          //       explanation: "API Request"
-          //     },
-          //     {
-          //       id: uuidv4(),
-          //       chatId: chatId,
-          //       role: 'assistant',
-          //       content: JSON.stringify(msg.rawOutput, null, 2),
-          //       isCorrect: result.validation.passedTest,
-          //       explanation: `Response Time: ${result.validation.metrics.responseTime}ms`
-          //     }
-          //   );
-          // });
-
-          messages: result.conversation.allMessages.map(msg => ({
+          chat.messages = result.conversation.allMessages.map(msg => ({
             id: uuidv4(),
             chatId: chatId,
-            role: 'user',
+            role: msg.role,
             content: msg.content,
-            isCorrect: true,
+            isCorrect: msg.role === 'assistant' ? result.validation.passedTest : true,
             metrics: {
               responseTime: result.validation.metrics.responseTime
             }
-          }))
+          }));
       
           // Update metrics and store chat
           chat.metrics.correct = result.validation.passedTest ? 1 : 0;
@@ -282,46 +245,46 @@ export function TestRunsDashboard() {
         </div>
 
         <div className="space-y-6 max-w-[800px] mx-auto">
-          {selectedChat.messages.map((message: TestMessage) => (
-            <div key={message.id} className="space-y-2">
-              {message.role === 'user' ? (
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm">👤</span>
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <div className="bg-blue-500/20 rounded-lg">
-                      <CollapsibleJson content={message.content} />
-                    </div>
+        {selectedChat.messages.map((message: TestMessage) => (
+          <div key={message.id} className="space-y-2">
+            {message.role === 'user' ? (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm">👤</span>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <div className="bg-blue-500/20 rounded-lg">
+                    <CollapsibleJson content={message.content} />
                   </div>
                 </div>
-              ) : (
-                <div className="flex items-start gap-3">
-                  <div className="flex-1 overflow-hidden">
-                    <div className="bg-emerald-500/10 rounded-lg">
-                      <CollapsibleJson content={message.content} />
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge 
-                        variant={message.isCorrect ? "outline" : "destructive"} 
-                        className={message.isCorrect ? "bg-green-500/10" : "bg-red-500/10"}
-                      >
-                        {message.isCorrect ? "Correct" : "Incorrect"}
-                      </Badge>
-                      {message.explanation && (
-                        <span className="text-xs text-zinc-400">
-                          {message.explanation}
-                        </span>
-                      )}
-                    </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-3">
+                <div className="flex-1 overflow-hidden">
+                  <div className="bg-emerald-500/10 rounded-lg">
+                    <CollapsibleJson content={message.content} />
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm">🤖</span>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge 
+                      variant={message.isCorrect ? "outline" : "destructive"} 
+                      className={message.isCorrect ? "bg-green-500/10" : "bg-red-500/10"}
+                    >
+                      {message.isCorrect ? "Correct" : "Incorrect"}
+                    </Badge>
+                    {message.explanation && (
+                      <span className="text-xs text-zinc-400">
+                        {message.explanation}
+                      </span>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm">🤖</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
         </div>
       </div>
     );

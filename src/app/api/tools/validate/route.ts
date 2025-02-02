@@ -34,13 +34,14 @@ Focus on semantic meaning rather than exact wording. Consider:
 export async function POST(req: Request) {
   try {
     const { actualResponse, expectedOutput } = await req.json()
-    if (!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY) {
-      throw new Error('API key not configured');
+    const apiKey = localStorage.getItem('anthropic_api_key');
+    if (!apiKey) {
+      throw new Error('Anthropic API key not found. Please add your API key in settings.');
     }
 
     const model = ModelFactory.createLangchainModel(
       AnthropicModel.Sonnet3_5, 
-      process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
+      apiKey
     );
 
 

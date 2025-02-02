@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { 
   Home,
   BookOpen,
-  LineChart,
+  Users,
   PlayCircle,
 } from 'lucide-react'
 
@@ -23,14 +23,14 @@ export default function Sidebar() {
       href: '/tools/test-cases'
     },
     {
+      label: 'Personas',
+      icon: Users,
+      href: '/tools/personas'
+    },
+    {
       label: 'Runs',
       icon: PlayCircle,
       href: '/tools/runs'
-    },
-    {
-      label: 'Analytics',
-      icon: LineChart,
-      href: '/tools/analytics'
     }
   ]
 

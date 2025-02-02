@@ -1,4 +1,4 @@
-export { QaAgent } from './claudeAgent';
+export { QaAgent } from './qaAgent';
 export type { 
   QaAgentConfig,
   TestResult,

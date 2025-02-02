@@ -32,6 +32,8 @@ export function useTestExecution() {
     try {
       const allTests = storageService.getSavedTests();
       const rules = storageService.getRuleTemplates();
+      const personas = storageService.getPersonaMappings();
+
       console.log('All tests:', allTests);
       
       const testToRun = allTests.find(t => t.id === testId);
@@ -50,22 +52,9 @@ export function useTestExecution() {
       }
 
       const scenarios = latestVariation.cases || [];
-      
+      const selectedPersonas = personas[testId]?.personaIds || [];
+
       setProgress({ completed: 0, total: scenarios.length });
-      
-      // Initialize Claude Agent
-      const agent = new QaAgent({
-        headers: {
-          ...testToRun.headers,
-        },
-        modelId: AnthropicModel.Sonnet3_5,
-        endpointUrl: testToRun.agentEndpoint,
-        apiConfig: {
-          inputFormat: testToRun.input ? JSON.parse(testToRun.input) : {},
-          outputFormat: testToRun.expectedOutput ? JSON.parse(testToRun.expectedOutput) : {},
-          rules: testToRun.rules.map((rule: Rule) => ({ ...rule, isValid: rule.isValid ?? false }))
-        }
-      });
 
       const newRun: TestRun = {
         id: uuidv4(),
@@ -91,124 +80,122 @@ export function useTestExecution() {
 
       setCurrentMessages([]);
       for (const [index, scenario] of scenarios.entries()) {
-        try {
-          console.log(`Executing scenario ${index + 1}/${scenarios.length}:`, scenario);
-          
-          // New: Show typing indicator
-          setIsTyping(true);
-  
+        for (const personaId of selectedPersonas) {
+          try {
+            console.log(`Executing scenario ${index + 1}/${scenarios.length}:`, scenario);
 
-          const result = await agent.runTest(
-            scenario.scenario,
-            scenario.expectedOutput || ''
-          );
-          const testMessage = result.conversation.humanMessage;
-          setCurrentMessages(prev => [...prev, {
-            id: uuidv4(),
-            role: 'user',
-            content: testMessage,
-            timestamp: new Date().toISOString(),
-            metrics: {
-              responseTime: result.validation.metrics.responseTime,
-              validationScore: result.validation.passedTest ? 1 : 0
-            }
-          }]);
-          console.log('Test result:', result);
+            const agent = new QaAgent({
+              headers: {
+                ...testToRun.headers,
+              },
+              modelId: AnthropicModel.Sonnet3_5,
+              endpointUrl: testToRun.agentEndpoint,
+              apiConfig: {
+                inputFormat: testToRun.input ? JSON.parse(testToRun.input) : {},
+                outputFormat: testToRun.expectedOutput ? JSON.parse(testToRun.expectedOutput) : {},
+                rules: testToRun.rules.map((rule: Rule) => ({ ...rule, isValid: rule.isValid ?? false }))
+              },
+              persona: personaId
+            });
+            
+            // New: Show typing indicator
+            setIsTyping(true);
+    
 
-          setIsTyping(false);
-          setCurrentMessages(prev => [...prev, {
-            id: uuidv4(),
-            role: 'assistant',
-            content: result.conversation.chatResponse,
-            timestamp: new Date().toISOString(),
-            metrics: {
-              responseTime: result.validation.metrics.responseTime,
-              validationScore: result.validation.passedTest ? 1 : 0
-            }
-          }]);
-          
-          const chatId = uuidv4();
-          const chat: TestChat = {
-            id: chatId,
-            name: scenario.scenario,
-            scenario: scenario.scenario,
-            status: result.validation.passedTest ? 'passed' : 'failed',
-            messages: [{
+            const result = await agent.runTest(
+              scenario.scenario,
+              scenario.expectedOutput || ''
+            );
+            const testMessage = result.conversation.humanMessage;
+            setCurrentMessages(prev => [...prev, {
               id: uuidv4(),
-              chatId: chatId,
               role: 'user',
-              content: result.conversation.humanMessage,
+              content: testMessage,
+              timestamp: new Date().toISOString(),
               metrics: {
                 responseTime: result.validation.metrics.responseTime,
                 validationScore: result.validation.passedTest ? 1 : 0
               }
-            }, {
+            }]);
+            console.log('Test result:', result);
+
+            setIsTyping(false);
+            setCurrentMessages(prev => [...prev, {
               id: uuidv4(),
-              chatId: chatId,
               role: 'assistant',
               content: result.conversation.chatResponse,
+              timestamp: new Date().toISOString(),
               metrics: {
                 responseTime: result.validation.metrics.responseTime,
                 validationScore: result.validation.passedTest ? 1 : 0
               }
-            }],
-            metrics: {
-              correct: result.validation.passedTest ? 1 : 0,
-              incorrect: result.validation.passedTest? 0 : 1,
-              responseTime: [result.validation.metrics.responseTime],
-              validationScores: [result.validation.passedTest ? 1 : 0],
-              contextRelevance: [1],
-              validationDetails: {
-                customFailure: !result.validation.passedTest,
-                containsFailures: [],
-                notContainsFailures: []
-              }
-            },
-            timestamp: new Date().toISOString()
-          };
-          
-          completedChats.set(scenario.scenario, chat);
-          newRun.metrics.passed += result.validation.passedTest ? 1 : 0;
-          newRun.metrics.failed += result.validation.passedTest ? 0 : 1;
-          newRun.metrics.correct += result.validation.passedTest ? 1 : 0;
-          newRun.metrics.incorrect += result.validation.passedTest ? 0 : 1;
-          
-          setProgress(prev => ({ ...prev, completed: index + 1 }));
-          
-        } catch (error: any) {
-          console.error('Error in test execution:', error);
-          const chat: TestChat = {
-            id: uuidv4(),
-            name: scenario.scenario,
-            scenario: scenario.scenario,
-            status: 'failed',
-            messages: [],
-            metrics: { 
-              correct: 0,
-              incorrect: 1,
-              responseTime: [], 
-              validationScores: [], 
-              contextRelevance: [],
-              validationDetails: {
-                customFailure: true,
-                containsFailures: [],
-                notContainsFailures: []
-              }
-            },
-            timestamp: new Date().toISOString(),
-            error: error.message || 'Unknown error occurred'
-          };
-          
-          completedChats.set(scenario.scenario, chat);
-          newRun.metrics.failed += 1;
-          newRun.metrics.incorrect += 1;
-        }
+            }]);
+            
+            const chatId = uuidv4();
+            const chat: TestChat = {
+              id: chatId,
+              name: scenario.scenario,
+              scenario: scenario.scenario,
+              status: result.validation.passedTest ? 'passed' : 'failed',
+              messages: result.conversation.allMessages,
+              metrics: {
+                correct: result.validation.passedTest ? 1 : 0,
+                incorrect: result.validation.passedTest? 0 : 1,
+                responseTime: [result.validation.metrics.responseTime],
+                validationScores: [result.validation.passedTest ? 1 : 0],
+                contextRelevance: [1],
+                validationDetails: {
+                  customFailure: !result.validation.passedTest,
+                  containsFailures: [],
+                  notContainsFailures: []
+                }
+              },
+              timestamp: new Date().toISOString()
+            };
+            
+            completedChats.set(scenario.scenario, chat);
+            newRun.metrics.passed += result.validation.passedTest ? 1 : 0;
+            newRun.metrics.failed += result.validation.passedTest ? 0 : 1;
+            newRun.metrics.correct += result.validation.passedTest ? 1 : 0;
+            newRun.metrics.incorrect += result.validation.passedTest ? 0 : 1;
+            
+            setProgress(prev => ({ ...prev, completed: index + 1 }));
+            
+          } catch (error: any) {
+            console.error('Error in test execution:', error);
+            const chat: TestChat = {
+              id: uuidv4(),
+              name: scenario.scenario,
+              scenario: scenario.scenario,
+              status: 'failed',
+              messages: [],
+              metrics: { 
+                correct: 0,
+                incorrect: 1,
+                responseTime: [], 
+                validationScores: [], 
+                contextRelevance: [],
+                validationDetails: {
+                  customFailure: true,
+                  containsFailures: [],
+                  notContainsFailures: []
+                }
+              },
+              timestamp: new Date().toISOString(),
+              error: error.message || 'Unknown error occurred'
+            };
+            
+            completedChats.set(scenario.scenario, chat);
+            newRun.metrics.failed += 1;
+            newRun.metrics.incorrect += 1;
+          }
 
-        updateRun({
-          ...newRun,
-          chats: Array.from(completedChats.values()),
-          status: completedChats.size === scenarios.length ? 'completed' : 'running'
-        });
+          updateRun({
+            ...newRun,
+            chats: Array.from(completedChats.values()),
+            status: completedChats.size === scenarios.length ? 'completed' : 'running'
+          });
+        }
       }
 
       setStatus('completed');

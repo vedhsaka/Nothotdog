@@ -19,15 +19,10 @@ export interface Rule {
     headers: Record<string, string>;
     endpointUrl: string;
     apiConfig: ApiConfig;
+    persona?: string;
   }
   
-  // export interface TestMessage {
-  //   humanMessage: string;
-  //   rawInput: Record<string, any>;
-  //   rawOutput: Record<string, any>;
-  //   chatResponse: string;
-  // }
-  
+
   export interface TestResult {
     conversation: {
       humanMessage: string;

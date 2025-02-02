@@ -12,6 +12,11 @@ import { TestMessage } from "@/types/runs";
 import { v4 as uuidv4 } from 'uuid';
 import { ModelFactory } from "@/services/llm/modelfactory";
 import { AnthropicModel } from "@/services/llm/enums";
+import { SYSTEM_PROMPTS } from "@/services/prompts";
+import { ChattyExplorer } from "../personas/variants/chattyExplorer";
+import { ImpatientUser } from "../personas/variants/impatientUser";
+import { DirectProfessional } from "../personas/variants/directProfessional";
+import { TechnicalExpert } from "../personas/variants/technicalExpert";
 
 export class QaAgent {
   private model;
@@ -22,16 +27,10 @@ export class QaAgent {
   constructor(config: QaAgentConfig) {
     this.config = config;
 
-    const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+    const apiKey = localStorage.getItem('anthropic_api_key');
     if (!apiKey) {
-      throw new Error('NEXT_PUBLIC_ANTHROPIC_API_KEY is not set');
+      throw new Error('Anthropic API key not found. Please add your API key in settings.');
     }
-
-    // this.model = new ChatAnthropic({
-    //   anthropicApiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY,
-    //   modelName: "claude-3-sonnet-20240229",
-    //   temperature: 0.7,
-    // });
 
     this.model = ModelFactory.createLangchainModel(
       config.modelId || AnthropicModel.Sonnet3_5,
@@ -44,27 +43,18 @@ export class QaAgent {
       inputKey: "input",
     });
 
+    const personas = {
+      [ChattyExplorer.id]: ChattyExplorer,
+      [DirectProfessional.id]: DirectProfessional,
+      [ImpatientUser.id]: ImpatientUser,
+      [TechnicalExpert.id]: TechnicalExpert
+    };
+  
+    const personaSystemPrompt = config.persona ? personas[config.persona].systemPrompt : undefined;
+  
+
     this.prompt = ChatPromptTemplate.fromMessages([
-      ["system", `You are an API tester that engages in natural human-like conversations. Your goal is to test scenarios through organic dialogue that feels authentic and unpredictable.
-
-You should:
-1. Start conversations naturally - use greetings, small talk, or indirect questions
-2. Vary your conversation style:
-   - Sometimes be brief and direct
-   - Sometimes engage in longer dialogues with multiple turns
-   - Occasionally go off-topic or include irrelevant details
-   - Use different personality traits (casual, formal, chatty, etc.)
-3. Include realistic human behaviors:
-   - Typos and corrections
-   - Incomplete thoughts
-   - Follow-up questions
-   - Topic changes
-   - Emotional expressions (excitement, confusion, frustration)
-
-Format your responses as:
-TEST_MESSAGE: <your natural human message>
-CONVERSATION_PLAN: <optional - include if you plan multiple turns>
-ANALYSIS: <your analysis of the interaction>`],
+      ["system", SYSTEM_PROMPTS.API_TESTER(personaSystemPrompt)],
       ["human", "{input}"]
     ]);
   }
@@ -102,12 +92,6 @@ ANALYSIS: <your analysis of the interaction>`],
       totalResponseTime += Date.now() - startTime;
       
       const chatId = uuidv4();
-      // allMessages.push({
-      //   humanMessage: testMessage,
-      //   rawInput: formattedInput,
-      //   rawOutput: apiResponse,
-      //   chatResponse
-      // });
 
       allMessages.push({
         id: uuidv4(),
@@ -160,12 +144,6 @@ ANALYSIS: <your analysis of the interaction>`],
 
           const turnResponseTime = Date.now() - startTime
           totalResponseTime += Date.now() - startTime;
-          // allMessages.push({
-          //   humanMessage: followUpMessage,
-          //   rawInput: followUpInput,
-          //   rawOutput: apiResponse,
-          //   chatResponse
-          // });
           allMessages.push({
             id: uuidv4(),
             chatId: chatId,
@@ -194,7 +172,6 @@ ANALYSIS: <your analysis of the interaction>`],
       const formatValid = ResponseValidator.validateResponseFormat(apiResponse, this.config.apiConfig.outputFormat);
       const conditionMet = ResponseValidator.validateCondition(apiResponse, this.config.apiConfig.rules);
 
-      // ${allMessages.map(m => `Human: ${m.humanMessage}\nAssistant: ${m.chatResponse}`).join('\n\n')}
       // Final analysis
       const analysisResult = await chain.invoke({
         input: `Analyze if this conversation met our test expectations:

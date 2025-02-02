@@ -1,12 +1,14 @@
 import { TestRun } from '@/types/runs';
 import { ConversationContext, TestScenario, TestVariations, SavedTest } from '@/types';
+import { PersonaMapping, PersonaMappings } from '@/types/persona-mapping'
 
 const STORAGE_KEYS = {
   TEST_VARIATIONS: 'testVariations',
   RULE_TEMPLATES: 'ruleTemplates',
   CONVERSATION_HISTORY: 'conversationHistory',
   CONVERSATION_METRICS: 'conversationMetrics',
-  SAVED_TESTS: 'savedTests'
+  SAVED_TESTS: 'savedTests',
+  PERSONA_MAPPINGS: 'personaMappings',
 } as const;
 
 interface ConversationResult {
@@ -132,6 +134,16 @@ class LocalStorageService {
   
   setTestRuns(runs: TestRun[]): void {
     this.setItem('testRuns', runs);
+  }
+
+  getPersonaMappings(): PersonaMappings {
+    return this.getItem<PersonaMappings>(STORAGE_KEYS.PERSONA_MAPPINGS, {});
+  }
+  
+  setPersonaMapping(mapping: PersonaMapping) {
+    const mappings = this.getPersonaMappings();
+    mappings[mapping.testId] = mapping;
+    this.setItem(STORAGE_KEYS.PERSONA_MAPPINGS, mappings);
   }
 }
 

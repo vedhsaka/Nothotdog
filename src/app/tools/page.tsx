@@ -17,6 +17,7 @@ import {
 import { ResponseTime } from '@/components/tools/ResponseTime'
 import { Rule } from '@/components/tools/types'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import AgentDescription from '@/components/tools/agentDescription';
 
 interface Header {
   key: string;
@@ -41,6 +42,8 @@ export default function ToolsPage() {
     headers: Record<string, string>;
   }>>([])
   const [ruleTemplates, setRuleTemplates] = useState<Record<string, Rule[]>>({});
+  const [agentDescription, setAgentDescription] = useState('');
+  const [userDescription, setUserDescription] = useState('');
 
   // Load saved agents and rule templates on component mount
   useEffect(() => {
@@ -76,6 +79,9 @@ export default function ToolsPage() {
     setAgentEndpoint(savedTest.agentEndpoint);
     setManualInput(savedTest.input || '');
     setManualResponse(savedTest.expectedOutput || '');
+    setAgentDescription(savedTest.agentDescription || '');
+    setUserDescription(savedTest.userDescription || '');
+
     
     // Load associated rule templates if they exist
     const savedTemplates = JSON.parse(localStorage.getItem('ruleTemplates') || '{}');
@@ -155,6 +161,8 @@ export default function ToolsPage() {
       expectedOutput: manualResponse,
       rules,
       responseTime,
+      agentDescription,
+      userDescription,
       timestamp: new Date().toISOString()
     };
 
@@ -206,9 +214,15 @@ export default function ToolsPage() {
           </Button>
         </div>
       </div>
-
+      <AgentDescription
+          agentDescription={agentDescription}
+          userDescription={userDescription}
+          onAgentDescriptionChange={setAgentDescription}
+          onUserDescriptionChange={setUserDescription}
+        />
       <div className="grid grid-cols-12 gap-6">
         {/* Main Column - Configuration and Response */}
+
         <div className="col-span-8 space-y-4">
           {/* Agent Configuration Section */}
           <Card className="bg-black/40 border-zinc-800">
