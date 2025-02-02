@@ -1,14 +1,12 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+"use client";
+import React, { useState, useEffect } from "react";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash} from 'lucide-react';
-import { ResponseTime } from '@/components/tools/ResponseTime';
-import { TestCaseVariations } from '@/components/tools/TestCaseVariations';
-import PersonaSelector from '@/components/tools/personaSelector';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { Button } from "@/components/ui/button";
+import { Trash } from "lucide-react";
+import { ResponseTime } from "@/components/tools/ResponseTime";
+import { TestCaseVariations } from "@/components/tools/TestCaseVariations";
+import PersonaSelector from "@/components/tools/personaSelector";
 
 interface AgentCase {
   id: string;
@@ -25,22 +23,48 @@ interface AgentCase {
 export default function TestCasesPage() {
   const [agentCases, setAgentCases] = useState<AgentCase[]>([]);
   const [selectedCase, setSelectedCase] = useState<AgentCase | null>(null);
-
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
-    // Load saved agent cases from localStorage
-    const cases = JSON.parse(localStorage.getItem('savedTests') || '[]');
+    const cases = JSON.parse(localStorage.getItem("savedTests") || "[]");
     setAgentCases(cases);
   }, []);
 
   const handleCaseSelect = (test: AgentCase) => {
     setSelectedCase(test);
   };
-  
+
+  const toggleSelectCase = (id: string) => {
+    setSelectedIds((prevSelected) =>
+      prevSelected.includes(id)
+        ? prevSelected.filter((selectedId) => selectedId !== id)
+        : [...prevSelected, id]
+    );
+  };
+
+  const selectAllCases = () => {
+    if (selectedIds.length === agentCases.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(agentCases.map((test) => test.id));
+    }
+  };
+
+  const deleteSelectedCases = () => {
+    const updatedCases = agentCases.filter(
+      (test) => !selectedIds.includes(test.id)
+    );
+    localStorage.setItem("savedTests", JSON.stringify(updatedCases));
+    setAgentCases(updatedCases);
+    setSelectedIds([]);
+    if (selectedCase && selectedIds.includes(selectedCase.id)) {
+      setSelectedCase(null);
+    }
+  };
 
   const deleteAgentCase = (id: string) => {
-    const updatedCases = agentCases.filter(test => test.id !== id);
-    localStorage.setItem('savedTests', JSON.stringify(updatedCases));
+    const updatedCases = agentCases.filter((test) => test.id !== id);
+    localStorage.setItem("savedTests", JSON.stringify(updatedCases));
     setAgentCases(updatedCases);
     if (selectedCase?.id === id) {
       setSelectedCase(null);
@@ -49,7 +73,6 @@ export default function TestCasesPage() {
 
   return (
     <div className="grid grid-cols-12 gap-4 p-6">
-      {/* Left Column - Agent Cases */}
       <div className="col-span-4">
         <Card className="bg-black/40 border-zinc-800">
           <CardHeader>
@@ -59,28 +82,49 @@ export default function TestCasesPage() {
                 {agentCases.length} Cases
               </Badge>
             </div>
+            <div className="flex mt-2">
+              <Button onClick={selectAllCases}>
+                {selectedIds.length === agentCases.length
+                  ? "Deselect All"
+                  : "Select All"}
+              </Button>
+              <Button
+                onClick={deleteSelectedCases}
+                variant="destructive"
+                className="ml-2"
+              >
+                Delete Selected
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="max-h-[calc(100vh-12rem)] overflow-y-auto">
             <div className="space-y-2">
               {agentCases.map((test) => (
-                <div 
+                <div
                   key={test.id}
                   className={`p-4 rounded-lg cursor-pointer transition-colors ${
-                    selectedCase?.id === test.id 
-                      ? 'bg-black/60 border border-zinc-700' 
-                      : 'bg-black/20 hover:bg-black/30'
+                    selectedCase?.id === test.id
+                      ? "bg-black/60 border border-zinc-700"
+                      : "bg-black/20 hover:bg-black/30"
                   }`}
-                  onClick={() => setSelectedCase(test)}
+                  onClick={() => handleCaseSelect(test)}
                 >
                   <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">{test.name || "Unnamed Test"}</h3>
-                      <p className="text-sm text-zinc-400 mt-1 truncate max-w-[300px]">
-                        Endpoint: {test.agentEndpoint}
-                      </p>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(test.id)}
+                        onChange={() => toggleSelectCase(test.id)}
+                        className="mr-2"
+                      />
+                      <h3 className="font-medium">
+                        {test.name || "Unnamed Test"}
+                      </h3>
                     </div>
                     <div className="flex items-center gap-4">
-                      {test.responseTime > 0 && <ResponseTime time={test.responseTime} />}
+                      {test.responseTime > 0 && (
+                        <ResponseTime time={test.responseTime} />
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -93,6 +137,9 @@ export default function TestCasesPage() {
                       </Button>
                     </div>
                   </div>
+                  <p className="text-sm text-zinc-400 mt-1 truncate max-w-[300px]">
+                    Endpoint: {test.agentEndpoint}
+                  </p>
                 </div>
               ))}
 
@@ -105,14 +152,12 @@ export default function TestCasesPage() {
           </CardContent>
         </Card>
       </div>
- 
+
       <div className="col-span-4">
         <TestCaseVariations selectedTest={selectedCase} />
       </div>
-      <div className="col-span-4">`
-      <PersonaSelector 
-          selectedTest={selectedCase?.id || ''} 
-        />
+      <div className="col-span-4">
+        <PersonaSelector selectedTest={selectedCase?.id || ""} />
       </div>
     </div>
   );
