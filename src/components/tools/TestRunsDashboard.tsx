@@ -16,6 +16,7 @@ import { Play, ChevronDown } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { QaAgent } from '@/services/agents/claude/qaAgent';
 import { AnthropicModel } from '@/services/llm/enums';
+import { storageService } from '@/services/storage/localStorage';
 
 function CollapsibleJson({ content }: { content: string }) {
   let formattedContent = content;
@@ -96,6 +97,9 @@ export function TestRunsDashboard() {
     const testVariations = savedVariations[testId] || [];
     const latestVariation = testVariations[testVariations.length - 1];
     const scenarios = latestVariation?.cases || [];
+    const personas = storageService.getPersonaMappings();
+    const selectedPersonas = personas[testId]?.personaIds || [];
+    const totalRuns = scenarios.length * selectedPersonas.length;
   
     const newRun: TestRun = {
       id: uuidv4(),
@@ -103,10 +107,10 @@ export function TestRunsDashboard() {
       timestamp: new Date().toISOString(),
       status: 'running',
       metrics: {
-        total: scenarios.length,
+        total: totalRuns,
         passed: 0,
         failed: 0,
-        chats: scenarios.length,
+        chats: totalRuns,
         correct: 0,
         incorrect: 0
       },
