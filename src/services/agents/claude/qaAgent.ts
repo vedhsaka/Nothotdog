@@ -26,16 +26,15 @@ export class QaAgent {
 
   constructor(config: QaAgentConfig) {
     this.config = config;
-
-    const apiKey = localStorage.getItem('anthropic_api_key');
-    if (!apiKey) {
-      throw new Error('Anthropic API key not found. Please add your API key in settings.');
-    }
+    
+    const modelId = config.modelId || AnthropicModel.Sonnet3_5;
+    const apiKey = this.getApiKey(modelId);
 
     this.model = ModelFactory.createLangchainModel(
-      config.modelId || AnthropicModel.Sonnet3_5,
-      apiKey
-    )
+      modelId,
+      apiKey,
+      config.modelOptions
+    );
 
     this.memory = new BufferMemory({
       returnMessages: true,
@@ -57,6 +56,21 @@ export class QaAgent {
       ["system", SYSTEM_PROMPTS.API_TESTER(personaSystemPrompt)],
       ["human", "{input}"]
     ]);
+  }
+
+  private getApiKey(modelId: string): string {
+    const isOpenAI = modelId.includes('gpt');
+    const apiKey = isOpenAI 
+      ? process.env.NEXT_PUBLIC_OPENAI_API_KEY
+      : process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+    
+    if (!apiKey) {
+      throw new Error(
+        `${isOpenAI ? 'NEXT_PUBLIC_OPENAI_API_KEY' : 'NEXT_PUBLIC_ANTHROPIC_API_KEY'} is not set`
+      );
+    }
+    
+    return apiKey;
   }
 
   async runTest(scenario: string, expectedOutput: string): Promise<TestResult> {

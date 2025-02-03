@@ -1,24 +1,38 @@
 import { ChatAnthropic } from "@langchain/anthropic";
-import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { LLMProvider } from './enums';
-import { MODEL_CONFIGS } from './config';
+import { ChatOpenAI } from "@langchain/openai";
+import { AnthropicModel, OpenAIModel, MODEL_CONFIGS } from "./enums";
+
+interface ModelOptions {
+  temperature?: number;
+  maxTokens?: number;
+}
 
 export class ModelFactory {
-  static createLangchainModel(modelId: string, apiKey: string): BaseChatModel {
-    const config = MODEL_CONFIGS[modelId];
-    if (!config) {
-      throw new Error(`Model configuration not found for ${modelId}`);
-    }
+  static createLangchainModel(modelId: string, apiKey: string, options?: ModelOptions) {
+    const defaultConfig = MODEL_CONFIGS[modelId] || {
+      maxTokens: 4096,
+      temperature: 0.7
+    };
 
-    switch (config.provider) {
-      case LLMProvider.Anthropic:
-        return new ChatAnthropic({
-          anthropicApiKey: apiKey,
-          modelName: config.modelId,
-          temperature: config.defaultTemperature,
-        });
-      default:
-        throw new Error(`Unsupported LLM provider: ${config.provider}`);
+    const config = {
+      temperature: options?.temperature || defaultConfig.temperature,
+      maxTokens: options?.maxTokens || defaultConfig.maxTokens,
+    };
+
+    if (modelId.includes('gpt')) {
+      return new ChatOpenAI({
+        openAIApiKey: apiKey,
+        modelName: modelId,
+        temperature: config.temperature,
+        maxTokens: config.maxTokens,
+      });
+    } else {
+      return new ChatAnthropic({
+        anthropicApiKey: apiKey,
+        modelName: modelId,
+        temperature: config.temperature,
+        maxTokens: config.maxTokens,
+      });
     }
   }
 }
