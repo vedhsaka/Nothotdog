@@ -53,8 +53,8 @@ export function useTestExecution() {
 
       const scenarios = latestVariation.cases || [];
       const selectedPersonas = personas[testId]?.personaIds || [];
-
-      setProgress({ completed: 0, total: scenarios.length });
+      const totalRuns = scenarios.length * selectedPersonas.length;
+      setProgress({ completed: 0, total: totalRuns });
 
       const newRun: TestRun = {
         id: uuidv4(),
@@ -62,10 +62,10 @@ export function useTestExecution() {
         timestamp: new Date().toISOString(),
         status: 'running',
         metrics: {
-          total: scenarios.length,
+          total: totalRuns,
           passed: 0,
           failed: 0,
-          chats: scenarios.length,
+          chats: totalRuns,
           correct: 0,
           incorrect: 0
         },
@@ -193,7 +193,7 @@ export function useTestExecution() {
           updateRun({
             ...newRun,
             chats: Array.from(completedChats.values()),
-            status: completedChats.size === scenarios.length ? 'completed' : 'running'
+            status: completedChats.size === totalRuns ? 'completed' : 'running'
           });
         }
       }
