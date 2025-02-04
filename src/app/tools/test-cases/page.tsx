@@ -83,12 +83,12 @@ export default function TestCasesPage() {
               </Badge>
             </div>
             <div className="flex mt-2">
-              <Button onClick={selectAllCases}>
+              <Button size="sm" onClick={selectAllCases}>
                 {selectedIds.length === agentCases.length
                   ? "Deselect All"
                   : "Select All"}
               </Button>
-              <Button
+              <Button size="sm"
                 onClick={deleteSelectedCases}
                 variant="destructive"
                 className="ml-2"
