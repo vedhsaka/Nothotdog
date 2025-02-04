@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash } from "lucide-react";
 import { TestVariation } from "@/types/variations";
 
+
 interface TestCase {
   id: string;
   sourceTestId: string;
@@ -44,11 +45,14 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
 
   const generateTestCases = async () => {
     if (!selectedTest) return;
-
+    const apiKey = localStorage.getItem('anthropic_api_key');
     try {
       const response = await fetch("/api/tools/generate-tests", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-API-Key": apiKey || ''
+        },
         body: JSON.stringify({
           inputExample: selectedTest.input,
           expectedOutput: selectedTest.expectedOutput,
@@ -196,13 +200,35 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     <Card className="bg-black/40 border-zinc-800">
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle>Generated Scenarios</CardTitle>
+          {/* <CardTitle>Generated Scenarios</CardTitle>
           {selectedTest && (
             <Button size="sm" onClick={addNewTestCase}>
               <Plus className="h-4 w-4 mr-2" />
               Add Test Case
             </Button>
-          )}
+          )} */}
+
+
+
+            {selectedTest && (
+               generatedCases.length > 0 ? (
+                 <Button 
+                   size="sm"
+                   onClick={addNewTestCase}
+                 >
+                   <Plus className="h-4 w-4 mr-2" />
+                   Add Test Case
+                 </Button>
+               ) : (
+                 <Button 
+                   size="sm"
+                   onClick={generateTestCases}
+                 >
+                   <Plus className="h-4 w-4 mr-2" />
+                   Generate Scenarios
+                 </Button>
+               )
+             )} 
         </div>
 
         <div className="flex gap-2 mt-2">
