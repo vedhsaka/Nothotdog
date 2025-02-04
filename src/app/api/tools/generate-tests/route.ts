@@ -60,9 +60,9 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { agentDescription, userDescription } = validateGenerateTestsRequest(body);
 
-    const apiKey = localStorage.getItem('anthropic_api_key');
+    const apiKey = req.headers.get('x-api-key');
     if (!apiKey) {
-      throw new Error('Anthropic API key not found. Please add your API key in settings.');
+      throw new Error('API key not found in request headers');
     }
 
     const model = ModelFactory.createLangchainModel(
