@@ -360,7 +360,7 @@ export default function ToolsPage() {
           <Card className="bg-black/40 border-zinc-800">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Response</CardTitle>
+                <CardTitle>Response Details</CardTitle>
                 {responseTime > 0 && <ResponseTime time={responseTime} />}
               </div>
             </CardHeader>
@@ -537,23 +537,25 @@ export default function ToolsPage() {
 
 function getJsonPath(obj: any, key: string, line: string): string {
   const paths: string[] = [];
-  
+
   function traverse(current: any, currentPath: string[] = []) {
     if (current && typeof current === 'object') {
       Object.keys(current).forEach(k => {
+        const newPath = [...currentPath, k];
         if (k === key) {
-          paths.push([...currentPath, k].join('.'));
+          paths.push(newPath.join('.'));
         }
-        traverse(current[k], [...currentPath, k]);
+        traverse(current[k], newPath);
       });
     }
   }
-  
   traverse(obj);
+
+  // Ensure that the correct path is returned by checking the JSON structure
   return paths.find(p => {
     const value = getValueFromPath(obj, p);
     return JSON.stringify(value, null, 2).split('\n')[0].includes(line.split(':')[1].trim());
-  }) || key;
+  }) || paths[0] || key; // Default to the first found path if there's no exact match
 }
 
 function getValueFromPath(obj: any, path: string): any {
