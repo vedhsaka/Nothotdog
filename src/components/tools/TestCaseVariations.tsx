@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash } from "lucide-react";
@@ -32,6 +32,11 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (selectedTest) {
@@ -53,9 +58,9 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     try {
       const response = await fetch("/api/tools/generate-tests", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "X-API-Key": apiKey || ''
+          "X-API-Key": apiKey || "",
         },
         body: JSON.stringify({
           inputExample: selectedTest.input,
@@ -202,52 +207,52 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     }
   };
 
+  const showBulkActions = generatedCases.length > 1 && selectedIds.length > 0;
+
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <Card className="bg-black/40 border-zinc-800">
       <CardHeader>
         <div className="flex justify-between items-center">
-          {/* <CardTitle>Generated Scenarios</CardTitle>
-          {selectedTest && (
-            <Button size="sm" onClick={addNewTestCase}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Test Case
-            </Button>
-          )} */}
           {loading && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
               <Loading size="lg" message="Generating test cases..." />
             </div>
           )}
 
-          {selectedTest && (
-            generatedCases.length > 0 ? (
+          {selectedTest &&
+            (generatedCases.length > 0 ? (
               <Button size="sm" onClick={addNewTestCase}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Test Case
               </Button>
             ) : (
-              <Button
-                size="sm"
-                onClick={generateTestCases}
-                disabled={loading}
-              >
+              <Button size="sm" onClick={generateTestCases} disabled={loading}>
                 <Plus className="h-4 w-4 mr-2" />
                 Generate Scenarios
               </Button>
-            )
-          )}
+            ))}
         </div>
 
-        <div className="flex gap-2 mt-2">
-          <Button size="sm" onClick={selectAllCases}>
-            {selectedIds.length === generatedCases.length
-              ? "Deselect All"
-              : "Select All"}
-          </Button>
-          <Button size="sm" onClick={deleteSelectedCases} variant="destructive">
-            Delete Selected
-          </Button>
-        </div>
+        {showBulkActions && (
+          <div className="flex gap-2 mt-2">
+            <Button size="sm" onClick={selectAllCases}>
+              {selectedIds.length === generatedCases.length
+                ? "Deselect All"
+                : "Select All"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={deleteSelectedCases}
+              variant="destructive"
+            >
+              Delete Selected
+            </Button>
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-4">
