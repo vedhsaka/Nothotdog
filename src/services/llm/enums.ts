@@ -9,7 +9,6 @@ export enum AnthropicModel {
 
 export enum OpenAIModel {
   GPT4 = "gpt-4",
-  GPT4Turbo = "gpt-4-turbo-preview",
   GPT35Turbo = "gpt-3.5-turbo"
 }
 
@@ -25,10 +24,6 @@ export const MODEL_CONFIGS: Record<string, ModelConfig> = {
   },
   [OpenAIModel.GPT4]: {
     maxTokens: 8192,
-    temperature: 0.7
-  },
-  [OpenAIModel.GPT4Turbo]: {
-    maxTokens: 4096,
     temperature: 0.7
   },
   [OpenAIModel.GPT35Turbo]: {

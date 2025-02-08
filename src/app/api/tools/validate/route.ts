@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 
 import { ModelFactory } from '@/services/llm/modelfactory';
-import { AnthropicModel } from '@/services/llm/enums';
+import { AnthropicModel, OpenAIModel } from '@/services/llm/enums';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
 import { NextResponse } from 'next/server'
@@ -30,20 +30,22 @@ Focus on semantic meaning rather than exact wording. Consider:
 4. Similar level of specificity`]
 ]);
 
-
 export async function POST(req: Request) {
   try {
     const { actualResponse, expectedOutput } = await req.json()
-    const apiKey = localStorage.getItem('anthropic_api_key');
-    if (!apiKey) {
-      throw new Error('Anthropic API key not found. Please add your API key in settings.');
+    
+    const llmKey = localStorage.getItem('llm_key');
+    const llmProvider = localStorage.getItem('llm_provider');
+    const llmModel = localStorage.getItem('llm_model');
+
+    if (!llmKey || !llmProvider || !llmModel) {
+      throw new Error('LLM configuration not found. Please configure your LLM settings.');
     }
 
     const model = ModelFactory.createLangchainModel(
-      AnthropicModel.Sonnet3_5, 
-      apiKey
+      llmModel as AnthropicModel | OpenAIModel,
+      llmKey
     );
-
 
     const chain = RunnableSequence.from([
       validationTemplate,
@@ -70,4 +72,4 @@ export async function POST(req: Request) {
       { status: 500 }
     )
   }
-} 
+}

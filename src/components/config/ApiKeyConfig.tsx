@@ -19,18 +19,53 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AnthropicModel } from '@/services/llm/enums';
+import { AnthropicModel, OpenAIModel, LLMProvider } from '@/services/llm/enums';
 
-export default function ApiKeyConfig() {
+export default function LLMConfig() {
   const [keyName, setKeyName] = useState('');
   const [apiKey, setApiKey] = useState('');
-  const [selectedModel, setSelectedModel] = useState(AnthropicModel.Sonnet3_5);
+  const [selectedLLM, setSelectedLLM] = useState('');
+  const [selectedModel, setSelectedModel] = useState('');
+
+  const providers = Object.values(LLMProvider);
+
+  // Helper function to format model names
+  const formatModelName = (key: string): string => {
+    switch (key) {
+      case AnthropicModel.Sonnet3_5:
+        return 'Claude 3.5 Sonnet';
+      case OpenAIModel.GPT4:
+        return 'GPT-4';
+      case OpenAIModel.GPT35Turbo:
+        return 'GPT-3.5 Turbo';
+      default:
+        return key;
+    }
+  };
+
+  // Helper function to get available models for a provider
+  const getModelsForProvider = (provider: string) => {
+    switch (provider.toLowerCase()) {
+      case LLMProvider.Anthropic:
+        return Object.values(AnthropicModel).map(value => ({
+          name: formatModelName(value),
+          value: value
+        }));
+      case LLMProvider.OpenAI:
+        return Object.values(OpenAIModel).map(value => ({
+          name: formatModelName(value),
+          value: value
+        }));
+      default:
+        return [];
+    }
+  };
 
   const handleSave = () => {
-    // Save API key configuration
-    localStorage.setItem('anthropic_api_key', apiKey);
-    localStorage.setItem('anthropic_key_name', keyName);
-    localStorage.setItem('anthropic_model', selectedModel);
+    localStorage.setItem('llm_provider', selectedLLM.toLowerCase());
+    localStorage.setItem('llm_key', apiKey);
+    localStorage.setItem('llm_model', selectedModel);
+    localStorage.setItem('llm_key_name', keyName);
   };
 
   return (
@@ -46,7 +81,7 @@ export default function ApiKeyConfig() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-black/90 border-zinc-800">
         <DialogHeader>
-          <DialogTitle>Add Anthropic Config</DialogTitle>
+          <DialogTitle>LLM Configuration</DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-2">
@@ -73,21 +108,50 @@ export default function ApiKeyConfig() {
           </div>
 
           <div className="space-y-2">
-            <Label>Select model</Label>
+            <Label>Select LLM Provider</Label>
             <Select
-            value={selectedModel}
-            onValueChange={(value: string) => setSelectedModel(value as AnthropicModel)}
+              value={selectedLLM}
+              onValueChange={(value: string) => {
+                setSelectedLLM(value);
+                setSelectedModel('');
+              }}
             >
-            <SelectTrigger className="bg-black/40 border-zinc-800">
-                <SelectValue placeholder="Select a model" />
-            </SelectTrigger>
-            <SelectContent className="bg-black/90 border-zinc-800">
-                <SelectItem value={AnthropicModel.Sonnet3_5}>
-                Claude 3.5 Sonnet
-                </SelectItem>
-            </SelectContent>
+              <SelectTrigger className="bg-black/40 border-zinc-800">
+                <SelectValue placeholder="Select a provider" />
+              </SelectTrigger>
+              <SelectContent className="bg-black/90 border-zinc-800">
+                {providers.map((provider) => (
+                  <SelectItem 
+                    key={provider} 
+                    value={provider}
+                  >
+                    {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
+
+          {selectedLLM && (
+            <div className="space-y-2">
+              <Label>Select Model</Label>
+              <Select
+                value={selectedModel}
+                onValueChange={(value: string) => setSelectedModel(value)}
+              >
+                <SelectTrigger className="bg-black/40 border-zinc-800">
+                  <SelectValue placeholder="Select a model" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90 border-zinc-800">
+                  {getModelsForProvider(selectedLLM).map(({ name, value }) => (
+                    <SelectItem key={value} value={value}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <Button 
             onClick={handleSave}

@@ -45,36 +45,53 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
 
   const generateTestCases = async () => {
     if (!selectedTest) return;
-    const apiKey = localStorage.getItem('anthropic_api_key');
+  
+    const llmKey = localStorage.getItem('llm_key');
+    const llmProvider = localStorage.getItem('llm_provider');
+    const llmModel = localStorage.getItem('llm_model');
+  
+    if (!llmKey || !llmProvider || !llmModel) {
+      console.error("LLM configuration not found. Please configure your LLM settings.");
+      return;
+    }
+  
     try {
       const response = await fetch("/api/tools/generate-tests", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "X-API-Key": apiKey || ''
+          "llm-key": llmKey,
+          "llm-provider": llmProvider,
+          "llm-model": llmModel
         },
         body: JSON.stringify({
           inputExample: selectedTest.input,
           expectedOutput: selectedTest.expectedOutput,
+          agentDescription: "AI Test Agent",  // Add a default description
+          userDescription: "Test User"        // Add a default description
         }),
       });
-
+  
       const data = await response.json();
-      if (data.error) {
-        console.error("Generation error:", data.error);
+  
+      if (!response.ok || data.error) {
+        console.error("Generation error:", data.error, data.details || '');
+        // Optionally show error to user in UI
         return;
       }
-
-      if (data.testCases) {
+  
+      if (data.testCases && Array.isArray(data.testCases)) {
         const newCases = data.testCases.map((tc: any) => ({
           id: crypto.randomUUID(),
           sourceTestId: selectedTest.id,
           scenario: tc.scenario,
           expectedOutput: tc.expectedOutput || "",
         }));
-
+  
         setGeneratedCases(newCases);
         saveVariations(selectedTest.id, newCases);
+      } else {
+        console.error("Invalid response format:", data);
       }
     } catch (error) {
       console.error("Failed to generate test cases:", error);

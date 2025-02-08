@@ -11,7 +11,7 @@ import { ResponseValidator } from './validators';
 import { TestMessage } from "@/types/runs";
 import { v4 as uuidv4 } from 'uuid';
 import { ModelFactory } from "@/services/llm/modelfactory";
-import { AnthropicModel } from "@/services/llm/enums";
+import { AnthropicModel, OpenAIModel } from "@/services/llm/enums";
 import { SYSTEM_PROMPTS } from "@/services/prompts";
 import { ChattyExplorer } from "../personas/variants/chattyExplorer";
 import { ImpatientUser } from "../personas/variants/impatientUser";
@@ -27,12 +27,14 @@ export class QaAgent {
   constructor(config: QaAgentConfig) {
     this.config = config;
     
-    const modelId = config.modelId || AnthropicModel.Sonnet3_5;
-    const apiKey = this.getApiKey(modelId);
+    const llmConfig = this.getLLMConfig();
+    if (!llmConfig) {
+      throw new Error('LLM configuration not found. Please configure your LLM settings.');
+    }
 
     this.model = ModelFactory.createLangchainModel(
-      modelId,
-      apiKey,
+      llmConfig.model as AnthropicModel | OpenAIModel,
+      llmConfig.key,
       config.modelOptions
     );
 
@@ -51,26 +53,28 @@ export class QaAgent {
   
     const personaSystemPrompt = config.persona ? personas[config.persona].systemPrompt : undefined;
   
-
     this.prompt = ChatPromptTemplate.fromMessages([
       ["system", SYSTEM_PROMPTS.API_TESTER(personaSystemPrompt)],
       ["human", "{input}"]
     ]);
   }
 
-  private getApiKey(modelId: string): string {
-    const isOpenAI = modelId.includes('gpt');
-    const apiKey = isOpenAI 
-      ? process.env.NEXT_PUBLIC_OPENAI_API_KEY
-      : process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+  private getLLMConfig() {
+    if (typeof window === 'undefined') return null;
     
-    if (!apiKey) {
-      throw new Error(
-        `${isOpenAI ? 'NEXT_PUBLIC_OPENAI_API_KEY' : 'NEXT_PUBLIC_ANTHROPIC_API_KEY'} is not set`
-      );
+    const key = localStorage.getItem('llm_key');
+    const provider = localStorage.getItem('llm_provider');
+    const model = localStorage.getItem('llm_model');
+    
+    if (!key || !provider || !model) {
+      return null;
     }
-    
-    return apiKey;
+  
+    return {
+      key,
+      provider,
+      model
+    };
   }
 
   async runTest(scenario: string, expectedOutput: string): Promise<TestResult> {
@@ -95,7 +99,6 @@ export class QaAgent {
 
       // Initial message
       const formattedInput = ApiHandler.formatInput(testMessage, this.config.apiConfig.inputFormat);
-      // let apiResponse = await ApiHandler.callEndpoint(this.config.endpointUrl, this.config.headers, formattedInput);
       let apiResponse = await ApiHandler.callEndpoint(
         this.config.endpointUrl, 
         this.config.headers, 
@@ -127,7 +130,6 @@ export class QaAgent {
           responseTime: totalResponseTime,
           validationScore: 1
         }
-
       });
 
       // Handle multi-turn conversation
@@ -168,7 +170,6 @@ export class QaAgent {
               validationScore: 1
             }
           });
-          // Add assistant message
           allMessages.push({
             id: uuidv4(),
             chatId: chatId,

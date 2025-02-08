@@ -9,6 +9,10 @@ const STORAGE_KEYS = {
   CONVERSATION_METRICS: 'conversationMetrics',
   SAVED_TESTS: 'savedTests',
   PERSONA_MAPPINGS: 'personaMappings',
+  LLM_KEY: 'llm_key',
+  LLM_PROVIDER: 'llm_provider',
+  LLM_MODEL: 'llm_model',
+  LLM_KEY_NAME: 'llm_key_name'
 } as const;
 
 interface ConversationResult {
@@ -24,6 +28,13 @@ interface ConversationResult {
     successRate: number;
   };
   timestamp: string;
+}
+
+interface LLMConfig {
+  key: string;
+  provider: string;
+  model: string;
+  keyName: string;
 }
 
 class LocalStorageService {
@@ -62,13 +73,11 @@ class LocalStorageService {
     this.setItem(STORAGE_KEYS.SAVED_TESTS, tests);
   }
 
-  // New methods for conversation storage
   saveConversationResult(result: ConversationResult): void {
     const history = this.getConversationHistory();
     history.push(result);
     this.setItem(STORAGE_KEYS.CONVERSATION_HISTORY, history);
     
-    // Update aggregated metrics
     const metrics = this.getConversationMetrics();
     const scenarioMetrics = metrics[result.scenarioId] || {
       runs: 0,
@@ -145,6 +154,38 @@ class LocalStorageService {
     mappings[mapping.testId] = mapping;
     this.setItem(STORAGE_KEYS.PERSONA_MAPPINGS, mappings);
   }
+
+  getLLMConfig(): LLMConfig | null {
+    const key = this.getItem<string>(STORAGE_KEYS.LLM_KEY, '');
+    const provider = this.getItem<string>(STORAGE_KEYS.LLM_PROVIDER, '');
+    const model = this.getItem<string>(STORAGE_KEYS.LLM_MODEL, '');
+    const keyName = this.getItem<string>(STORAGE_KEYS.LLM_KEY_NAME, '');
+
+    if (!key || !provider || !model) {
+      return null;
+    }
+
+    return {
+      key,
+      provider,
+      model,
+      keyName
+    };
+  }
+
+  setLLMConfig(config: LLMConfig): void {
+    this.setItem(STORAGE_KEYS.LLM_KEY, config.key);
+    this.setItem(STORAGE_KEYS.LLM_PROVIDER, config.provider);
+    this.setItem(STORAGE_KEYS.LLM_MODEL, config.model);
+    this.setItem(STORAGE_KEYS.LLM_KEY_NAME, config.keyName);
+  }
+
+  clearLLMConfig(): void {
+    window.localStorage.removeItem(STORAGE_KEYS.LLM_KEY);
+    window.localStorage.removeItem(STORAGE_KEYS.LLM_PROVIDER);
+    window.localStorage.removeItem(STORAGE_KEYS.LLM_MODEL);
+    window.localStorage.removeItem(STORAGE_KEYS.LLM_KEY_NAME);
+  }
 }
 
-export const storageService = new LocalStorageService(); 
+export const storageService = new LocalStorageService();

@@ -2,7 +2,7 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 import { validateTestRequest } from '@/lib/validations/testRequest';
-import { AnthropicModel } from '@/services/llm/enums';
+import { AnthropicModel, OpenAIModel } from '@/services/llm/enums';
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { JsonOutputParser } from "@langchain/core/output_parsers";
@@ -23,10 +23,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { agentEndpoint, testCases, headers } = body;
     
-    // Get the saved test case to compare against
     const savedTestCase = testCases[0];
     
-    // Validate request format
     if (!validateTestRequest(
       { input: savedTestCase.input, headers }, 
       { input: savedTestCase.input, headers: savedTestCase.headers }
@@ -37,14 +35,17 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiKey = localStorage.getItem('anthropic_api_key');
-    if (!apiKey) {
-      throw new Error('Anthropic API key not found. Please add your API key in settings.');
+    const llmKey = localStorage.getItem('llm_key');
+    const llmProvider = localStorage.getItem('llm_provider');
+    const llmModel = localStorage.getItem('llm_model');
+
+    if (!llmKey || !llmProvider || !llmModel) {
+      throw new Error('LLM configuration not found. Please configure your LLM settings.');
     }
 
     const model = ModelFactory.createLangchainModel(
-      AnthropicModel.Sonnet3_5,
-      apiKey
+      llmModel as AnthropicModel | OpenAIModel,
+      llmKey
     );
 
     const evaluationChain = RunnableSequence.from([
@@ -62,7 +63,6 @@ export async function POST(req: Request) {
       const body = JSON.stringify({ input: testCase.input });
 
       try {
-        // Test the agent
         const agentResponse = await fetch(agentEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...headers },
@@ -72,7 +72,6 @@ export async function POST(req: Request) {
         const endTime = Date.now();
         const responseTime = endTime - startTime;
 
-        // Use Langchain chain for evaluation
         const evaluation = await evaluationChain.invoke({
           expectedOutput: JSON.stringify(testCase.expectedOutput),
           actualOutput: JSON.stringify(agentData.output)
@@ -100,7 +99,6 @@ export async function POST(req: Request) {
       }
     }));
 
-    // Calculate metrics
     const totalTests = results.length;
     const successfulTests = results.filter(r => r.isCorrect).length;
     const averageResponseTime = results.reduce((acc, r) => acc + r.responseTime, 0) / totalTests;
@@ -115,7 +113,7 @@ export async function POST(req: Request) {
         averageMatchScore,
         totalTests,
         successfulTests
-      }
+      }w
     });
   } catch (error) {
     console.error('Evaluation error:', error);
