@@ -133,6 +133,7 @@ npm run dev
 3. Commit your changes
 4. Push to the branch
 5. Create a Pull Request
+6. Please ensure to add a screenshot to show the changes made in the Pull Request.
 
 ## Contact
 
