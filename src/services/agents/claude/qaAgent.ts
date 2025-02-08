@@ -45,13 +45,16 @@ export class QaAgent {
     });
 
     const personas = {
-      [ChattyExplorer.id]: ChattyExplorer,
-      [DirectProfessional.id]: DirectProfessional,
-      [ImpatientUser.id]: ImpatientUser,
-      [TechnicalExpert.id]: TechnicalExpert
-    };
-  
-    const personaSystemPrompt = config.persona ? personas[config.persona].systemPrompt : undefined;
+      chatty: ChattyExplorer,
+      direct: DirectProfessional,
+      impatient: ImpatientUser,
+      technical: TechnicalExpert
+    } as const;
+
+    type PersonaKey = keyof typeof personas; // Restricts to valid keys
+
+    const personaKey = config.persona as PersonaKey | undefined;
+    const personaSystemPrompt = personaKey ? personas[personaKey]?.systemPrompt : undefined;
   
     this.prompt = ChatPromptTemplate.fromMessages([
       ["system", SYSTEM_PROMPTS.API_TESTER(personaSystemPrompt)],
@@ -104,7 +107,7 @@ export class QaAgent {
         this.config.headers, 
         formattedInput
       );
-      let chatResponse = ConversationHandler.extractChatResponse(apiResponse, this.config.apiConfig.rules);
+      let chatResponse = apiResponse?.response?.text || ConversationHandler.extractChatResponse(apiResponse, this.config.apiConfig.rules);
 
       totalResponseTime += Date.now() - startTime;
       
@@ -150,7 +153,7 @@ export class QaAgent {
               this.config.headers,
               followUpInput,
             );
-            chatResponse = ConversationHandler.extractChatResponse(apiResponse, this.config.apiConfig.rules);
+            chatResponse = apiResponse?.response?.text || ConversationHandler.extractChatResponse(apiResponse, this.config.apiConfig.rules);
           } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
               throw new Error('API request timed out after 10 seconds');

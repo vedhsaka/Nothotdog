@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { QaAgent } from '@/services/agents/claude/qaAgent';
 import { AnthropicModel } from '@/services/llm/enums';
 import { storageService } from '@/services/storage/localStorage';
+import { useTestExecution } from '@/hooks/useTestExecution';
 
 function CollapsibleJson({ content }: { content: string }) {
   let formattedContent = content;
@@ -45,190 +46,15 @@ function CollapsibleJson({ content }: { content: string }) {
 }
 
 export function TestRunsDashboard() {
-  const [runs, setRuns] = useState<TestRun[]>([]);
-  const [selectedRun, setSelectedRun] = useState<TestRun | null>(null);
-  const [selectedChat, setSelectedChat] = useState<TestChat | null>(null);
-  const [savedTests, setSavedTests] = useState<Array<{id: string, name: string}>>([]);
-
-  useEffect(() => {
-    // Load saved runs
-    const savedRuns = JSON.parse(localStorage.getItem('testRuns') || '[]');
-    const validatedRuns = savedRuns.map((run: any) => ({
-      ...run,
-      metrics: {
-        total: run.metrics?.total || 0,
-        passed: run.metrics?.passed || 0,
-        failed: run.metrics?.failed || 0,
-        chats: run.metrics?.chats || 0
-      },
-      chats: (run.chats || []).map((chat: any) => ({
-        ...chat,
-        metrics: {
-          correct: chat.metrics?.correct || 0,
-          incorrect: chat.metrics?.incorrect || 0
-        },
-        messages: chat.messages || []
-      }))
-    }));
-    setRuns(validatedRuns);
-
-    // Load saved tests
-    const tests = JSON.parse(localStorage.getItem('savedTests') || '[]');
-    setSavedTests(tests.map((test: any) => ({
-      id: test.id,
-      name: test.name || 'Unnamed Test'
-    })));
-  }, []);
-
-  const runTest = async (testId: string) => {
-    const allTests = JSON.parse(localStorage.getItem('savedTests') || '[]');
-    const ruleTemplates = JSON.parse(localStorage.getItem('ruleTemplates') || '{}');
-    const testToRun = allTests.find((t: any) => t.id === testId);
-    
-    if (!testToRun) {
-      console.error('Test not found');
-      return;
-    }
-  
-    const templateRules = ruleTemplates[testToRun.name] || [];
-    const combinedRules = [...templateRules, ...(testToRun.rules || [])];
-    
-    const savedVariations = JSON.parse(localStorage.getItem('testVariations') || '{}');
-    const testVariations = savedVariations[testId] || [];
-    const latestVariation = testVariations[testVariations.length - 1];
-    const scenarios = latestVariation?.cases || [];
-    const personas = storageService.getPersonaMappings();
-    const selectedPersonas = personas[testId]?.personaIds || [];
-    const totalRuns = scenarios.length * selectedPersonas.length;
-  
-    const newRun: TestRun = {
-      id: uuidv4(),
-      name: testToRun.name,
-      timestamp: new Date().toISOString(),
-      status: 'running',
-      metrics: {
-        total: totalRuns,
-        passed: 0,
-        failed: 0,
-        chats: totalRuns,
-        correct: 0,
-        incorrect: 0
-      },
-      chats: [],
-      results: []
-    };
-  
-    setRuns(prev => [newRun, ...prev]);
-  
-    try {
-      const completedChats = new Map<string, TestChat>();
-  
-      const scenarioPromises = scenarios.map(async (scenario: TestScenario) => {
-        const chatId = uuidv4();
-        const chat: TestChat = {
-          id: chatId,
-          name: scenario.scenario,
-          scenario: scenario.scenario,
-          status: 'running',
-          messages: [],
-          metrics: {
-            correct: 0,
-            incorrect: 0,
-            responseTime: [],
-            validationScores: [],
-            contextRelevance: [],
-            validationDetails: {
-              customFailure: false,
-              containsFailures: [],
-              notContainsFailures: []
-            }
-          },
-          timestamp: new Date().toISOString()
-         };
-      
-        // Create a new agent for this scenario
-        const scenarioAgent = new QaAgent({
-          headers: {
-            ...testToRun.headers,
-          },
-          modelId: AnthropicModel.Sonnet3_5,
-          endpointUrl: testToRun.agentEndpoint,
-          apiConfig: {
-            inputFormat: JSON.parse(testToRun.input || '{}'),
-            outputFormat: JSON.parse(testToRun.output || '{}'),
-            rules: combinedRules
-          },
-        });
-      
-        try {
-          // Make the API call
-          const result = await scenarioAgent.runTest(
-            scenario.scenario,
-            scenario.expectedOutput || ''
-          );
-
-          chat.messages = result.conversation.allMessages.map(msg => ({
-            id: uuidv4(),
-            chatId: chatId,
-            role: msg.role,
-            content: msg.content,
-            isCorrect: msg.role === 'assistant' ? result.validation.passedTest : true,
-            metrics: {
-              responseTime: result.validation.metrics.responseTime
-            }
-          }));
-      
-          // Update metrics and store chat
-          chat.metrics.correct = result.validation.passedTest ? 1 : 0;
-          chat.metrics.incorrect = result.validation.passedTest ? 0 : 1;
-          
-          completedChats.set(chat.id, {...chat});
-          newRun.chats = Array.from(completedChats.values());
-          newRun.metrics.passed += result.validation.passedTest ? 1 : 0;
-          newRun.metrics.failed += result.validation.passedTest ? 0 : 1;
-          
-          setRuns(prev => prev.map(run => 
-            run.id === newRun.id ? {...newRun} : run
-          ));
-      
-        } catch (error) {
-          console.error('Scenario test failed:', error);
-          chat.messages.push({
-            id: uuidv4(),
-            chatId: chatId,
-            role: 'assistant',
-            content: 'Error: Failed to execute conversation',
-            isCorrect: false,
-            explanation: 'Test execution failed'
-          });
-          chat.metrics.incorrect += 1;
-          newRun.metrics.failed += 1;
-          
-          completedChats.set(chat.id, {...chat});
-          newRun.chats = Array.from(completedChats.values());
-          setRuns(prev => prev.map(run => 
-            run.id === newRun.id ? {...newRun} : run
-          ));
-        }
-      
-        return chat;
-      });
-  
-      await Promise.all(scenarioPromises);
-      
-      newRun.status = 'completed';
-      setRuns(prev => prev.map(run => 
-        run.id === newRun.id ? {...newRun} : run
-      ));
-      
-    } catch (error) {
-      console.error('Test run failed:', error);
-      newRun.status = 'failed';
-      setRuns(prev => prev.map(run => 
-        run.id === newRun.id ? {...newRun} : run
-      ));
-    }
-  };
+  const {
+    runs,
+    selectedRun,
+    setSelectedRun,
+    selectedChat,
+    setSelectedChat,
+    savedTests,
+    executeTest
+  } = useTestExecution();
 
   if (selectedChat) {
     return (
@@ -371,7 +197,7 @@ export function TestRunsDashboard() {
               savedTests.map((test) => (
                 <DropdownMenuItem 
                   key={test.id}
-                  onSelect={() => runTest(test.id)}
+                  onSelect={() => executeTest(test.id)}
                   className="cursor-pointer"
                 >
                   {test.name}
