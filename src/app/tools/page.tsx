@@ -45,6 +45,9 @@ export default function ToolsPage() {
   const [agentDescription, setAgentDescription] = useState('');
   const [userDescription, setUserDescription] = useState('');
 
+  // New state to track edit mode
+  const [isEditMode, setIsEditMode] = useState(false);
+
   // Load saved agents and rule templates on component mount
   useEffect(() => {
     const tests = JSON.parse(localStorage.getItem('savedTests') || '[]');
@@ -82,7 +85,6 @@ export default function ToolsPage() {
     setAgentDescription(savedTest.agentDescription || '');
     setUserDescription(savedTest.userDescription || '');
 
-    
     // Load associated rule templates if they exist
     const savedTemplates = JSON.parse(localStorage.getItem('ruleTemplates') || '{}');
     if (savedTemplates[savedTest.name]) {
@@ -99,6 +101,9 @@ export default function ToolsPage() {
     setHeaders(headerArray.length ? headerArray : [{ key: '', value: '' }]);
     setIsConfigExpanded(true);
     setIsInputExpanded(true);
+    
+    // Set edit mode to true when loading an existing test
+    setIsEditMode(true);
   };
 
   const addHeader = () => {
@@ -169,17 +174,18 @@ export default function ToolsPage() {
     // Update or add the test case
     if (existingTestIndex >= 0) {
       existingTests[existingTestIndex] = testCase;
-      localStorage.setItem('savedTests', JSON.stringify(existingTests));
+      alert("Test case updated successfully!");
     } else {
-      localStorage.setItem('savedTests', JSON.stringify([...existingTests, testCase]));
+      existingTests.push(testCase);
+      alert("Test case saved successfully!");
     }
-
+    
+    localStorage.setItem('savedTests', JSON.stringify(existingTests));
+    
     // Save rule templates
     const updatedTemplates = { ...ruleTemplates, [testName]: rules };
     localStorage.setItem('ruleTemplates', JSON.stringify(updatedTemplates));
     
-    alert(`Test case ${existingTestIndex >= 0 ? 'updated' : 'saved'} successfully!`);
-
     // Refresh the saved agents list
     setSavedAgents(existingTests.map((test: any) => ({
       id: test.id,
@@ -187,9 +193,12 @@ export default function ToolsPage() {
       agentEndpoint: test.agentEndpoint,
       headers: test.headers
     })));
+
+    // Optionally reset edit mode after saving
+    setIsEditMode(false);
   };
 
-  // Add a function to get rule templates for an agent
+  // Function to get rule templates for an agent
   const getRuleTemplatesForAgent = (agentName: string): Rule[] => {
     return ruleTemplates[agentName] || [];
   };
@@ -210,7 +219,7 @@ export default function ToolsPage() {
           />
           <Button onClick={saveTest} disabled={!manualResponse || !testName}>
             <Save className="mr-2 h-4 w-4" />
-            Save Test
+            {isEditMode ? "Update Test" : "Save Test"}
           </Button>
         </div>
       </div>
@@ -222,7 +231,6 @@ export default function ToolsPage() {
         />
       <div className="grid grid-cols-12 gap-6">
         {/* Main Column - Configuration and Response */}
-
         <div className="col-span-8 space-y-4">
           {/* Agent Configuration Section */}
           <Card className="bg-black/40 border-zinc-800">
