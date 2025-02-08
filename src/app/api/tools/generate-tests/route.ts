@@ -6,6 +6,7 @@ import { jsonrepair } from 'jsonrepair';
 import { AnthropicModel, OpenAIModel } from '@/services/llm/enums';
 import { ModelFactory } from '@/services/llm/modelfactory';
 import { TEST_CASES_PROMPT } from '@/services/prompts';
+import { getLLMConfigForActiveModel } from '@/utils/getLLMConfigForActiveModel';
 
 function extractJSON(text: string): any {
   try {
@@ -56,24 +57,18 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { inputExample, expectedOutput } = body;
 
-    const llmKey = req.headers.get('llm-key');
-    const llmProvider = req.headers.get('llm-provider');
-    const llmModel = req.headers.get('llm-model');
-
-    if (!llmKey || !llmProvider || !llmModel) {
+    const config = getLLMConfigForActiveModel(req.headers);
+    
+    if (!config) {
       return NextResponse.json(
-        { error: 'LLM configuration not found' },
+        { error: 'Missing or invalid LLM configuration' },
         { status: 400 }
       );
     }
 
     const model = ModelFactory.createLangchainModel(
-      llmModel as AnthropicModel | OpenAIModel,
-      llmKey,
-      {
-        maxTokens: 2000,
-        temperature: 0.7
-      }
+      config.model as AnthropicModel | OpenAIModel,
+      config.apiKey
     );
 
     // Properly construct the context with input and expected output
@@ -88,10 +83,10 @@ Expected Output: ${JSON.stringify(expectedOutput, null, 2)}`;
     }]);
 
     // Log the response for debugging
-    console.log('Model response:', response.content);
+    // console.log('Model response:', response.content);
       
     let evaluations = extractJSON(response.content as string);
-    console.log('Extracted evaluations:', evaluations);
+    // console.log('Extracted evaluations:', evaluations);
 
     if (!evaluations?.evaluations || !Array.isArray(evaluations.evaluations)) {
       console.log('No evaluations array found, creating empty array');
@@ -105,7 +100,7 @@ Expected Output: ${JSON.stringify(expectedOutput, null, 2)}`;
         expectedOutput: evaluation.expectedOutput.trim()
       }));
 
-    console.log('Valid evaluations:', validEvaluations);
+    // console.log('Valid evaluations:', validEvaluations);
 
     if (validEvaluations.length === 0) {
       return NextResponse.json({

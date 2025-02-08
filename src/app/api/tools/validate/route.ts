@@ -6,6 +6,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
 import { NextResponse } from 'next/server'
 import { JsonOutputParser } from '@langchain/core/output_parsers';
+import { getLLMConfigForActiveModel } from '@/utils/getLLMConfigForActiveModel';
 
 const validationTemplate = ChatPromptTemplate.fromMessages([
   ["user", `You are a test validation system. Compare if the actual response matches the expected output semantically.
@@ -34,17 +35,18 @@ export async function POST(req: Request) {
   try {
     const { actualResponse, expectedOutput } = await req.json()
     
-    const llmKey = localStorage.getItem('llm_key');
-    const llmProvider = localStorage.getItem('llm_provider');
-    const llmModel = localStorage.getItem('llm_model');
-
-    if (!llmKey || !llmProvider || !llmModel) {
-      throw new Error('LLM configuration not found. Please configure your LLM settings.');
+    const config = getLLMConfigForActiveModel(req.headers);
+    
+    if (!config) {
+      return NextResponse.json(
+        { error: 'Missing or invalid LLM configuration' },
+        { status: 400 }
+      );
     }
 
     const model = ModelFactory.createLangchainModel(
-      llmModel as AnthropicModel | OpenAIModel,
-      llmKey
+      config.model as AnthropicModel | OpenAIModel,
+      config.apiKey
     );
 
     const chain = RunnableSequence.from([

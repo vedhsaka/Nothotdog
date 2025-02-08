@@ -65,19 +65,25 @@ export class QaAgent {
   private getLLMConfig() {
     if (typeof window === 'undefined') return null;
     
-    const key = localStorage.getItem('llm_key');
-    const provider = localStorage.getItem('llm_provider');
-    const model = localStorage.getItem('llm_model');
+    const activeModel = localStorage.getItem('active_model');
+    if (!activeModel) return null;
+  
+    const provider = activeModel.includes('gpt') ? 'openai' : 'anthropic';
     
-    if (!key || !provider || !model) {
+    try {
+      const llmConfig = JSON.parse(localStorage.getItem('llm_config') || '{}');
+      const apiKey = llmConfig[provider];
+  
+      if (!apiKey) return null;
+  
+      return {
+        provider,
+        model: activeModel,
+        key: apiKey
+      };
+    } catch (error) {
       return null;
     }
-  
-    return {
-      key,
-      provider,
-      model
-    };
   }
 
   async runTest(scenario: string, expectedOutput: string): Promise<TestResult> {

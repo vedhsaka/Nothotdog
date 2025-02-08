@@ -7,6 +7,7 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { JsonOutputParser } from "@langchain/core/output_parsers";
 import { ModelFactory } from '@/services/llm/modelfactory';
+import { getLLMConfigForActiveModel } from '@/utils/getLLMConfigForActiveModel';
 
 const evaluationTemplate = ChatPromptTemplate.fromMessages([
   ["user", `Evaluate if this output matches the expected output and explain why:
@@ -35,17 +36,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const llmKey = localStorage.getItem('llm_key');
-    const llmProvider = localStorage.getItem('llm_provider');
-    const llmModel = localStorage.getItem('llm_model');
-
-    if (!llmKey || !llmProvider || !llmModel) {
-      throw new Error('LLM configuration not found. Please configure your LLM settings.');
+    const config = getLLMConfigForActiveModel(req.headers);
+    
+    if (!config) {
+      return NextResponse.json(
+        { error: 'Missing or invalid LLM configuration' },
+        { status: 400 }
+      );
     }
 
     const model = ModelFactory.createLangchainModel(
-      llmModel as AnthropicModel | OpenAIModel,
-      llmKey
+      config.model as AnthropicModel | OpenAIModel,
+      config.apiKey
     );
 
     const evaluationChain = RunnableSequence.from([
@@ -113,7 +115,7 @@ export async function POST(req: Request) {
         averageMatchScore,
         totalTests,
         successfulTests
-      }w
+      }
     });
   } catch (error) {
     console.error('Evaluation error:', error);

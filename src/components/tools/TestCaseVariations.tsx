@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash } from "lucide-react";
 import { TestVariation } from "@/types/variations";
+import { getLLMConfigForActiveModel } from '@/utils/getLLMConfigForActiveModel';
+import { NextResponse } from 'next/server'; 
 
 
 interface TestCase {
@@ -46,12 +48,19 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   const generateTestCases = async () => {
     if (!selectedTest) return;
   
-    const llmKey = localStorage.getItem('llm_key');
-    const llmProvider = localStorage.getItem('llm_provider');
-    const llmModel = localStorage.getItem('llm_model');
+    const llmConfig = JSON.parse(localStorage.getItem('llm_config') || '{}');
+    const activeModel = localStorage.getItem('active_model');
   
-    if (!llmKey || !llmProvider || !llmModel) {
-      console.error("LLM configuration not found. Please configure your LLM settings.");
+    if (!activeModel) {
+      console.error("No active model selected");
+      return;
+    }
+  
+    const provider = activeModel.includes('gpt') ? 'openai' : 'anthropic';
+    const apiKey = llmConfig[provider];
+  
+    if (!apiKey) {
+      console.error("No API key found for provider:", provider);
       return;
     }
   
@@ -60,15 +69,14 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "llm-key": llmKey,
-          "llm-provider": llmProvider,
-          "llm-model": llmModel
+          "active-model": activeModel,
+          "llm-config": JSON.stringify(llmConfig)
         },
         body: JSON.stringify({
           inputExample: selectedTest.input,
           expectedOutput: selectedTest.expectedOutput,
-          agentDescription: "AI Test Agent",  // Add a default description
-          userDescription: "Test User"        // Add a default description
+          agentDescription: "AI Test Agent",
+          userDescription: "Test User"
         }),
       });
   
@@ -76,7 +84,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   
       if (!response.ok || data.error) {
         console.error("Generation error:", data.error, data.details || '');
-        // Optionally show error to user in UI
         return;
       }
   
@@ -90,8 +97,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   
         setGeneratedCases(newCases);
         saveVariations(selectedTest.id, newCases);
-      } else {
-        console.error("Invalid response format:", data);
       }
     } catch (error) {
       console.error("Failed to generate test cases:", error);

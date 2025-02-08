@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
 import {
   Dialog,
@@ -22,14 +22,22 @@ import {
 import { AnthropicModel, OpenAIModel, LLMProvider } from '@/services/llm/enums';
 
 export default function LLMConfig() {
-  const [keyName, setKeyName] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [selectedLLM, setSelectedLLM] = useState('');
-  const [selectedModel, setSelectedModel] = useState('');
+  const [activeModel, setActiveModel] = useState('');
+  const [llmConfig, setLLMConfig] = useState<Record<string, string>>({});
 
   const providers = Object.values(LLMProvider);
 
-  // Helper function to format model names
+  useEffect(() => {
+    const storedConfig = localStorage.getItem('llm_config');
+    if (storedConfig) {
+      setLLMConfig(JSON.parse(storedConfig));
+    }
+    const storedModel = localStorage.getItem('active_model');
+    if (storedModel) setActiveModel(storedModel);
+  }, []);
+
   const formatModelName = (key: string): string => {
     switch (key) {
       case AnthropicModel.Sonnet3_5:
@@ -43,7 +51,6 @@ export default function LLMConfig() {
     }
   };
 
-  // Helper function to get available models for a provider
   const getModelsForProvider = (provider: string) => {
     switch (provider.toLowerCase()) {
       case LLMProvider.Anthropic:
@@ -61,11 +68,22 @@ export default function LLMConfig() {
     }
   };
 
+  const getAllAvailableModels = () => {
+    const models: { name: string; value: string }[] = [];
+    providers.forEach(provider => {
+      getModelsForProvider(provider).forEach(model => {
+        models.push(model);
+      });
+    });
+    return models;
+  };
+
   const handleSave = () => {
-    localStorage.setItem('llm_provider', selectedLLM.toLowerCase());
-    localStorage.setItem('llm_key', apiKey);
-    localStorage.setItem('llm_model', selectedModel);
-    localStorage.setItem('llm_key_name', keyName);
+    const newConfig = { ...llmConfig };
+    newConfig[selectedLLM.toLowerCase()] = apiKey;
+    
+    localStorage.setItem('llm_config', JSON.stringify(newConfig));
+    setLLMConfig(newConfig);
   };
 
   return (
@@ -81,20 +99,32 @@ export default function LLMConfig() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-black/90 border-zinc-800">
         <DialogHeader>
-          <DialogTitle>LLM Configuration</DialogTitle>
+          <DialogTitle className="flex justify-between items-center">
+            <span>LLM Configuration</span>
+            <div className="flex items-center space-x-2">
+              <Label>Active Model:</Label>
+              <Select
+                value={activeModel}
+                onValueChange={(value: string) => {
+                  setActiveModel(value);
+                  localStorage.setItem('active_model', value);
+                }}
+              >
+                <SelectTrigger className="w-[180px] bg-black/40 border-zinc-800">
+                  <SelectValue placeholder="Select active model" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90 border-zinc-800">
+                  {getAllAvailableModels().map(({ name, value }) => (
+                    <SelectItem key={value} value={value}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="keyName">API key name</Label>
-            <Input
-              id="keyName"
-              placeholder="Key name"
-              value={keyName}
-              onChange={(e) => setKeyName(e.target.value)}
-              className="bg-black/40 border-zinc-800"
-            />
-          </div>
-          
           <div className="space-y-2">
             <Label htmlFor="apiKey">API key</Label>
             <Input
@@ -113,7 +143,6 @@ export default function LLMConfig() {
               value={selectedLLM}
               onValueChange={(value: string) => {
                 setSelectedLLM(value);
-                setSelectedModel('');
               }}
             >
               <SelectTrigger className="bg-black/40 border-zinc-800">
@@ -131,27 +160,6 @@ export default function LLMConfig() {
               </SelectContent>
             </Select>
           </div>
-
-          {selectedLLM && (
-            <div className="space-y-2">
-              <Label>Select Model</Label>
-              <Select
-                value={selectedModel}
-                onValueChange={(value: string) => setSelectedModel(value)}
-              >
-                <SelectTrigger className="bg-black/40 border-zinc-800">
-                  <SelectValue placeholder="Select a model" />
-                </SelectTrigger>
-                <SelectContent className="bg-black/90 border-zinc-800">
-                  {getModelsForProvider(selectedLLM).map(({ name, value }) => (
-                    <SelectItem key={value} value={value}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
 
           <Button 
             onClick={handleSave}

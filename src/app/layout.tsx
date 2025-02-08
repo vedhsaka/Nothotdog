@@ -1,6 +1,6 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
-import ApiKeyConfig from '@/components/config/ApiKeyConfig';
+import LLMConfig from '@/components/config/LLMConfig';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -14,7 +14,7 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen bg-[#0A0A0A] text-white antialiased`}>
         <main className="flex min-h-screen flex-col">
           {children}
-          <ApiKeyConfig />
+          <LLMConfig />
         </main>
       </body>
     </html>
