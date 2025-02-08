@@ -51,10 +51,3 @@ export interface TestCase {
   //   cases?: string[];
   // }
 
-  export interface Rule {
-    id: string;
-    path: string;
-    condition: '=' | '>' | '<' | '>=' | '<=' | 'contains' | 'startsWith' | 'endsWith';
-    value: string;
-    isValid?: boolean;
-  }

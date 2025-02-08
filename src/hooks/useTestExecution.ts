@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { TestRun } from '@/types/runs';
+import { TestMessage, TestRun } from '@/types/runs';
 import { ChatMessage, TestChat } from '@/types/chat';
 import { useTestRuns } from './useTestRuns';
 import { storageService } from '@/services/storage/localStorage';
@@ -15,47 +15,54 @@ export type TestExecutionError = {
   details?: string;
 };
 
-
 export function useTestExecution() {
-  const { addRun, updateRun } = useTestRuns();
+  // Destructure runs and state management from useTestRuns:
+  const { runs, addRun, updateRun, selectedRun, setSelectedRun } = useTestRuns();
   const [status, setStatus] = useState<TestExecutionStatus>('idle');
   const [error, setError] = useState<TestExecutionError | null>(null);
   const [progress, setProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 0 });
   const [currentMessages, setCurrentMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [selectedChat, setSelectedChat] = useState<TestChat | null>(null);
+  
+  // Remove the local runs effect (do not call setRuns here)
+  // You can still load saved tests if needed:
+  const [savedTests, setSavedTests] = useState<Array<{ id: string, name: string }>>([]);
+  useEffect(() => {
+    const tests = JSON.parse(localStorage.getItem('savedTests') || '[]');
+    setSavedTests(tests.map((test: any) => ({
+      id: test.id,
+      name: test.name || 'Unnamed Test'
+    })));
+  }, []);
 
   const executeTest = async (testId: string) => {
     setStatus('connecting');
     setError(null);
     setProgress({ completed: 0, total: 0 });
-    
+
+    const allTests = storageService.getSavedTests();
+    const ruleTemplates = storageService.getRuleTemplates() as Record<string, Rule[]>;
+    const personas = storageService.getPersonaMappings();
+    const testToRun = allTests.find(t => t.id === testId);
+    if (!testToRun) {
+      throw new Error('Test configuration not found');
+    }
+    const testVariations = storageService.getTestVariations();
+    const variations = testVariations[testId] || [];
+    const latestVariation = variations[variations.length - 1];
+    if (!latestVariation) {
+      throw new Error('No test variations found');
+    }
+    const scenarios = latestVariation.cases || [];
+    const selectedPersonas = personas[testId]?.personaIds || [];
+    const totalRuns = scenarios.length * selectedPersonas.length;
+
     try {
-      const allTests = storageService.getSavedTests();
-      const rules = storageService.getRuleTemplates();
-      const personas = storageService.getPersonaMappings();
-
-      console.log('All tests:', allTests);
-      
-      const testToRun = allTests.find(t => t.id === testId);
-      console.log('Test to run:', testToRun);
-      
-      if (!testToRun) {
-        throw new Error('Test configuration not found');
-      }
-
-      const testVariations = storageService.getTestVariations();
-      const variations = testVariations[testId] || [];
-      const latestVariation = variations[variations.length - 1];
-      
-      if (!latestVariation) {
-        throw new Error('No test variations found');
-      }
-
-      const scenarios = latestVariation.cases || [];
-      const selectedPersonas = personas[testId]?.personaIds || [];
-      const totalRuns = scenarios.length * selectedPersonas.length;
+      setStatus('running');
       setProgress({ completed: 0, total: totalRuns });
 
+      // Create and add a new test run
       const newRun: TestRun = {
         id: uuidv4(),
         name: testToRun.name,
@@ -72,75 +79,59 @@ export function useTestExecution() {
         chats: [],
         results: []
       };
-
       addRun(newRun);
-      setStatus('running');
 
-      const completedChats = new Map<string, TestChat>();
-
+      const completedChats: TestChat[] = [];
+      const testRules = ruleTemplates[testToRun.name] || [];
       setCurrentMessages([]);
-      for (const [index, scenario] of scenarios.entries()) {
+
+      let completedCount = 0;
+      for (const scenario of scenarios) {
         for (const personaId of selectedPersonas) {
           try {
-            console.log(`Executing scenario ${index + 1}/${scenarios.length}:`, scenario);
-
             const agent = new QaAgent({
-              headers: {
-                ...testToRun.headers,
-              },
+              headers: { ...testToRun.headers },
               modelId: AnthropicModel.Sonnet3_5,
               endpointUrl: testToRun.agentEndpoint,
               apiConfig: {
                 inputFormat: testToRun.input ? JSON.parse(testToRun.input) : {},
                 outputFormat: testToRun.expectedOutput ? JSON.parse(testToRun.expectedOutput) : {},
-                rules: testToRun.rules.map((rule: Rule) => ({ ...rule, isValid: rule.isValid ?? false }))
+                rules: testRules
               },
               persona: personaId
             });
-            
-            // New: Show typing indicator
-            setIsTyping(true);
-    
 
             const result = await agent.runTest(
               scenario.scenario,
               scenario.expectedOutput || ''
             );
-            const testMessage = result.conversation.humanMessage;
-            setCurrentMessages(prev => [...prev, {
-              id: uuidv4(),
-              role: 'user',
-              content: testMessage,
-              timestamp: new Date().toISOString(),
-              metrics: {
-                responseTime: result.validation.metrics.responseTime,
-                validationScore: result.validation.passedTest ? 1 : 0
-              }
-            }]);
-            console.log('Test result:', result);
 
-            setIsTyping(false);
-            setCurrentMessages(prev => [...prev, {
-              id: uuidv4(),
-              role: 'assistant',
-              content: result.conversation.chatResponse,
-              timestamp: new Date().toISOString(),
-              metrics: {
-                responseTime: result.validation.metrics.responseTime,
-                validationScore: result.validation.passedTest ? 1 : 0
-              }
-            }]);
             
-            const chatId = uuidv4();
+            // Instead of manually constructing userMessage and assistantMessage:
+            const messagesFromAgent: ChatMessage[] = result.conversation.allMessages.map((msg: TestMessage) => ({
+              id: uuidv4(), // or reuse msg.id if available
+              role: msg.role as "user" | "assistant", // ensure the role is correctly typed
+              content: msg.content,
+              timestamp: new Date().toISOString(), // or use msg.timestamp if provided
+              metrics: msg.metrics || {
+                responseTime: result.validation.metrics.responseTime,
+                validationScore: msg.role === "assistant" ? (result.validation.passedTest ? 1 : 0) : 1,
+              }
+            }));
+
+            // Update the UI conversation with the messages in the correct order:
+            setCurrentMessages(prev => [...prev, ...messagesFromAgent]);
+
+
             const chat: TestChat = {
-              id: chatId,
+              id: uuidv4(),
               name: scenario.scenario,
               scenario: scenario.scenario,
               status: result.validation.passedTest ? 'passed' : 'failed',
               messages: result.conversation.allMessages,
               metrics: {
                 correct: result.validation.passedTest ? 1 : 0,
-                incorrect: result.validation.passedTest? 0 : 1,
+                incorrect: result.validation.passedTest ? 0 : 1,
                 responseTime: [result.validation.metrics.responseTime],
                 validationScores: [result.validation.passedTest ? 1 : 0],
                 contextRelevance: [1],
@@ -152,15 +143,12 @@ export function useTestExecution() {
               },
               timestamp: new Date().toISOString()
             };
-            
-            completedChats.set(scenario.scenario, chat);
+
+            completedChats.push(chat);
             newRun.metrics.passed += result.validation.passedTest ? 1 : 0;
             newRun.metrics.failed += result.validation.passedTest ? 0 : 1;
             newRun.metrics.correct += result.validation.passedTest ? 1 : 0;
             newRun.metrics.incorrect += result.validation.passedTest ? 0 : 1;
-            
-            setProgress(prev => ({ ...prev, completed: index + 1 }));
-            
           } catch (error: any) {
             console.error('Error in test execution:', error);
             const chat: TestChat = {
@@ -169,11 +157,11 @@ export function useTestExecution() {
               scenario: scenario.scenario,
               status: 'failed',
               messages: [],
-              metrics: { 
+              metrics: {
                 correct: 0,
                 incorrect: 1,
-                responseTime: [], 
-                validationScores: [], 
+                responseTime: [],
+                validationScores: [],
                 contextRelevance: [],
                 validationDetails: {
                   customFailure: true,
@@ -184,31 +172,22 @@ export function useTestExecution() {
               timestamp: new Date().toISOString(),
               error: error.message || 'Unknown error occurred'
             };
-            
-            completedChats.set(scenario.scenario, chat);
-            newRun.metrics.failed += 1;
-            newRun.metrics.incorrect += 1;
+            completedChats.push(chat);
           }
-
-          updateRun({
-            ...newRun,
-            chats: Array.from(completedChats.values()),
-            status: completedChats.size === totalRuns ? 'completed' : 'running'
-          });
+          completedCount++;
+          setProgress({ completed: completedCount, total: totalRuns });
         }
       }
 
-      setStatus('completed');
-      
+      newRun.chats = completedChats;
+      newRun.status = 'completed';
+      updateRun(newRun);
+      setSelectedRun(newRun);
+      setStatus('completed');      
     } catch (error: any) {
-      console.error('Error executing test:', error);
+      console.error('Test execution failed:', error);
       setStatus('failed');
-      setError({
-        message: error.message || 'Test execution failed',
-        code: error.code,
-        details: error.stack
-      });
-      throw error;
+      setError({ message: error.message, details: error.stack });
     }
   };
 
@@ -226,6 +205,12 @@ export function useTestExecution() {
     progress,
     isExecuting: status === 'connecting' || status === 'running',
     currentMessages,
-    isTyping
+    isTyping,
+    runs,
+    selectedRun,
+    setSelectedRun,
+    selectedChat,
+    setSelectedChat,
+    savedTests
   };
 }
