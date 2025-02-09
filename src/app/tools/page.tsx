@@ -202,6 +202,36 @@ export default function ToolsPage() {
           <h2 className="text-xl font-semibold">Manual Testing</h2>
         </div>
         <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                Load Saved Agent
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              {savedAgents.length > 0 ? (
+                savedAgents.map((agent) => (
+                  <DropdownMenuItem
+                    key={agent.id}
+                    onClick={() => loadAgent(agent.id)}
+                    className="flex flex-col items-start"
+                  >
+                    <span>{agent.name}</span>
+                    <span className="text-xs text-zinc-500">
+                      {getRuleTemplatesForAgent(agent.name).length} saved rules
+                    </span>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem disabled>
+                  No saved agents
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>     
+          </div>
           <Input
             placeholder="Enter test name"
             value={testName}
@@ -235,34 +265,6 @@ export default function ToolsPage() {
                       <CardDescription>Configure your AI agent endpoint and headers</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            Load Saved Agent
-                            <ChevronDown className="ml-2 h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[200px]">
-                          {savedAgents.length > 0 ? (
-                            savedAgents.map((agent) => (
-                              <DropdownMenuItem
-                                key={agent.id}
-                                onClick={() => loadAgent(agent.id)}
-                                className="flex flex-col items-start"
-                              >
-                                <span>{agent.name}</span>
-                                <span className="text-xs text-zinc-500">
-                                  {getRuleTemplatesForAgent(agent.name).length} saved rules
-                                </span>
-                              </DropdownMenuItem>
-                            ))
-                          ) : (
-                            <DropdownMenuItem disabled>
-                              No saved agents
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                       <Button 
                         variant="ghost" 
                         size="icon"
