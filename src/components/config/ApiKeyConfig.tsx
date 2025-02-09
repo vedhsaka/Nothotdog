@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,8 +46,13 @@ export default function ApiKeyConfig() {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-black/90 border-zinc-800">
-        <DialogHeader>
+        <DialogHeader className="flex flex-row justify-between items-center">
           <DialogTitle>Add Anthropic Config</DialogTitle>
+          <DialogClose asChild>
+            <Button variant="ghost" size="icon">
+              <X className="h-5 w-5" />
+            </Button>
+          </DialogClose>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-2">
@@ -63,12 +69,12 @@ export default function ApiKeyConfig() {
           <div className="space-y-2">
             <Label htmlFor="apiKey">API key</Label>
             <Input
-              id="apiKey"
-              type="password"
-              placeholder="API key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="bg-black/40 border-zinc-800"
+            id="apiKey"
+            type="password"
+            placeholder="API key"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            className="bg-black/40 border-zinc-800"
             />
           </div>
 
@@ -78,21 +84,18 @@ export default function ApiKeyConfig() {
             value={selectedModel}
             onValueChange={(value: string) => setSelectedModel(value as AnthropicModel)}
             >
-            <SelectTrigger className="bg-black/40 border-zinc-800">
+              <SelectTrigger className="bg-black/40 border-zinc-800">
                 <SelectValue placeholder="Select a model" />
-            </SelectTrigger>
-            <SelectContent className="bg-black/90 border-zinc-800">
+              </SelectTrigger>
+              <SelectContent className="bg-black/90 border-zinc-800">
                 <SelectItem value={AnthropicModel.Sonnet3_5}>
-                Claude 3.5 Sonnet
+                  Claude 3.5 Sonnet
                 </SelectItem>
-            </SelectContent>
+              </SelectContent>
             </Select>
           </div>
 
-          <Button 
-            onClick={handleSave}
-            className="w-full"
-          >
+          <Button onClick={handleSave} className="w-full">
             Save Configuration
           </Button>
         </div>
