@@ -45,6 +45,9 @@ export default function ToolsPage() {
   const [agentDescription, setAgentDescription] = useState('');
   const [userDescription, setUserDescription] = useState('');
 
+  // New state to track edit mode
+  const [isEditMode, setIsEditMode] = useState(false);
+
   // Load saved agents and rule templates on component mount
   useEffect(() => {
     const tests = JSON.parse(localStorage.getItem('savedTests') || '[]');
@@ -82,7 +85,6 @@ export default function ToolsPage() {
     setAgentDescription(savedTest.agentDescription || '');
     setUserDescription(savedTest.userDescription || '');
 
-    
     // Load associated rule templates if they exist
     const savedTemplates = JSON.parse(localStorage.getItem('ruleTemplates') || '{}');
     if (savedTemplates[savedTest.name]) {
@@ -99,6 +101,9 @@ export default function ToolsPage() {
     setHeaders(headerArray.length ? headerArray : [{ key: '', value: '' }]);
     setIsConfigExpanded(true);
     setIsInputExpanded(true);
+    
+    // Set edit mode to true when loading an existing test
+    setIsEditMode(true);
   };
 
   const addHeader = () => {
@@ -169,17 +174,18 @@ export default function ToolsPage() {
     // Update or add the test case
     if (existingTestIndex >= 0) {
       existingTests[existingTestIndex] = testCase;
-      localStorage.setItem('savedTests', JSON.stringify(existingTests));
+      alert("Test case updated successfully!");
     } else {
-      localStorage.setItem('savedTests', JSON.stringify([...existingTests, testCase]));
+      existingTests.push(testCase);
+      alert("Test case saved successfully!");
     }
-
+    
+    localStorage.setItem('savedTests', JSON.stringify(existingTests));
+    
     // Save rule templates
     const updatedTemplates = { ...ruleTemplates, [testName]: rules };
     localStorage.setItem('ruleTemplates', JSON.stringify(updatedTemplates));
     
-    alert(`Test case ${existingTestIndex >= 0 ? 'updated' : 'saved'} successfully!`);
-
     // Refresh the saved agents list
     setSavedAgents(existingTests.map((test: any) => ({
       id: test.id,
@@ -187,9 +193,12 @@ export default function ToolsPage() {
       agentEndpoint: test.agentEndpoint,
       headers: test.headers
     })));
+
+    // Optionally reset edit mode after saving
+    setIsEditMode(false);
   };
 
-  // Add a function to get rule templates for an agent
+  // Function to get rule templates for an agent
   const getRuleTemplatesForAgent = (agentName: string): Rule[] => {
     return ruleTemplates[agentName] || [];
   };
@@ -202,6 +211,36 @@ export default function ToolsPage() {
           <h2 className="text-xl font-semibold">Manual Testing</h2>
         </div>
         <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                Load Saved Agent
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              {savedAgents.length > 0 ? (
+                savedAgents.map((agent) => (
+                  <DropdownMenuItem
+                    key={agent.id}
+                    onClick={() => loadAgent(agent.id)}
+                    className="flex flex-col items-start"
+                  >
+                    <span>{agent.name}</span>
+                    <span className="text-xs text-zinc-500">
+                      {getRuleTemplatesForAgent(agent.name).length} saved rules
+                    </span>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem disabled>
+                  No saved agents
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>     
+          </div>
           <Input
             placeholder="Enter test name"
             value={testName}
@@ -210,7 +249,7 @@ export default function ToolsPage() {
           />
           <Button onClick={saveTest} disabled={!manualResponse || !testName}>
             <Save className="mr-2 h-4 w-4" />
-            Save Test
+            {isEditMode ? "Update Test" : "Save Test"}
           </Button>
         </div>
       </div>
@@ -222,7 +261,6 @@ export default function ToolsPage() {
         />
       <div className="grid grid-cols-12 gap-6">
         {/* Main Column - Configuration and Response */}
-
         <div className="col-span-8 space-y-4">
           {/* Agent Configuration Section */}
           <Card className="bg-black/40 border-zinc-800">
@@ -235,34 +273,6 @@ export default function ToolsPage() {
                       <CardDescription>Configure your AI agent endpoint and headers</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            Load Saved Agent
-                            <ChevronDown className="ml-2 h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[200px]">
-                          {savedAgents.length > 0 ? (
-                            savedAgents.map((agent) => (
-                              <DropdownMenuItem
-                                key={agent.id}
-                                onClick={() => loadAgent(agent.id)}
-                                className="flex flex-col items-start"
-                              >
-                                <span>{agent.name}</span>
-                                <span className="text-xs text-zinc-500">
-                                  {getRuleTemplatesForAgent(agent.name).length} saved rules
-                                </span>
-                              </DropdownMenuItem>
-                            ))
-                          ) : (
-                            <DropdownMenuItem disabled>
-                              No saved agents
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                       <Button 
                         variant="ghost" 
                         size="icon"
@@ -360,7 +370,7 @@ export default function ToolsPage() {
           <Card className="bg-black/40 border-zinc-800">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Response</CardTitle>
+                <CardTitle>Response Details</CardTitle>
                 {responseTime > 0 && <ResponseTime time={responseTime} />}
               </div>
             </CardHeader>
@@ -537,23 +547,25 @@ export default function ToolsPage() {
 
 function getJsonPath(obj: any, key: string, line: string): string {
   const paths: string[] = [];
-  
+
   function traverse(current: any, currentPath: string[] = []) {
     if (current && typeof current === 'object') {
       Object.keys(current).forEach(k => {
+        const newPath = [...currentPath, k];
         if (k === key) {
-          paths.push([...currentPath, k].join('.'));
+          paths.push(newPath.join('.'));
         }
-        traverse(current[k], [...currentPath, k]);
+        traverse(current[k], newPath);
       });
     }
   }
-  
   traverse(obj);
+
+  // Ensure that the correct path is returned by checking the JSON structure
   return paths.find(p => {
     const value = getValueFromPath(obj, p);
     return JSON.stringify(value, null, 2).split('\n')[0].includes(line.split(':')[1].trim());
-  }) || key;
+  }) || paths[0] || key; // Default to the first found path if there's no exact match
 }
 
 function getValueFromPath(obj: any, path: string): any {
