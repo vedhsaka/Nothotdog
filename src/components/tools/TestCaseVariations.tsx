@@ -203,7 +203,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   };
 
   return (
-    <Card className="bg-black/40 border-zinc-800">
+    <Card className="bg-black/40 border-zinc-800 w-full">
       <CardHeader>
         <div className="flex justify-between items-center">
           {/* <CardTitle>Generated Scenarios</CardTitle>
@@ -253,7 +253,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 w-full">
         {generatedCases.map((testCase) => (
           <div key={testCase.id}>
             <div className="flex items-center">
@@ -264,8 +264,8 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                 className="mr-2"
               />
               {editingId === testCase.id ? (
-                <Card className="bg-black/20 border-zinc-800">
-                  <CardContent className="pt-4 space-y-4">
+                <Card className="bg-black/20 border-zinc-800 p-4 w-full">
+                  <CardContent className="pt-4 space-y-4 w-full">
                     <div>
                       <label className="text-sm text-zinc-400">
                         Test Scenario
@@ -279,7 +279,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                           }))
                         }
                         placeholder="Describe the test scenario in plain English..."
-                        className="mt-1"
+                        className="mt-1 w-full"
                       />
                     </div>
                     <div>
@@ -295,7 +295,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                           }))
                         }
                         placeholder="Describe what should happen..."
-                        className="mt-1"
+                        className="mt-1 w-full"
                       />
                     </div>
                     <div className="flex justify-end gap-2">
@@ -316,10 +316,10 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="bg-black/20 border-zinc-800">
-                  <CardContent className="pt-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1 space-y-4">
+                <Card className="bg-black/20 border-zinc-800 p-4 w-full">
+                  <CardContent className="pt-4 w-full">
+                    <div className="flex justify-between items-start w-full">
+                      <div className="flex-1 space-y-4 w-full">
                         <div>
                           <h4 className="text-sm font-medium text-zinc-400">
                             Test Scenario
