@@ -1,49 +1,52 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Settings } from 'lucide-react';
+import React, { useState } from "react";
+import { Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { AnthropicModel } from '@/services/llm/enums';
+} from "@/components/ui/select";
+import { AnthropicModel } from "@/services/llm/enums";
 
 export default function ApiKeyConfig() {
-  const [keyName, setKeyName] = useState('');
-  const [apiKey, setApiKey] = useState('');
+  const [keyName, setKeyName] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [selectedModel, setSelectedModel] = useState(AnthropicModel.Sonnet3_5);
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleSave = () => {
-    // Save API key configuration
-    localStorage.setItem('anthropic_api_key', apiKey);
-    localStorage.setItem('anthropic_key_name', keyName);
-    localStorage.setItem('anthropic_model', selectedModel);
+    localStorage.setItem("anthropic_api_key", apiKey);
+    localStorage.setItem("anthropic_key_name", keyName);
+    localStorage.setItem("anthropic_model", selectedModel);
+    setIsOpen(false);
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
           className="absolute bottom-4 left-4 h-10 w-10"
+          onClick={() => setIsOpen(true)}
         >
           <Settings className="h-5 w-5" />
         </Button>
       </DialogTrigger>
+      <div className={`modal-overlay ${isOpen ? "block" : "hidden"}`} />
       <DialogContent className="sm:max-w-[425px] bg-black/90 border-zinc-800">
         <DialogHeader>
           <DialogTitle>Add Anthropic Config</DialogTitle>
@@ -59,7 +62,7 @@ export default function ApiKeyConfig() {
               className="bg-black/40 border-zinc-800"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="apiKey">API key</Label>
             <Input
@@ -75,26 +78,34 @@ export default function ApiKeyConfig() {
           <div className="space-y-2">
             <Label>Select model</Label>
             <Select
-            value={selectedModel}
-            onValueChange={(value: string) => setSelectedModel(value as AnthropicModel)}
+              value={selectedModel}
+              onValueChange={(value: string) =>
+                setSelectedModel(value as AnthropicModel)
+              }
             >
-            <SelectTrigger className="bg-black/40 border-zinc-800">
+              <SelectTrigger className="bg-black/40 border-zinc-800">
                 <SelectValue placeholder="Select a model" />
-            </SelectTrigger>
-            <SelectContent className="bg-black/90 border-zinc-800">
+              </SelectTrigger>
+              <SelectContent className="bg-black/90 border-zinc-800">
                 <SelectItem value={AnthropicModel.Sonnet3_5}>
-                Claude 3.5 Sonnet
+                  Claude 3.5 Sonnet
                 </SelectItem>
-            </SelectContent>
+              </SelectContent>
             </Select>
           </div>
 
-          <Button 
-            onClick={handleSave}
-            className="w-full"
-          >
-            Save Configuration
-          </Button>
+          <div className="flex justify-between">
+            <Button onClick={handleSave} className="w-full mr-2">
+              Save Configuration
+            </Button>
+            <Button
+              onClick={() => setIsOpen(false)}
+              variant="outline"
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
