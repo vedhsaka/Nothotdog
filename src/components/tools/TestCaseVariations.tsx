@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash } from "lucide-react";
 import { TestVariation } from "@/types/variations";
-import { Loading } from "../common/Loading";
+
 
 interface TestCase {
   id: string;
@@ -31,7 +32,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   const [editingState, setEditingState] = useState<EditingState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (selectedTest) {
@@ -47,9 +47,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   const generateTestCases = async () => {
     if (!selectedTest) return;
     const apiKey = localStorage.getItem('anthropic_api_key');
-
-    setLoading(true);
-
     try {
       const response = await fetch("/api/tools/generate-tests", {
         method: "POST",
@@ -82,8 +79,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
       }
     } catch (error) {
       console.error("Failed to generate test cases:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -122,7 +117,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
       scenario: "",
       expectedOutput: "",
     });
-    setGeneratedCases([...generatedCases, newCase]);
+    setGeneratedCases([newCase, ...generatedCases]);
   };
 
   const startEditing = (testCase: TestCase) => {
@@ -213,11 +208,8 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
               Add Test Case
             </Button>
           )} */}
-          {loading && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-              <Loading size="lg" message="Generating test cases..." />
-            </div>
-          )}
+
+
 
             {selectedTest && (
                generatedCases.length > 0 ? (
@@ -232,7 +224,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                  <Button 
                    size="sm"
                    onClick={generateTestCases}
-                   disabled={loading}
                  >
                    <Plus className="h-4 w-4 mr-2" />
                    Generate Scenarios
@@ -264,8 +255,8 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                 className="mr-2"
               />
               {editingId === testCase.id ? (
-                <Card className="bg-black/20 border-zinc-800">
-                  <CardContent className="pt-4 space-y-4">
+                <Card className="bg-black/20 border-zinc-800 p-4 w-full">
+                  <CardContent className="pt-4 space-y-4 w-full">
                     <div>
                       <label className="text-sm text-zinc-400">
                         Test Scenario
@@ -279,7 +270,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                           }))
                         }
                         placeholder="Describe the test scenario in plain English..."
-                        className="mt-1"
+                        className="mt-1 w-full"
                       />
                     </div>
                     <div>
@@ -295,7 +286,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                           }))
                         }
                         placeholder="Describe what should happen..."
-                        className="mt-1"
+                        className="mt-1 w-full"
                       />
                     </div>
                     <div className="flex justify-end gap-2">
@@ -317,7 +308,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                 </Card>
               ) : (
                 <Card className="bg-black/20 border-zinc-800">
-                  <CardContent className="pt-4">
+                  <CardContent className="pt-4 w-full">
                     <div className="flex justify-between items-start">
                       <div className="flex-1 space-y-4">
                         <div>
