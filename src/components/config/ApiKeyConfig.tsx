@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,8 +49,13 @@ export default function ApiKeyConfig() {
       </DialogTrigger>
       <div className={`modal-overlay ${isOpen ? "block" : "hidden"}`} />
       <DialogContent className="sm:max-w-[425px] bg-black/90 border-zinc-800">
-        <DialogHeader>
+        <DialogHeader className="flex flex-row justify-between items-center">
           <DialogTitle>Add Anthropic Config</DialogTitle>
+          <DialogClose asChild>
+            <Button variant="ghost" size="icon">
+              <span>X</span>
+            </Button>
+          </DialogClose>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-2">
