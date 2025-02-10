@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { AnthropicModel, OpenAIModel, LLMProvider } from "@/services/llm/enums";
 
-export default function LLMConfig() {
+export default function ApiKeyConfig() {
   const [apiKey, setApiKey] = useState("");
   const [selectedLLM, setSelectedLLM] = useState("");
   const [activeModel, setActiveModel] = useState("");
