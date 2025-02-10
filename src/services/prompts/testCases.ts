@@ -1,7 +1,7 @@
 export const TEST_CASES_PROMPT = `Generate diverse test cases for an API. 
 {context}
 
-Create 20+ varied test cases that maintain this exact input format structure but test different scenarios. Include:
+Create 3 varied test cases that maintain this exact input format structure but test different scenarios. Include:
 
 1. Standard Valid Cases:
 - Regular queries

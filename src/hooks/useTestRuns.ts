@@ -1,30 +1,33 @@
 import { useState, useEffect } from 'react';
 import { TestRun } from '@/types/runs';
-import { storageService } from '@/services/storage/localStorage';
+import { dbService } from '@/services/db';
 
 export function useTestRuns() {
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [selectedRun, setSelectedRun] = useState<TestRun | null>(null);
 
   useEffect(() => {
-    const savedRuns = storageService.getTestRuns() as TestRun[];
-    setRuns(savedRuns);
+    loadRuns();
   }, []);
 
-  const addRun = (newRun: TestRun) => {
-    setRuns(prev => [newRun, ...prev]);
-    storageService.setTestRuns([newRun, ...runs]);
+  const loadRuns = async () => {
+    const savedRuns = await dbService.getTestRuns();
+    setRuns(savedRuns);
   };
 
-  const updateRun = (updatedRun: TestRun) => {
+  const addRun = async (newRun: TestRun) => {
+    await dbService.createTestRun(newRun);
+    setRuns(prev => [newRun, ...prev]);
+  };
+
+  const updateRun = async (updatedRun: TestRun) => {
+    await dbService.updateTestRun(updatedRun); // Note: In production, this would be updateTestRun
     setRuns(prev => {
       const index = prev.findIndex(run => run.id === updatedRun.id);
       if (index === -1) return prev;
       
       const newRuns = [...prev];
       newRuns[index] = updatedRun;
-      storageService.setTestRuns(newRuns);
-      
       return newRuns;
     });
 
@@ -40,4 +43,4 @@ export function useTestRuns() {
     addRun,
     updateRun
   };
-} 
+}

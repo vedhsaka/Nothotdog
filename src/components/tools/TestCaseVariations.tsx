@@ -3,8 +3,9 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash } from "lucide-react";
-import { TestVariation } from "@/types/variations";
 import { Loading } from "../common/Loading";
+import { useTestVariations } from "@/hooks/useTestVariations";
+import { TestVariation } from "@/types/variations";
 
 interface TestCase {
   id: string;
@@ -31,25 +32,33 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   const [editingState, setEditingState] = useState<EditingState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+
+  const { 
+    variationData, 
+    loading, 
+    error, 
+    addVariation,
+    updateVariation,
+    deleteVariation
+  } = useTestVariations(selectedTest?.id);
+  
 
   useEffect(() => {
-    if (selectedTest) {
-      const savedVariations = JSON.parse(
-        localStorage.getItem("testVariations") || "{}"
+    if (variationData && selectedTest) {
+      setGeneratedCases(
+        variationData.testCases.map(tc => ({
+          ...tc,
+          sourceTestId: selectedTest.id,
+        }))
       );
-      const testVariations = savedVariations[selectedTest.id] || [];
-      const latestVariation = testVariations[testVariations.length - 1];
-      setGeneratedCases(latestVariation?.cases || []);
     }
-  }, [selectedTest]);
+  }, [variationData, selectedTest]);
+
+
 
   const generateTestCases = async () => {
     if (!selectedTest) return;
     const apiKey = localStorage.getItem('anthropic_api_key');
-
-    setLoading(true);
-
     try {
       const response = await fetch("/api/tools/generate-tests", {
         method: "POST",
@@ -69,102 +78,121 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
         return;
       }
 
-      if (data.testCases) {
-        const newCases = data.testCases.map((tc: any) => ({
-          id: crypto.randomUUID(),
-          sourceTestId: selectedTest.id,
-          scenario: tc.scenario,
-          expectedOutput: tc.expectedOutput || "",
-        }));
+      const newCases = data.testCases.map((tc: any) => ({
 
-        setGeneratedCases(newCases);
-        saveVariations(selectedTest.id, newCases);
-      }
+        id: crypto.randomUUID(),
+
+        sourceTestId: selectedTest.id,
+
+        scenario: tc.scenario,
+
+        expectedOutput: tc.expectedOutput || "",
+
+      }));
+
+      const variation = {
+        id: crypto.randomUUID(),
+        testId: selectedTest.id,
+        sourceTestId: selectedTest.id,
+        timestamp: new Date().toISOString(),
+        cases: newCases,
+      };
+      addVariation(variation);
+      setGeneratedCases(newCases);
     } catch (error) {
       console.error("Failed to generate test cases:", error);
     } finally {
-      setLoading(false);
     }
-  };
-
-  const saveVariations = (testId: string, cases: TestCase[]) => {
-    if (!selectedTest) return;
-
-    const savedVariations = JSON.parse(
-      localStorage.getItem("testVariations") || "{}"
-    );
-    const testVariations = savedVariations[testId] || [];
-
-    const variation: TestVariation = {
-      id: crypto.randomUUID(),
-      testId: selectedTest.id,
-      sourceTestId: testId,
-      timestamp: new Date().toISOString(),
-      cases,
-    };
-
-    savedVariations[testId] = [...testVariations, variation];
-    localStorage.setItem("testVariations", JSON.stringify(savedVariations));
   };
 
   const addNewTestCase = () => {
     if (!selectedTest) return;
 
-    const newCase: TestCase = {
+    const newCase = {
       id: crypto.randomUUID(),
       sourceTestId: selectedTest.id,
       scenario: "",
       expectedOutput: "",
     };
+    const updatedCases = [...generatedCases, newCase];
 
+    setGeneratedCases(updatedCases);
     setEditingId(newCase.id);
-    setEditingState({
-      scenario: "",
-      expectedOutput: "",
-    });
-    setGeneratedCases([...generatedCases, newCase]);
+    setEditingState({ scenario: "", expectedOutput: "" });
   };
 
-  const startEditing = (testCase: TestCase) => {
-    setEditingId(testCase.id);
-    setEditingState({
-      scenario: testCase.scenario,
-      expectedOutput: testCase.expectedOutput,
-    });
-  };
-
-  const saveEdit = () => {
+  // const saveEdit = async () => {
+  //   if (!selectedTest || !editingState || !editingId) return;
+  
+  //   const newTestCase: TestCase = {
+  //     id: editingId,
+  //     sourceTestId: selectedTest.id,
+  //     scenario: editingState.scenario,
+  //     expectedOutput: editingState.expectedOutput,
+  //   };
+  
+  //   const variationPayload: TestVariation = {
+  //     id: crypto.randomUUID(),
+  //     testId: selectedTest.id,
+  //     sourceTestId: selectedTest.id,
+  //     timestamp: new Date().toISOString(),
+  //     cases: [ newTestCase ],
+  //   };
+  
+  //   await addVariation(variationPayload);
+  //   setGeneratedCases(prev => [...prev, newTestCase]);
+  //   setEditingId(null);
+  //   setEditingState(null);
+  // };
+  
+  const saveEdit = async () => {
     if (!selectedTest || !editingState || !editingId) return;
-
-    const updatedCases = generatedCases.map((tc) =>
-      tc.id === editingId
-        ? {
-            ...tc,
-            scenario: editingState.scenario,
-            expectedOutput: editingState.expectedOutput,
-          }
-        : tc
-    );
-
-    setGeneratedCases(updatedCases);
-    saveVariations(selectedTest.id, updatedCases);
-    setEditingId(null);
-    setEditingState(null);
+  
+    const editedTestCase: TestCase = {
+      id: editingId,
+      sourceTestId: selectedTest.id,
+      scenario: editingState.scenario,
+      expectedOutput: editingState.expectedOutput,
+    };
+  
+    const existsInServer =
+      variationData &&
+      variationData.testCases.some(tc => tc.id === editingId);
+  
+    const payload: TestVariation = {
+      id: existsInServer ? editingId : crypto.randomUUID(),
+      testId: selectedTest.id,
+      sourceTestId: selectedTest.id,
+      timestamp: new Date().toISOString(),
+      cases: [editedTestCase],
+    };
+  
+    try {
+      if (existsInServer) {
+        await updateVariation(payload);
+      } else {
+        await addVariation(payload);
+      }
+  
+      setGeneratedCases(prev => {
+        const index = prev.findIndex(tc => tc.id === editingId);
+        if (index > -1) {
+          const updated = [...prev];
+          updated[index] = editedTestCase;
+          return updated;
+        }
+        return [...prev, editedTestCase];
+      });
+    } catch (error) {
+      console.error("Failed to save edit:", error);
+    } finally {
+      setEditingId(null);
+      setEditingState(null);
+    }
   };
-
-  const deleteTestCase = (id: string) => {
-    if (!selectedTest) return;
-
-    const updatedCases = generatedCases.filter((tc) => tc.id !== id);
-    setGeneratedCases(updatedCases);
-    saveVariations(selectedTest.id, updatedCases);
-
-    // Remove from selectedIds if deleted
-    setSelectedIds((prevSelected) =>
-      prevSelected.filter((selectedId) => selectedId !== id)
-    );
-  };
-
+  
+  
+  
   const toggleSelectCase = (id: string) => {
     setSelectedIds((prevSelected) =>
       prevSelected.includes(id)
@@ -175,31 +203,49 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
 
   const selectAllCases = () => {
     if (selectedIds.length === generatedCases.length) {
-      setSelectedIds([]); // Deselect all if all are selected
+      setSelectedIds([]);
     } else {
-      setSelectedIds(generatedCases.map((test) => test.id)); // Select all
+      setSelectedIds(generatedCases.map((test) => test.id));
     }
   };
 
-  const deleteSelectedCases = () => {
-    if (!selectedTest) return;
+  // Replace your deleteTestCase and deleteSelectedCases functions with this unified function:
+    const deleteTestCases = async (idsToDelete: string[]) => {
+      if (!selectedTest) return;
 
-    const updatedCases = generatedCases.filter(
-      (tc) => !selectedIds.includes(tc.id)
-    );
-    setGeneratedCases(updatedCases);
+      // Filter out the test cases that should be deleted
+      const updatedCases = generatedCases.filter(tc => !idsToDelete.includes(tc.id));
 
-    // Update local storage after deletion
-    saveVariations(selectedTest.id, updatedCases);
+      // Create a variation object with the remaining test cases.
+      const variation = {
+        id: crypto.randomUUID(),
+        testId: selectedTest.id,
+        sourceTestId: selectedTest.id,
+        timestamp: new Date().toISOString(),
+        cases: updatedCases,
+      };
 
-    // Clear selection
-    setSelectedIds([]);
+      // Call the deletion function from your hook (which sends a DELETE request)
+      await deleteVariation(variation);
 
-    // Reset editing state if necessary
-    if (editingId && selectedIds.includes(editingId)) {
-      setEditingId(null);
-      setEditingState(null);
-    }
+      // Update your state
+      setGeneratedCases(updatedCases);
+      setSelectedIds(prev => prev.filter(id => !idsToDelete.includes(id)));
+
+      // If currently editing one of the test cases that was deleted, clear the editing state.
+      if (editingId && idsToDelete.includes(editingId)) {
+        setEditingId(null);
+        setEditingState(null);
+      }
+    };
+
+  
+  const startEditing = (testCase: TestCase) => {
+    setEditingId(testCase.id);
+    setEditingState({
+      scenario: testCase.scenario,
+      expectedOutput: testCase.expectedOutput,
+    });
   };
 
   return (
@@ -247,7 +293,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
               ? "Deselect All"
               : "Select All"}
           </Button>
-          <Button size="sm" onClick={deleteSelectedCases} variant="destructive">
+          <Button size="sm" onClick={() => deleteTestCases(selectedIds)} variant="destructive">
             Delete Selected
           </Button>
         </div>
@@ -348,7 +394,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteTestCase(testCase.id)}
+                          onClick={() => deleteTestCases([testCase.id])}
                         >
                           <Trash className="h-4 w-4" />
                         </Button>

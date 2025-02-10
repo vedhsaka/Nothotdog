@@ -3,7 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { TestMessage, TestRun } from '@/types/runs';
 import { ChatMessage, TestChat } from '@/types/chat';
 import { useTestRuns } from './useTestRuns';
-import { storageService } from '@/services/storage/localStorage';
+// import { storageService } from '@/services/storage/localStorage';
+import { dbService } from '@/services/db';
 import { QaAgent } from '@/services/agents/claude/qaAgent';
 import { Rule } from '@/services/agents/claude/types';
 import { AnthropicModel } from '@/services/llm/enums';
@@ -25,15 +26,17 @@ export function useTestExecution() {
   const [isTyping, setIsTyping] = useState(false);
   const [selectedChat, setSelectedChat] = useState<TestChat | null>(null);
   
-  // Remove the local runs effect (do not call setRuns here)
-  // You can still load saved tests if needed:
   const [savedTests, setSavedTests] = useState<Array<{ id: string, name: string }>>([]);
+  
   useEffect(() => {
-    const tests = JSON.parse(localStorage.getItem('savedTests') || '[]');
-    setSavedTests(tests.map((test: any) => ({
-      id: test.id,
-      name: test.name || 'Unnamed Test'
-    })));
+    const loadTests = async () => {
+      const tests = await dbService.getSavedTests();
+      setSavedTests(tests.map(test => ({
+        id: test.id,
+        name: test.name
+      })));
+    };
+    loadTests();
   }, []);
 
   const executeTest = async (testId: string) => {
@@ -41,19 +44,21 @@ export function useTestExecution() {
     setError(null);
     setProgress({ completed: 0, total: 0 });
 
-    const allTests = storageService.getSavedTests();
-    const ruleTemplates = storageService.getRuleTemplates() as Record<string, Rule[]>;
-    const personas = storageService.getPersonaMappings();
+
+    const allTests = await dbService.getSavedTests();
+    const personas = await dbService.getPersonaMappings();
     const testToRun = allTests.find(t => t.id === testId);
     if (!testToRun) {
       throw new Error('Test configuration not found');
     }
-    const testVariations = storageService.getTestVariations();
-    const variations = testVariations[testId] || [];
-    const latestVariation = variations[variations.length - 1];
+    
+    const variations = await dbService.getTestVariations();
+    const testVariations = variations[testId] || [];
+    const latestVariation = testVariations[testVariations.length - 1];
     if (!latestVariation) {
       throw new Error('No test variations found');
     }
+    
     const scenarios = latestVariation.cases || [];
     const selectedPersonas = personas[testId]?.personaIds || [];
     const totalRuns = scenarios.length * selectedPersonas.length;
@@ -82,7 +87,7 @@ export function useTestExecution() {
       addRun(newRun);
 
       const completedChats: TestChat[] = [];
-      const testRules = ruleTemplates[testToRun.name] || [];
+      const testRules = await dbService.getValidationRules(testToRun.name) || [];
       setCurrentMessages([]);
 
       let completedCount = 0;
