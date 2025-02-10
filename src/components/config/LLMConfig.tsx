@@ -1,31 +1,32 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Settings } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { AnthropicModel, OpenAIModel, LLMProvider } from '@/services/llm/enums';
+} from "@/components/ui/select";
+import { AnthropicModel, OpenAIModel, LLMProvider } from "@/services/llm/enums";
 
 export default function LLMConfig() {
-  const [apiKey, setApiKey] = useState('');
-  const [selectedLLM, setSelectedLLM] = useState('');
-  const [activeModel, setActiveModel] = useState('');
+  const [apiKey, setApiKey] = useState("");
+  const [selectedLLM, setSelectedLLM] = useState("");
+  const [activeModel, setActiveModel] = useState("");
   const [llmConfig, setLLMConfig] = useState<Record<string, string>>({});
+  const [isOpen, setIsOpen] = useState(false);
 
   const providers = Object.values(LLMProvider);
 
@@ -84,19 +85,22 @@ export default function LLMConfig() {
     
     localStorage.setItem('llm_config', JSON.stringify(newConfig));
     setLLMConfig(newConfig);
+    setIsOpen(false);
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
           className="absolute bottom-4 left-4 h-10 w-10"
+          onClick={() => setIsOpen(true)}
         >
           <Settings className="h-5 w-5" />
         </Button>
       </DialogTrigger>
+      <div className={`modal-overlay ${isOpen ? "block" : "hidden"}`} />
       <DialogContent className="sm:max-w-[425px] bg-black/90 border-zinc-800">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
@@ -161,12 +165,24 @@ export default function LLMConfig() {
             </Select>
           </div>
 
-          <Button 
+          {/* <Button 
             onClick={handleSave}
             className="w-full"
           >
             Save Configuration
-          </Button>
+          </Button> */}
+          <div className="flex justify-between">
+            <Button onClick={handleSave} className="w-full mr-2">
+              Save Configuration
+            </Button>
+            <Button
+              onClick={() => setIsOpen(false)}
+              variant="outline"
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
