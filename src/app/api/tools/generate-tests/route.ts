@@ -55,7 +55,8 @@ function isValidEvaluation(evaluation: any): evaluation is Evaluation {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { inputExample, expectedOutput } = body;
+    const { agentDescription, userDescription } = validateGenerateTestsRequest(body);
+
 
     const config = getLLMConfigForActiveModel(req.headers);
     
@@ -71,9 +72,8 @@ export async function POST(req: Request) {
       config.apiKey
     );
 
-    // Properly construct the context with input and expected output
-    const context = `Example Input: ${JSON.stringify(inputExample, null, 2)}
-Expected Output: ${JSON.stringify(expectedOutput, null, 2)}`;
+    const context = `Agent Description: ${agentDescription || 'Not provided'}
+User Description: ${userDescription || 'Not provided'}`;
 
     const prompt = TEST_CASES_PROMPT.replace('{context}', context);
 

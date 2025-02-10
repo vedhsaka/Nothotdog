@@ -142,7 +142,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
       scenario: "",
       expectedOutput: "",
     });
-    setGeneratedCases([...generatedCases, newCase]);
+    setGeneratedCases([newCase, ...generatedCases]);
   };
 
   const startEditing = (testCase: TestCase) => {
@@ -284,8 +284,8 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                 className="mr-2"
               />
               {editingId === testCase.id ? (
-                <Card className="bg-black/20 border-zinc-800">
-                  <CardContent className="pt-4 space-y-4">
+                <Card className="bg-black/20 border-zinc-800 p-4 w-full">
+                  <CardContent className="pt-4 space-y-4 w-full">
                     <div>
                       <label className="text-sm text-zinc-400">
                         Test Scenario
@@ -299,7 +299,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                           }))
                         }
                         placeholder="Describe the test scenario in plain English..."
-                        className="mt-1"
+                        className="mt-1 w-full"
                       />
                     </div>
                     <div>
@@ -315,7 +315,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                           }))
                         }
                         placeholder="Describe what should happen..."
-                        className="mt-1"
+                        className="mt-1 w-full"
                       />
                     </div>
                     <div className="flex justify-end gap-2">

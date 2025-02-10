@@ -25,28 +25,29 @@ export default function ApiKeyConfig() {
   const [apiKey, setApiKey] = useState("");
   const [selectedLLM, setSelectedLLM] = useState("");
   const [activeModel, setActiveModel] = useState("");
+
   const [llmConfig, setLLMConfig] = useState<Record<string, string>>({});
   const [isOpen, setIsOpen] = useState(false);
 
   const providers = Object.values(LLMProvider);
 
   useEffect(() => {
-    const storedConfig = localStorage.getItem('llm_config');
+    const storedConfig = localStorage.getItem("llm_config");
     if (storedConfig) {
       setLLMConfig(JSON.parse(storedConfig));
     }
-    const storedModel = localStorage.getItem('active_model');
+    const storedModel = localStorage.getItem("active_model");
     if (storedModel) setActiveModel(storedModel);
   }, []);
 
   const formatModelName = (key: string): string => {
     switch (key) {
       case AnthropicModel.Sonnet3_5:
-        return 'Claude 3.5 Sonnet';
+        return "Claude 3.5 Sonnet";
       case OpenAIModel.GPT4:
-        return 'GPT-4';
+        return "GPT-4";
       case OpenAIModel.GPT35Turbo:
-        return 'GPT-3.5 Turbo';
+        return "GPT-3.5 Turbo";
       default:
         return key;
     }
@@ -83,7 +84,7 @@ export default function ApiKeyConfig() {
     const newConfig = { ...llmConfig };
     newConfig[selectedLLM.toLowerCase()] = apiKey;
     
-    localStorage.setItem('llm_config', JSON.stringify(newConfig));
+    localStorage.setItem("llm_config", JSON.stringify(newConfig));
     setLLMConfig(newConfig);
     setIsOpen(false);
   };
@@ -111,7 +112,7 @@ export default function ApiKeyConfig() {
                 value={activeModel}
                 onValueChange={(value: string) => {
                   setActiveModel(value);
-                  localStorage.setItem('active_model', value);
+                  localStorage.setItem("active_model", value);
                 }}
               >
                 <SelectTrigger className="w-[180px] bg-black/40 border-zinc-800">
