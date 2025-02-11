@@ -6,6 +6,8 @@ import { jsonrepair } from 'jsonrepair';
 import { AnthropicModel } from '@/services/llm/enums';
 import { ModelFactory } from '@/services/llm/modelfactory';
 import { TEST_CASES_PROMPT } from '@/services/prompts';
+import { Evaluation } from '@/types/test-sets';
+
 
 function extractJSON(text: string): any {
   try {
@@ -36,11 +38,6 @@ function extractJSON(text: string): any {
     console.warn('JSON extraction failed:', e);
     return { evaluations: [] };
   }
-}
-
-interface Evaluation {
-  scenario: string;
-  expectedOutput: string;
 }
 
 function isValidEvaluation(evaluation: any): evaluation is Evaluation {
