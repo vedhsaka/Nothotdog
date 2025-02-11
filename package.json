@@ -3,6 +3,7 @@
     "@anthropic-ai/sdk": "^0.32.1",
     "@langchain/anthropic": "^0.3.12",
     "@langchain/core": "^0.3.33",
+    "@prisma/client": "^6.3.1",
     "@radix-ui/react-alert-dialog": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.5",
     "@radix-ui/react-dropdown-menu": "^2.1.4",
@@ -47,6 +48,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.4.49",
+    "prisma": "^6.3.1",
     "tailwindcss": "^3.4.16",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.7.2"
