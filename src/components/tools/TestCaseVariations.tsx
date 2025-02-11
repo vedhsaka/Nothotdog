@@ -58,7 +58,10 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
 
   const generateTestCases = async () => {
     if (!selectedTest) return;
-    const apiKey = localStorage.getItem('anthropic_api_key');
+    const apiKey = localStorage.getItem("anthropic_api_key");
+
+    setLoading(true);
+
     try {
       const response = await fetch("/api/tools/generate-tests", {
         method: "POST",
@@ -119,6 +122,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     setGeneratedCases(updatedCases);
     setEditingId(newCase.id);
     setEditingState({ scenario: "", expectedOutput: "" });
+    setGeneratedCases([newCase, ...generatedCases]);
   };
 
   // const saveEdit = async () => {
@@ -265,26 +269,23 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
             </div>
           )}
 
-            {selectedTest && (
-               generatedCases.length > 0 ? (
-                 <Button 
-                   size="sm"
-                   onClick={addNewTestCase}
-                 >
-                   <Plus className="h-4 w-4 mr-2" />
-                   Add Test Case
-                 </Button>
-               ) : (
-                 <Button 
-                   size="sm"
-                   onClick={generateTestCases}
-                   disabled={loading}
-                 >
-                   <Plus className="h-4 w-4 mr-2" />
-                   Generate Scenarios
-                 </Button>
-               )
-             )} 
+          {selectedTest && (
+            generatedCases.length > 0 ? (
+              <Button size="sm" onClick={addNewTestCase}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Test Case
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={generateTestCases}
+                disabled={loading}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Generate Scenarios
+              </Button>
+            )
+          )}
         </div>
 
         <div className="flex gap-2 mt-2">
@@ -310,8 +311,8 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                 className="mr-2"
               />
               {editingId === testCase.id ? (
-                <Card className="bg-black/20 border-zinc-800">
-                  <CardContent className="pt-4 space-y-4">
+                <Card className="bg-black/20 border-zinc-800 p-4 flex-1">
+                  <CardContent className="pt-4 space-y-4 flex-1">
                     <div>
                       <label className="text-sm text-zinc-400">
                         Test Scenario
@@ -325,7 +326,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                           }))
                         }
                         placeholder="Describe the test scenario in plain English..."
-                        className="mt-1"
+                        className="mt-1 w-full"
                       />
                     </div>
                     <div>
@@ -341,7 +342,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                           }))
                         }
                         placeholder="Describe what should happen..."
-                        className="mt-1"
+                        className="mt-1 w-full"
                       />
                     </div>
                     <div className="flex justify-end gap-2">
