@@ -220,10 +220,6 @@ Did the interaction meet our expectations? Explain why or why not.`
     }
   }
 
-  async getHistory(): Promise<BaseMessage[]> {
-    const memoryVars = await this.memory.loadMemoryVariables({});
-    return memoryVars.chat_history || [];
-  }
 
   async reset(): Promise<void> {
     await this.memory.clear();

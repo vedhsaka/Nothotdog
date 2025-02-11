@@ -7,11 +7,6 @@ const TestCaseSchema = z.object({
   category: z.string().optional()
 })
 
-const EvaluationSchema = z.object({
-  scenario: z.string(),
-  expectedOutput: z.string()
-})
-
 const GenerateTestsRequestSchema = z.object({
   inputExample: z.string(),
   agentDescription: z.string().optional().default(''),
