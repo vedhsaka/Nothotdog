@@ -188,7 +188,7 @@ export class QaAgent {
         ...msg,
         isCorrect: msg.id === allMessages[allMessages.length - 1].id ? 
           conversationValidation.isCorrect : 
-          undefined,
+          true,
         explanation: msg.id === allMessages[allMessages.length - 1].id ? 
           conversationValidation.explanation : 
           undefined
