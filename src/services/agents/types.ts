@@ -5,10 +5,6 @@ export interface Agent {
   reset(): void;
 }
 
-export interface AgentConfig {
-  baseURL: string;
-  headers: Record<string, string>;
-}
 
 export interface AgentResponse {
   response: string;
