@@ -129,14 +129,7 @@ export function TestRunsDashboard() {
               ← Back to Runs
             </Button>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-green-500/10">
-              {selectedRun.metrics.passed} Passed
-            </Badge>
-            <Badge variant="outline" className="bg-red-500/10">
-              {selectedRun.metrics.failed} Failed
-            </Badge>
-          </div>
+        
         </div>
 
         <div className="space-y-1">
@@ -158,15 +151,7 @@ export function TestRunsDashboard() {
                 </p>
               </div>
 
-              <div className="w-[40%] flex items-center justify-end gap-4">
-                <div className="flex items-center gap-1">
-                  <span className="text-green-500">{chat.metrics.correct}</span>
-                  <span className="text-zinc-400">Correct</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-red-500">{chat.metrics.incorrect}</span>
-                  <span className="text-zinc-400">Incorrect</span>
-                </div>
+              <div className="w-[40%] flex items-center justify-end">
                 <span className="text-zinc-400">→</span>
               </div>
             </div>
