@@ -4,33 +4,35 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash } from "lucide-react";
-import { ResponseTime } from "@/components/tools/ResponseTime";
 import { TestCaseVariations } from "@/components/tools/TestCaseVariations";
 import PersonaSelector from "@/components/tools/personaSelector";
+import { AgentConfig } from "@/types";
 
-interface AgentCase {
-  id: string;
-  timestamp: string;
-  name: string;
-  agentEndpoint: string;
-  responseTime: number;
-  headers: Record<string, string>;
-  input: string;
-  expectedOutput: string;
-  rules: any[];
-}
 
 export default function TestCasesPage() {
-  const [agentCases, setAgentCases] = useState<AgentCase[]>([]);
-  const [selectedCase, setSelectedCase] = useState<AgentCase | null>(null);
+  const [agentCases, setAgentCases] = useState<AgentConfig[]>([]);
+  const [selectedCase, setSelectedCase] = useState<AgentConfig | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
-    const cases = JSON.parse(localStorage.getItem("savedTests") || "[]");
-    setAgentCases(cases);
+    const fetchSavedTests = async () => {
+      try {
+        const response = await fetch("/api/tools/agent-config");
+        if (!response.ok) {
+          throw new Error("Failed to fetch saved tests");
+        }
+        const data = await response.json();
+        console.log(data);
+        setAgentCases(data);
+      } catch (error) {
+        console.error("Error fetching saved tests:", error);
+      }
+    };
+  
+    fetchSavedTests();
   }, []);
-
-  const handleCaseSelect = (test: AgentCase) => {
+  
+  const handleCaseSelect = (test: AgentConfig) => {
     setSelectedCase(test);
   };
 
@@ -50,26 +52,26 @@ export default function TestCasesPage() {
     }
   };
 
-  const deleteSelectedCases = () => {
-    const updatedCases = agentCases.filter(
-      (test) => !selectedIds.includes(test.id)
-    );
-    localStorage.setItem("savedTests", JSON.stringify(updatedCases));
-    setAgentCases(updatedCases);
-    setSelectedIds([]);
-    if (selectedCase && selectedIds.includes(selectedCase.id)) {
-      setSelectedCase(null);
-    }
-  };
+  // const deleteSelectedCases = () => {
+  //   const updatedCases = agentCases.filter(
+  //     (test) => !selectedIds.includes(test.id)
+  //   );
+  //   localStorage.setItem("savedTests", JSON.stringify(updatedCases));
+  //   setAgentCases(updatedCases);
+  //   setSelectedIds([]);
+  //   if (selectedCase && selectedIds.includes(selectedCase.id)) {
+  //     setSelectedCase(null);
+  //   }
+  // };
 
-  const deleteAgentCase = (id: string) => {
-    const updatedCases = agentCases.filter((test) => test.id !== id);
-    localStorage.setItem("savedTests", JSON.stringify(updatedCases));
-    setAgentCases(updatedCases);
-    if (selectedCase?.id === id) {
-      setSelectedCase(null);
-    }
-  };
+  // const deleteAgentCase = (id: string) => {
+  //   const updatedCases = agentCases.filter((test) => test.id !== id);
+  //   localStorage.setItem("savedTests", JSON.stringify(updatedCases));
+  //   setAgentCases(updatedCases);
+  //   if (selectedCase?.id === id) {
+  //     setSelectedCase(null);
+  //   }
+  // };
 
   return (
     <div className="grid grid-cols-12 gap-4 p-6">
@@ -83,7 +85,7 @@ export default function TestCasesPage() {
               </Badge>
             </div>
             <div className="flex mt-2">
-              <Button size="sm" onClick={selectAllCases}>
+              {/* <Button size="sm" onClick={selectAllCases}>
                 {selectedIds.length === agentCases.length
                   ? "Deselect All"
                   : "Select All"}
@@ -94,7 +96,7 @@ export default function TestCasesPage() {
                 className="ml-2"
               >
                 Delete Selected
-              </Button>
+              </Button> */}
             </div>
           </CardHeader>
           <CardContent className="max-h-[calc(100vh-12rem)] overflow-y-auto">
@@ -121,10 +123,7 @@ export default function TestCasesPage() {
                         {test.name || "Unnamed Test"}
                       </h3>
                     </div>
-                    <div className="flex items-center gap-4">
-                      {test.responseTime > 0 && (
-                        <ResponseTime time={test.responseTime} />
-                      )}
+                    {/* <div className="flex items-center gap-4">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -135,10 +134,10 @@ export default function TestCasesPage() {
                       >
                         <Trash className="h-4 w-4" />
                       </Button>
-                    </div>
+                    </div> */}
                   </div>
                   <p className="text-sm text-zinc-400 mt-1 truncate max-w-[300px]">
-                    Endpoint: {test.agentEndpoint}
+                    Endpoint: {test.endpoint}
                   </p>
                 </div>
               ))}

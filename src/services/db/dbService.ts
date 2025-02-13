@@ -128,36 +128,36 @@ export class DbService {
   //   });
   // }
 
-  // Saved Tests
-  async getSavedTests(): Promise<SavedTest[]> {
-    const tests = await prisma.test_scenarios.findMany({
-      where: {
-        agent_configs: {
-          org_id: DEFAULT_ORG_ID
-        }
-      },
-      include: {
-        agent_configs: {
-          include: {
-            agent_headers: true
-          }
-        }
-      }
-    });
+  // // Saved Tests
+  // async getSavedTests(): Promise<SavedTest[]> {
+  //   const tests = await prisma.test_scenarios.findMany({
+  //     where: {
+  //       agent_configs: {
+  //         org_id: DEFAULT_ORG_ID
+  //       }
+  //     },
+  //     include: {
+  //       agent_configs: {
+  //         include: {
+  //           agent_headers: true
+  //         }
+  //       }
+  //     }
+  //   });
 
-    return tests.map(test => ({
-      id: test.id,
-      name: test.name,
-      agentEndpoint: test.agent_configs.endpoint,
-      headers: test.agent_configs.agent_headers.reduce((acc, header) => ({
-        ...acc,
-        [header.key]: header.value
-      }), {}),
-      input: test.input,
-      expectedOutput: test.expected_output,
-      rules: []
-    }));
-  }
+  //   return tests.map(test => ({
+  //     id: test.id,
+  //     name: test.name,
+  //     agentEndpoint: test.agent_configs.endpoint,
+  //     headers: test.agent_configs.agent_headers.reduce((acc, header) => ({
+  //       ...acc,
+  //       [header.key]: header.value
+  //     }), {}),
+  //     input: test.input,
+  //     expectedOutput: test.expected_output,
+  //     rules: []
+  //   }));
+  // }
 
   // Test Variations
   // async getTestVariations(): Promise<TestVariations> {
@@ -188,6 +188,66 @@ export class DbService {
   //     }]
   //   }), {});
   // }
+
+
+  // Add this new method in your DbService class
+
+  async getAgentConfigs(): Promise<any[]> {
+    const configs = await prisma.agent_configs.findMany({
+      where: { org_id: DEFAULT_ORG_ID },
+      include: {
+        agent_headers: true,
+        agent_persona_mappings: true,
+      },
+    });
+
+    return configs.map(config => ({
+      id: config.id,
+      name: config.name,
+      endpoint: config.endpoint,
+      headers: config.agent_headers.reduce((acc, header) => ({
+        ...acc,
+        [header.key]: header.value,
+      }), {}),
+      // Return an array of persona IDs mapped to this agent config
+    }));
+  }
+
+  async deleteAgentConfig(configId: string): Promise<{ deleted: boolean }> {
+    try {
+      // Step 1: Delete related test scenarios
+      await prisma.test_scenarios.deleteMany({
+        where: { agent_id: configId },
+      });
+  
+      // Step 2: Delete related persona mappings
+      await prisma.agent_persona_mappings.deleteMany({
+        where: { agent_id: configId },
+      });
+  
+      // Step 3: Delete the agent config itself
+      await prisma.agent_configs.delete({
+        where: { id: configId },
+      });
+  
+      return { deleted: true };
+    } catch (error) {
+      console.error("Error deleting agent config:", error);
+      throw new Error("Failed to delete agent config");
+    }
+  }
+  
+
+  async getAgentConfig(testId: string) {
+    return prisma.agent_configs.findUnique({
+      where: { id: testId },
+      include: {
+        agent_descriptions: true,
+        agent_user_descriptions: true,
+      },
+    });
+  }
+  
 
   // Persona Mappings
   async getPersonaMappings(): Promise<PersonaMappings> {

@@ -99,6 +99,7 @@ export function useTestVariations(testId?: string) {
     addVariation,
     updateVariation,
     variationData,
-    deleteVariation
+    deleteVariation,
+    setLoading
   };
 }

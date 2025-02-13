@@ -3,10 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { TestMessage, TestRun } from '@/types/runs';
 import { ChatMessage, TestChat } from '@/types/chat';
 import { useTestRuns } from './useTestRuns';
-// import { storageService } from '@/services/storage/localStorage';
 import { dbService } from '@/services/db';
 import { QaAgent } from '@/services/agents/claude/qaAgent';
-import { Rule } from '@/services/agents/claude/types';
 import { AnthropicModel } from '@/services/llm/enums';
 
 export type TestExecutionStatus = 'idle' | 'connecting' | 'running' | 'completed' | 'failed';

@@ -39,7 +39,8 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     error, 
     addVariation,
     updateVariation,
-    deleteVariation
+    deleteVariation,
+    setLoading
   } = useTestVariations(selectedTest?.id);
   
 
@@ -55,58 +56,40 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   }, [variationData, selectedTest]);
 
 
-
   const generateTestCases = async () => {
-    if (!selectedTest) return;
+    if (!selectedTest?.id) {
+      console.error("Missing selected test ID");
+      return;
+    }
+  
     const apiKey = localStorage.getItem("anthropic_api_key");
-
     setLoading(true);
-
+  
     try {
-      const response = await fetch("/api/tools/generate-tests", {
+      const response = await fetch(`/api/tools/generate-tests`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "X-API-Key": apiKey || ''
+          "X-API-Key": apiKey || "",
         },
-        body: JSON.stringify({
-          inputExample: selectedTest.input,
-          expectedOutput: selectedTest.expectedOutput,
-        }),
+        body: JSON.stringify({ testId: selectedTest.id }),
       });
-
+  
       const data = await response.json();
       if (data.error) {
         console.error("Generation error:", data.error);
         return;
       }
-
-      const newCases = data.testCases.map((tc: any) => ({
-
-        id: crypto.randomUUID(),
-
-        sourceTestId: selectedTest.id,
-
-        scenario: tc.scenario,
-
-        expectedOutput: tc.expectedOutput || "",
-
-      }));
-
-      const variation = {
-        id: crypto.randomUUID(),
-        testId: selectedTest.id,
-        sourceTestId: selectedTest.id,
-        timestamp: new Date().toISOString(),
-        cases: newCases,
-      };
-      addVariation(variation);
-      setGeneratedCases(newCases);
+  
+      console.log("Generated test cases:", data);
+      setGeneratedCases(data.testCases);
     } catch (error) {
       console.error("Failed to generate test cases:", error);
     } finally {
+      setLoading(false);
     }
   };
+  
 
   const addNewTestCase = () => {
     if (!selectedTest) return;
@@ -125,29 +108,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     setGeneratedCases([newCase, ...generatedCases]);
   };
 
-  // const saveEdit = async () => {
-  //   if (!selectedTest || !editingState || !editingId) return;
-  
-  //   const newTestCase: TestCase = {
-  //     id: editingId,
-  //     sourceTestId: selectedTest.id,
-  //     scenario: editingState.scenario,
-  //     expectedOutput: editingState.expectedOutput,
-  //   };
-  
-  //   const variationPayload: TestVariation = {
-  //     id: crypto.randomUUID(),
-  //     testId: selectedTest.id,
-  //     sourceTestId: selectedTest.id,
-  //     timestamp: new Date().toISOString(),
-  //     cases: [ newTestCase ],
-  //   };
-  
-  //   await addVariation(variationPayload);
-  //   setGeneratedCases(prev => [...prev, newTestCase]);
-  //   setEditingId(null);
-  //   setEditingState(null);
-  // };
   
   const saveEdit = async () => {
     if (!selectedTest || !editingState || !editingId) return;
