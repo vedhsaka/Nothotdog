@@ -44,7 +44,7 @@ export default function PersonaSelector({ selectedTest }: PersonaSelectorProps) 
       };
 
   return (
-    <Card className="bg-black/40 border-zinc-800 h-full">
+    <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-semibold">Select Testing Personas</CardTitle>
       </CardHeader>
