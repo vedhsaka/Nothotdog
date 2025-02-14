@@ -75,7 +75,7 @@ export default function TestCasesPage() {
     <div className="grid grid-cols-12 gap-4 p-6">
       {/* Agent Cases Column */}
       <div className="col-span-4">
-        <Card className="bg-black/40 border-zinc-800">
+        <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Agent Cases</CardTitle>
