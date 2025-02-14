@@ -3,6 +3,12 @@ import { dbService } from '@/services/db/dbService';
 
 export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (id) {
+      const config = await dbService.getAgentConfigAll(id);
+      return NextResponse.json(config);
+    }
     const configs = await dbService.getAgentConfigs();
     return NextResponse.json(configs);
   } catch (error) {

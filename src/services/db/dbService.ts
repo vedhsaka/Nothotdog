@@ -209,10 +209,52 @@ export class DbService {
         ...acc,
         [header.key]: header.value,
       }), {}),
-      // Return an array of persona IDs mapped to this agent config
     }));
   }
 
+  async getAgentConfigAll(id: string) {
+    const config = await prisma.agent_configs.findUnique({
+      where: { id },
+      include: {
+        agent_headers: true,
+        agent_descriptions: true,
+        agent_user_descriptions: true,
+        validation_rules: true,
+        // Remove test_scenarios since we don't need them
+        agent_outputs: {
+          orderBy: { created_at: 'desc' },
+          take: 1
+        }
+      }
+    });
+    if (!config) return null;
+    const latestOutput = config.agent_outputs[0];
+    return {
+      id: config.id,
+      name: config.name,
+      endpoint: config.endpoint,
+      inputFormat: config.input_format,
+      headers: config.agent_headers.reduce((acc, h) => {
+        acc[h.key] = h.value;
+        return acc;
+      }, {} as Record<string, string>),
+      agentDescription: config.agent_descriptions?.[0]?.description ?? "",
+      userDescription: config.agent_user_descriptions?.[0]?.description ?? "",
+      rules: config.validation_rules.map(r => ({
+        path: r.path,
+        condition: r.condition,
+        expectedValue: r.expected_value,
+        description: r.description
+      })),
+      latestOutput: latestOutput ? {
+        responseData: latestOutput.response_data,
+        responseTime: latestOutput.response_time,
+        status: latestOutput.status,
+        errorMessage: latestOutput.error_message
+      } : null
+    };
+  }
+  
   async deleteAgentConfig(configId: string): Promise<{ deleted: boolean }> {
     try {
       // Step 1: Delete related test scenarios
