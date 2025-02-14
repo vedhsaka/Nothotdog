@@ -73,6 +73,7 @@ export default function TestCasesPage() {
 
   return (
     <div className="grid grid-cols-12 gap-4 p-6">
+      {/* Agent Cases Column */}
       <div className="col-span-4">
         <Card className="bg-black/40 border-zinc-800">
           <CardHeader>
@@ -88,7 +89,8 @@ export default function TestCasesPage() {
                   ? "Deselect All"
                   : "Select All"}
               </Button>
-              <Button size="sm"
+              <Button
+                size="sm"
                 onClick={deleteSelectedCases}
                 variant="destructive"
                 className="ml-2"
@@ -153,11 +155,14 @@ export default function TestCasesPage() {
         </Card>
       </div>
 
-      <div className="col-span-4">
-        <TestCaseVariations selectedTest={selectedCase} />
-      </div>
+      {/* Persona Selector Column moved to the middle */}
       <div className="col-span-4">
         <PersonaSelector selectedTest={selectedCase?.id || ""} />
+      </div>
+
+      {/* Test Case Variations Column moved to the right */}
+      <div className="col-span-4">
+        <TestCaseVariations selectedTest={selectedCase} />
       </div>
     </div>
   );
