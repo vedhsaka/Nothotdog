@@ -1,8 +1,7 @@
 // services/db/db.service.ts
 import { prisma } from '@/lib/prisma';
 import { TestRun } from '@/types/runs';
-import { SavedTest } from '@/types/saved';
-import { SimplifiedTestCases, TestVariation, TestVariations } from '@/types/variations';
+import { SimplifiedTestCases, TestVariation } from '@/types/variations';
 import { PersonaMappings } from '@/types/persona-mapping';
 import { Rule } from '../agents/claude/types';
 
@@ -128,22 +127,6 @@ export class DbService {
   //   });
   // }
 
-  // // Saved Tests
-  // async getSavedTests(): Promise<SavedTest[]> {
-  //   const tests = await prisma.test_scenarios.findMany({
-  //     where: {
-  //       agent_configs: {
-  //         org_id: DEFAULT_ORG_ID
-  //       }
-  //     },
-  //     include: {
-  //       agent_configs: {
-  //         include: {
-  //           agent_headers: true
-  //         }
-  //       }
-  //     }
-  //   });
 
   //   return tests.map(test => ({
   //     id: test.id,
@@ -253,6 +236,105 @@ export class DbService {
         errorMessage: latestOutput.error_message
       } : null
     };
+  }
+
+  async saveAgentConfig(configData: any) {
+    const parsedResponse = this.safeJsonParse(configData.agent_response);
+    let input_format = this.safeJsonParse(configData.input);
+
+    if (configData.id) {
+      // Update existing config
+      return prisma.agent_configs.update({
+        where: { id: configData.id },
+        data: {
+          name: configData.name,
+          endpoint: configData.endpoint,
+          input_format: input_format,
+          agent_headers: {
+            deleteMany: {},
+            create: Object.entries(configData.headers).map(([key, value]) => ({
+              key,
+              value: String(value),
+            }))
+          },
+          agent_descriptions: {
+            deleteMany: {},
+            create: { description: configData.agentDescription }
+          },
+          agent_user_descriptions: {
+            deleteMany: {},
+            create: { description: configData.userDescription }
+          },
+          validation_rules: {
+            deleteMany: {},
+            create: configData.rules.map((rule: any) => ({
+              path: rule.path,
+              condition: rule.condition,
+              expected_value: rule.value,
+              description: rule.description || ""
+            }))
+          },
+          agent_outputs: {
+            deleteMany: {},
+            create: {
+              response_data: parsedResponse,
+              response_time: configData.responseTime,
+              status: "success",
+              error_message: ""
+            }
+          }
+        }
+      });
+    } else {
+      // Create new config
+      return prisma.agent_configs.create({
+        data: {
+          name: configData.name,
+          endpoint: configData.endpoint,
+          input_format: input_format,
+          org_id: DEFAULT_ORG_ID,
+          created_by: DEFAULT_USER_ID,
+          agent_headers: {
+            create: Object.entries(configData.headers).map(([key, value]) => ({
+              key,
+              value: String(value),
+            }))
+          },
+          agent_descriptions: {
+            create: { description: configData.agentDescription }
+          },
+          agent_user_descriptions: {
+            create: { description: configData.userDescription }
+          },
+          validation_rules: {
+            create: configData.rules.map((rule: any) => ({
+              path: rule.path,
+              condition: rule.condition,
+              expected_value: rule.value,
+              description: rule.description || ""
+            }))
+          },
+          agent_outputs: {
+            create: {
+              response_data: parsedResponse,
+              response_time: configData.responseTime,
+              status: "success",
+              error_message: ""
+            }
+          }
+        }
+      });
+    }
+  }
+  
+
+  safeJsonParse(str: string) {
+    if (!str) return {};
+    try {
+      return JSON.parse(str);
+    } catch {
+      return { rawOutput: str };
+    }
   }
   
   async deleteAgentConfig(configId: string): Promise<{ deleted: boolean }> {

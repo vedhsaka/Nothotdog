@@ -22,7 +22,6 @@ export default function TestCasesPage() {
           throw new Error("Failed to fetch saved tests");
         }
         const data = await response.json();
-        console.log(data);
         setAgentCases(data);
       } catch (error) {
         console.error("Error fetching saved tests:", error);
@@ -153,7 +152,7 @@ export default function TestCasesPage() {
       </div>
 
       <div className="col-span-4">
-        <TestCaseVariations selectedTest={selectedCase} />
+        <TestCaseVariations selectedTestId={selectedCase?.id || null} />
       </div>
       <div className="col-span-4">
         <PersonaSelector selectedTest={selectedCase?.id || ""} />

@@ -1,5 +1,5 @@
 import { TestRun } from '@/types/runs';
-import { ConversationContext, TestScenario, TestVariations, SavedTest } from '@/types';
+import { ConversationContext, TestScenario } from '@/types';
 import { PersonaMapping, PersonaMappings } from '@/types/persona-mapping'
 
 const STORAGE_KEYS = {
@@ -38,14 +38,6 @@ class LocalStorageService {
     window.localStorage.setItem(key, JSON.stringify(value));
   }
 
-  getTestVariations(): TestVariations {
-    return this.getItem<TestVariations>(STORAGE_KEYS.TEST_VARIATIONS, {});
-  }
-
-  setTestVariations(variations: TestVariations): void {
-    this.setItem(STORAGE_KEYS.TEST_VARIATIONS, variations);
-  }
-
   getRuleTemplates(): Record<string, unknown> {
     return this.getItem<Record<string, unknown>>(STORAGE_KEYS.RULE_TEMPLATES, {});
   }
@@ -54,13 +46,6 @@ class LocalStorageService {
     this.setItem(STORAGE_KEYS.RULE_TEMPLATES, templates);
   }
 
-  getSavedTests(): SavedTest[] {
-    return this.getItem<SavedTest[]>(STORAGE_KEYS.SAVED_TESTS, []);
-  }
-
-  setSavedTests(tests: SavedTest[]): void {
-    this.setItem(STORAGE_KEYS.SAVED_TESTS, tests);
-  }
 
   // New methods for conversation storage
   saveConversationResult(result: ConversationResult): void {

@@ -19,15 +19,7 @@ interface EditingState {
   expectedOutput: string;
 }
 
-interface TestCaseVariationsProps {
-  selectedTest: {
-    id: string;
-    input: string;
-    expectedOutput: string;
-  } | null;
-}
-
-export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
+export function TestCaseVariations({ selectedTestId }: { selectedTestId: string | undefined }) {
   const [generatedCases, setGeneratedCases] = useState<TestCase[]>([]);
   const [editingState, setEditingState] = useState<EditingState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -41,23 +33,23 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     updateVariation,
     deleteVariation,
     setLoading
-  } = useTestVariations(selectedTest?.id);
+  } = useTestVariations(selectedTestId);
   
 
   useEffect(() => {
-    if (variationData && selectedTest) {
+    if (variationData && selectedTestId) {
       setGeneratedCases(
         variationData.testCases.map(tc => ({
           ...tc,
-          sourceTestId: selectedTest.id,
+          sourceTestId: selectedTestId,
         }))
       );
     }
-  }, [variationData, selectedTest]);
+  }, [variationData, selectedTestId]);
 
 
   const generateTestCases = async () => {
-    if (!selectedTest?.id) {
+    if (!selectedTestId) {
       console.error("Missing selected test ID");
       return;
     }
@@ -72,7 +64,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
           "Content-Type": "application/json",
           "X-API-Key": apiKey || "",
         },
-        body: JSON.stringify({ testId: selectedTest.id }),
+        body: JSON.stringify({ testId: selectedTestId }),
       });
   
       const data = await response.json();
@@ -92,11 +84,11 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   
 
   const addNewTestCase = () => {
-    if (!selectedTest) return;
+    if (!selectedTestId) return;
 
     const newCase = {
       id: crypto.randomUUID(),
-      sourceTestId: selectedTest.id,
+      sourceTestId: selectedTestId,
       scenario: "",
       expectedOutput: "",
     };
@@ -110,11 +102,11 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
 
   
   const saveEdit = async () => {
-    if (!selectedTest || !editingState || !editingId) return;
+    if (!selectedTestId || !editingState || !editingId) return;
   
     const editedTestCase: TestCase = {
       id: editingId,
-      sourceTestId: selectedTest.id,
+      sourceTestId: selectedTestId,
       scenario: editingState.scenario,
       expectedOutput: editingState.expectedOutput,
     };
@@ -125,8 +117,8 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   
     const payload: TestVariation = {
       id: existsInServer ? editingId : crypto.randomUUID(),
-      testId: selectedTest.id,
-      sourceTestId: selectedTest.id,
+      testId: selectedTestId,
+      sourceTestId: selectedTestId,
       timestamp: new Date().toISOString(),
       cases: [editedTestCase],
     };
@@ -175,7 +167,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
 
   // Replace your deleteTestCase and deleteSelectedCases functions with this unified function:
     const deleteTestCases = async (idsToDelete: string[]) => {
-      if (!selectedTest) return;
+      if (!selectedTestId) return;
 
       // Filter out the test cases that should be deleted
       const updatedCases = generatedCases.filter(tc => !idsToDelete.includes(tc.id));
@@ -183,8 +175,8 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
       // Create a variation object with the remaining test cases.
       const variation = {
         id: crypto.randomUUID(),
-        testId: selectedTest.id,
-        sourceTestId: selectedTest.id,
+        testId: selectedTestId,
+        sourceTestId: selectedTestId,
         timestamp: new Date().toISOString(),
         cases: updatedCases,
       };
@@ -229,7 +221,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
             </div>
           )}
 
-          {selectedTest && (
+          {selectedTestId && (
             generatedCases.length > 0 ? (
               <Button size="sm" onClick={addNewTestCase}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -368,7 +360,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
           </div>
         ))}
 
-        {!selectedTest && (
+        {!selectedTestId && (
           <div className="text-center py-8 text-zinc-500">
             Select an agent case to generate variations.
           </div>

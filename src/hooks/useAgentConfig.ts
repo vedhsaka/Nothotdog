@@ -29,6 +29,8 @@ export function useAgentConfig() {
   const [agentDescription, setAgentDescription] = useState("");
   const [userDescription, setUserDescription] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
+  const [currentAgentId, setCurrentAgentId] = useState<string | null>(null);
+
 
   useEffect(() => {
     async function fetchAgents() {
@@ -75,6 +77,7 @@ export function useAgentConfig() {
           );
         setResponseTime(data.latestOutput?.responseTime || 0);
         setIsEditMode(true);
+        setCurrentAgentId(data.id);
     }
     catch (err) {
         console.error("Failed to load agent:", err);
@@ -100,42 +103,36 @@ export function useAgentConfig() {
     setLoading(false);
   };
 
-  const saveTest = () => {
-    const existingTests = JSON.parse(localStorage.getItem("savedTests") || "[]");
-    const existingTestIndex = existingTests.findIndex((test: any) => test.name === testName);
-
-    const testCase = {
-      id: existingTestIndex >= 0 ? existingTests[existingTestIndex].id : crypto.randomUUID(),
-      name: testName,
-      agentEndpoint,
-      headers: Object.fromEntries(headers.map(h => [h.key, h.value])),
-      input: manualInput,
-      expectedOutput: manualResponse,
-      rules,
-      responseTime,
-      agentDescription,
-      userDescription,
-      timestamp: new Date().toISOString(),
-    };
-
-    if (existingTestIndex >= 0) {
-      existingTests[existingTestIndex] = testCase;
-    } else {
-      existingTests.push(testCase);
-    }
-
-    localStorage.setItem("savedTests", JSON.stringify(existingTests));
-    localStorage.setItem("ruleTemplates", JSON.stringify({ ...ruleTemplates, [testName]: rules }));
-
-    setSavedAgents(existingTests.map((test: any) => ({
-      id: test.id,
-      name: test.name,
-      agentEndpoint: test.agentEndpoint,
-      headers: test.headers
-    })));
+    const saveTest = async () => {
+        const payload = {
+        id: isEditMode ? currentAgentId : undefined,
+        name: testName,
+        endpoint: agentEndpoint,
+        headers: Object.fromEntries(headers.map(h => [h.key, h.value])),
+        input: manualInput,
+        agent_response: manualResponse,
+        rules,
+        responseTime,
+        agentDescription,
+        userDescription,
+        timestamp: new Date().toISOString(),
+        };
     
-    setIsEditMode(false);
-  };
+        try {
+        const res = await fetch("/api/tools/agent-config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        console.log(res);
+        if (!res.ok) throw new Error("Failed to save agent config");
+        // Optionally update your state with the new config info.
+        setIsEditMode(false);
+        } catch (error) {
+        console.error("saveTest error:", error);
+        }
+    };
+  
 
   return {
     testName, setTestName,
