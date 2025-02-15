@@ -24,6 +24,11 @@ export default function TestCasesPage() {
   const [agentCases, setAgentCases] = useState<AgentCase[]>([]);
   const [selectedCase, setSelectedCase] = useState<AgentCase | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const cases = JSON.parse(localStorage.getItem("savedTests") || "[]");
@@ -71,11 +76,17 @@ export default function TestCasesPage() {
     }
   };
 
+  const showBulkActions = agentCases.length > 1 && selectedIds.length > 0;
+
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <div className="grid grid-cols-12 gap-4 p-6">
       {/* Agent Cases Column */}
       <div className="col-span-4">
-        <Card className="bg-black/40 border-zinc-800">
+        <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Agent Cases</CardTitle>
@@ -83,21 +94,23 @@ export default function TestCasesPage() {
                 {agentCases.length} Cases
               </Badge>
             </div>
-            <div className="flex mt-2">
-              <Button size="sm" onClick={selectAllCases}>
-                {selectedIds.length === agentCases.length
-                  ? "Deselect All"
-                  : "Select All"}
-              </Button>
-              <Button
-                size="sm"
-                onClick={deleteSelectedCases}
-                variant="destructive"
-                className="ml-2"
-              >
-                Delete Selected
-              </Button>
-            </div>
+            {showBulkActions && (
+              <div className="flex mt-2">
+                <Button size="sm" onClick={selectAllCases}>
+                  {selectedIds.length === agentCases.length
+                    ? "Deselect All"
+                    : "Select All"}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={deleteSelectedCases}
+                  variant="destructive"
+                  className="ml-2"
+                >
+                  Delete Selected
+                </Button>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="max-h-[calc(100vh-12rem)] overflow-y-auto">
             <div className="space-y-2">
