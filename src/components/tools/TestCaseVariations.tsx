@@ -203,7 +203,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   };
 
   return (
-    <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+    <Card className="bg-black/40 border-zinc-800">
       <CardHeader>
         <div className="flex justify-between items-center">
           {/* <CardTitle>Generated Scenarios</CardTitle>
