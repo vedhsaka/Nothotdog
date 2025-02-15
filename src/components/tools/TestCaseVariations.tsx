@@ -51,7 +51,23 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
 
   const generateTestCases = async () => {
     if (!selectedTest) return;
-    const apiKey = localStorage.getItem("anthropic_api_key");
+
+    // Get LLM configuration from localStorage
+    const llmConfig = JSON.parse(localStorage.getItem('llm_config') || '{}');
+    const activeModel = localStorage.getItem('active_model');
+
+    if (!activeModel) {
+      console.error("No active model selected");
+      return;
+    }
+
+    const provider = activeModel.includes('gpt') ? 'openai' : 'anthropic';
+    const apiKey = llmConfig[provider];
+
+    if (!apiKey) {
+      console.error("No API key found for provider:", provider);
+      return;
+    }
 
     setLoading(true);
 
@@ -60,21 +76,25 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-API-Key": apiKey || "",
+          "active-model": activeModel,
+          "llm-config": JSON.stringify(llmConfig)
         },
         body: JSON.stringify({
           inputExample: selectedTest.input,
           expectedOutput: selectedTest.expectedOutput,
+          agentDescription: "AI Test Agent",
+          userDescription: "Test User"
         }),
       });
 
       const data = await response.json();
-      if (data.error) {
-        console.error("Generation error:", data.error);
+      
+      if (!response.ok || data.error) {
+        console.error("Generation error:", data.error, data.details || '');
         return;
       }
 
-      if (data.testCases) {
+      if (data.testCases && Array.isArray(data.testCases)) {
         const newCases = data.testCases.map((tc: any) => ({
           id: crypto.randomUUID(),
           sourceTestId: selectedTest.id,
@@ -164,7 +184,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     setGeneratedCases(updatedCases);
     saveVariations(selectedTest.id, updatedCases);
 
-    // Remove from selectedIds if deleted
     setSelectedIds((prevSelected) =>
       prevSelected.filter((selectedId) => selectedId !== id)
     );
@@ -180,9 +199,9 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
 
   const selectAllCases = () => {
     if (selectedIds.length === generatedCases.length) {
-      setSelectedIds([]); // Deselect all if all are selected
+      setSelectedIds([]);
     } else {
-      setSelectedIds(generatedCases.map((test) => test.id)); // Select all
+      setSelectedIds(generatedCases.map((test) => test.id));
     }
   };
 
@@ -193,14 +212,9 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
       (tc) => !selectedIds.includes(tc.id)
     );
     setGeneratedCases(updatedCases);
-
-    // Update local storage after deletion
     saveVariations(selectedTest.id, updatedCases);
-
-    // Clear selection
     setSelectedIds([]);
 
-    // Reset editing state if necessary
     if (editingId && selectedIds.includes(editingId)) {
       setEditingId(null);
       setEditingState(null);
@@ -217,13 +231,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
       <CardHeader>
         <div className="flex justify-between items-center">
-          {/* <CardTitle>Generated Scenarios</CardTitle>
-          {selectedTest && (
-            <Button size="sm" onClick={addNewTestCase}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Test Case
-            </Button>
-          )} */}
           {loading && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
               <Loading size="lg" message="Generating test cases..." />
@@ -251,11 +258,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
                 ? "Deselect All"
                 : "Select All"}
             </Button>
-            <Button
-              size="sm"
-              onClick={deleteSelectedCases}
-              variant="destructive"
-            >
+            <Button size="sm" onClick={deleteSelectedCases} variant="destructive">
               Delete Selected
             </Button>
           </div>

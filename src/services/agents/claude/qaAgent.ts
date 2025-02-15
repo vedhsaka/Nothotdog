@@ -1,4 +1,5 @@
 import { BufferMemory } from "langchain/memory";
+import { BaseMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
@@ -10,7 +11,7 @@ import { ResponseValidator } from './validators';
 import { TestMessage } from "@/types/runs";
 import { v4 as uuidv4 } from 'uuid';
 import { ModelFactory } from "@/services/llm/modelfactory";
-import { AnthropicModel } from "@/services/llm/enums";
+import { AnthropicModel, OpenAIModel } from "@/services/llm/enums";
 import { SYSTEM_PROMPTS } from "@/services/prompts";
 import { ChattyExplorer } from "../personas/variants/chattyExplorer";
 import { ImpatientUser } from "../personas/variants/impatientUser";
@@ -25,16 +26,17 @@ export class QaAgent {
 
   constructor(config: QaAgentConfig) {
     this.config = config;
-
-    const apiKey = localStorage.getItem('anthropic_api_key');
-    if (!apiKey) {
-      throw new Error('Anthropic API key not found. Please add your API key in settings.');
+    
+    const llmConfig = this.getLLMConfig();
+    if (!llmConfig) {
+      throw new Error('LLM configuration not found. Please configure your LLM settings.');
     }
 
     this.model = ModelFactory.createLangchainModel(
-      config.modelId || AnthropicModel.Sonnet3_5,
-      apiKey
-    )
+      llmConfig.model as AnthropicModel | OpenAIModel,
+      llmConfig.key,
+      config.modelOptions
+    );
 
     this.memory = new BufferMemory({
       returnMessages: true,
@@ -54,11 +56,34 @@ export class QaAgent {
     const personaKey = config.persona as PersonaKey | undefined;
     const personaSystemPrompt = personaKey ? personas[personaKey]?.systemPrompt : undefined;
   
-
     this.prompt = ChatPromptTemplate.fromMessages([
       ["system", SYSTEM_PROMPTS.API_TESTER(personaSystemPrompt)],
       ["human", "{input}"]
     ]);
+  }
+
+  private getLLMConfig() {
+    if (typeof window === 'undefined') return null;
+    
+    const activeModel = localStorage.getItem('active_model');
+    if (!activeModel) return null;
+  
+    const provider = activeModel.includes('gpt') ? 'openai' : 'anthropic';
+    
+    try {
+      const llmConfig = JSON.parse(localStorage.getItem('llm_config') || '{}');
+      const apiKey = llmConfig[provider];
+  
+      if (!apiKey) return null;
+  
+      return {
+        provider,
+        model: activeModel,
+        key: apiKey
+      };
+    } catch (error) {
+      return null;
+    }
   }
 
   async runTest(scenario: string, expectedOutput: string): Promise<TestResult> {
@@ -114,7 +139,6 @@ export class QaAgent {
           responseTime: totalResponseTime,
           validationScore: 1
         }
-
       });
 
       // Handle multi-turn conversation
@@ -143,7 +167,7 @@ export class QaAgent {
             throw error;
           }
 
-          const turnResponseTime = Date.now() - startTime
+          const turnResponseTime = Date.now() - startTime;
           totalResponseTime += Date.now() - startTime;
           allMessages.push({
             id: uuidv4(),
@@ -155,7 +179,6 @@ export class QaAgent {
               validationScore: 1
             }
           });
-          // Add assistant message
           allMessages.push({
             id: uuidv4(),
             chatId: chatId,
@@ -173,26 +196,26 @@ export class QaAgent {
       const formatValid = ResponseValidator.validateResponseFormat(apiResponse, this.config.apiConfig.outputFormat);
       const conditionMet = ResponseValidator.validateCondition(apiResponse, this.config.apiConfig.rules);
 
-      const fullConversation = allMessages
-      .map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`)
-      .join('\n\n');
+      // Final analysis
+      const analysisResult = await chain.invoke({
+        input: `Analyze if this conversation met our test expectations:
 
-      // Validate entire conversation
-      const conversationValidation = await this.validateFullConversation(
-        fullConversation,
-        scenario,
-        expectedOutput
+Original scenario: ${scenario}
+Expected behavior: ${expectedOutput}
+
+Conversation:
+${allMessages.map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`).join('\n\n')}
+
+Consider that the response format was ${formatValid ? 'valid' : 'invalid'}
+and the condition was ${conditionMet ? 'met' : 'not met'}.
+
+Did the interaction meet our expectations? Explain why or why not.`
+      });
+
+      await this.memory.saveContext(
+        { input: testMessage },
+        { output: chatResponse }
       );
-
-      const validatedMessages = allMessages.map(msg => ({
-        ...msg,
-        isCorrect: msg.id === allMessages[allMessages.length - 1].id ? 
-          conversationValidation.isCorrect : 
-          true,
-        explanation: msg.id === allMessages[allMessages.length - 1].id ? 
-          conversationValidation.explanation : 
-          undefined
-      }));
 
       return {
         conversation: {
@@ -200,134 +223,31 @@ export class QaAgent {
           rawInput: formattedInput,
           rawOutput: apiResponse,
           chatResponse,
-          allMessages: validatedMessages
+          allMessages
         },
         validation: {
-          passedTest: formatValid && conditionMet && conversationValidation.isCorrect,
+          passedTest: formatValid && conditionMet,
           formatValid,
           conditionMet,
-          explanation: conversationValidation.explanation,
-          conversationResult: conversationValidation,
+          explanation: analysisResult,
           metrics: {
             responseTime: totalResponseTime
           }
         }
       };
+
     } catch (error) {
       console.error('Error in runTest:', error);
       throw error;
     }
   }
 
-  private async validateFullConversation(
-    fullConversation: string,
-    scenario: string,
-    expectedOutput: string
-  ) {
-    const prompt = `Evaluate if this complete conversation fulfills the test scenario:
-  Test Scenario: ${scenario}
-  Expected Behavior: ${expectedOutput}
-  Complete Conversation:
-  ${fullConversation}
-  Evaluate if the conversation achieved the expected behavior. Consider the entire context.
-  Return JSON: { "isCorrect": boolean, "explanation": "why" }`;
-  
-    const result = await this.model.invoke([{
-      role: 'user',
-      content: prompt
-    }]);
-  
-    try {
-      const content = typeof result.content === 'string'
-        ? result.content
-        : JSON.stringify(result.content);
-      return JSON.parse(content);
-    } catch (error) {
-      console.error('Failed to parse validation result:', error);
-      return { isCorrect: false, explanation: 'Validation failed' };
-    }
+  async getHistory(): Promise<BaseMessage[]> {
+    const memoryVars = await this.memory.loadMemoryVariables({});
+    return memoryVars.chat_history || [];
+  }
+
+  async reset(): Promise<void> {
+    await this.memory.clear();
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//       // Final analysis
-//       const analysisResult = await chain.invoke({
-//         input: `Analyze if this conversation met our test expectations:
-
-// Original scenario: ${scenario}
-// Expected behavior: ${expectedOutput}
-
-// Conversation:
-// ${allMessages.map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`).join('\n\n')}
-
-// Consider that the response format was ${formatValid ? 'valid' : 'invalid'}
-// and the condition was ${conditionMet ? 'met' : 'not met'}.
-
-// Did the interaction meet our expectations? Explain why or why not.`
-//       });
-
-//       await this.memory.saveContext(
-//         { input: testMessage },
-//         { output: chatResponse }
-//       );
-
-//       return {
-//         conversation: {
-//           humanMessage: testMessage,
-//           rawInput: formattedInput,
-//           rawOutput: apiResponse,
-//           chatResponse,
-//           allMessages
-//         },
-//         validation: {
-//           passedTest: formatValid && conditionMet,
-//           formatValid,
-//           conditionMet,
-//           explanation: analysisResult,
-//           metrics: {
-//             responseTime: totalResponseTime
-//           }
-//         }
-//       };
-
-//     } catch (error) {
-//       console.error('Error in runTest:', error);
-//       throw error;
-//     }
-//   }
-
-
-//   async reset(): Promise<void> {
-//     await this.memory.clear();
-//   }
-// }

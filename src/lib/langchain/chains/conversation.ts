@@ -3,7 +3,7 @@ import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { BufferMemory } from "langchain/memory";
 import { ModelFactory } from '@/services/llm/modelfactory';
-import { AnthropicModel } from '@/services/llm/enums';
+import { AnthropicModel, OpenAIModel } from '@/services/llm/enums';
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { SYSTEM_PROMPTS } from "@/services/prompts";
 
@@ -12,15 +12,24 @@ export class ConversationChain {
   private memory: BufferMemory;
   private prompt: ChatPromptTemplate;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, activeModel?: string) {
     console.log('Initializing ConversationChain');
     if (!apiKey) {
       throw new Error('API key is required for ConversationChain');
     }
     console.log('API key provided:', apiKey ? 'Yes' : 'No');
 
+    let selectedModel;
+    if (activeModel) {
+      selectedModel = activeModel.includes('gpt') 
+        ? OpenAIModel.GPT4 
+        : AnthropicModel.Sonnet3_5;
+    } else {
+      selectedModel = AnthropicModel.Sonnet3_5; // Default fallback
+    }
+
     this.model = ModelFactory.createLangchainModel(
-      AnthropicModel.Sonnet3_5,
+      selectedModel,
       apiKey
     );
 
@@ -36,7 +45,29 @@ export class ConversationChain {
       ["human", "{input}"],
     ]);
 
-    console.log('ConversationChain initialized');
+    console.log('ConversationChain initialized with model:', selectedModel);
+  }
+
+  static async create(config?: { 
+    llmConfig?: Record<string, string>,
+    activeModel?: string 
+  }): Promise<ConversationChain> {
+    const activeModel = config?.activeModel || localStorage.getItem('active_model');
+    if (!activeModel) {
+      throw new Error('No active model selected');
+    }
+
+    const llmConfig = config?.llmConfig || 
+      JSON.parse(localStorage.getItem('llm_config') || '{}');
+    
+    const provider = activeModel.includes('gpt') ? 'openai' : 'anthropic';
+    const apiKey = llmConfig[provider];
+
+    if (!apiKey) {
+      throw new Error(`No API key found for ${provider}`);
+    }
+
+    return new ConversationChain(apiKey, activeModel);
   }
 
   async call(input: string): Promise<string> {

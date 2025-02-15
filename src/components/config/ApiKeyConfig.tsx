@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Settings } from "lucide-react";
 import {
   Dialog,
@@ -20,18 +20,72 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AnthropicModel } from "@/services/llm/enums";
+import { AnthropicModel, OpenAIModel, LLMProvider } from "@/services/llm/enums";
 
 export default function ApiKeyConfig() {
-  const [keyName, setKeyName] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [selectedModel, setSelectedModel] = useState(AnthropicModel.Sonnet3_5);
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [activeModel, setActiveModel] = useState("");
+  const [llmConfig, setLLMConfig] = useState<Record<string, string>>({});
   const [isOpen, setIsOpen] = useState(false);
 
+  const providers = Object.values(LLMProvider);
+
+  useEffect(() => {
+    const storedConfig = localStorage.getItem("llm_config");
+    if (storedConfig) {
+      setLLMConfig(JSON.parse(storedConfig));
+    }
+    const storedModel = localStorage.getItem("active_model");
+    if (storedModel) setActiveModel(storedModel);
+  }, []);
+
+  const formatModelName = (key: string): string => {
+    switch (key) {
+      case AnthropicModel.Sonnet3_5:
+        return "Claude 3.5 Sonnet";
+      case OpenAIModel.GPT4:
+        return "GPT-4";
+      case OpenAIModel.GPT35Turbo:
+        return "GPT-3.5 Turbo";
+      default:
+        return key;
+    }
+  };
+
+  const getModelsForProvider = (provider: string) => {
+    switch (provider.toLowerCase()) {
+      case LLMProvider.Anthropic:
+        return Object.values(AnthropicModel).map(value => ({
+          name: formatModelName(value),
+          value: value
+        }));
+      case LLMProvider.OpenAI:
+        return Object.values(OpenAIModel).map(value => ({
+          name: formatModelName(value),
+          value: value
+        }));
+      default:
+        return [];
+    }
+  };
+
+  const getAllAvailableModels = () => {
+    const models: { name: string; value: string }[] = [];
+    providers.forEach(provider => {
+      getModelsForProvider(provider).forEach(model => {
+        models.push(model);
+      });
+    });
+    return models;
+  };
+
   const handleSave = () => {
-    localStorage.setItem("anthropic_api_key", apiKey);
-    localStorage.setItem("anthropic_key_name", keyName);
-    localStorage.setItem("anthropic_model", selectedModel);
+    const newConfig = { ...llmConfig };
+    newConfig[selectedProvider.toLowerCase()] = apiKey;
+    
+    localStorage.setItem("llm_config", JSON.stringify(newConfig));
+    setLLMConfig(newConfig);
     setIsOpen(false);
   };
 
@@ -50,7 +104,7 @@ export default function ApiKeyConfig() {
       <div className={`modal-overlay ${isOpen ? "block" : "hidden"}`} />
       <DialogContent className="sm:max-w-[425px] bg-black/90 border-zinc-800">
         <DialogHeader className="flex flex-row justify-between items-center">
-          <DialogTitle>Add Anthropic Config</DialogTitle>
+          <DialogTitle>LLM Configuration</DialogTitle>
           <DialogClose asChild>
             <Button variant="ghost" size="icon">
               <span>X</span>
@@ -58,15 +112,47 @@ export default function ApiKeyConfig() {
           </DialogClose>
         </DialogHeader>
         <div className="space-y-6 py-4">
+          <div className="flex items-center space-x-2">
+            <Label>Active Model:</Label>
+            <Select
+              value={activeModel}
+              onValueChange={(value: string) => {
+                setActiveModel(value);
+                localStorage.setItem("active_model", value);
+              }}
+            >
+              <SelectTrigger className="w-[180px] bg-black/40 border-zinc-800">
+                <SelectValue placeholder="Select active model" />
+              </SelectTrigger>
+              <SelectContent className="bg-black/90 border-zinc-800">
+                {getAllAvailableModels().map(({ name, value }) => (
+                  <SelectItem key={value} value={value}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="keyName">API key name</Label>
-            <Input
-              id="keyName"
-              placeholder="Key name"
-              value={keyName}
-              onChange={(e) => setKeyName(e.target.value)}
-              className="bg-black/40 border-zinc-800"
-            />
+            <Label>Select LLM Provider</Label>
+            <Select
+              value={selectedProvider}
+              onValueChange={(value: string) => {
+                setSelectedProvider(value);
+              }}
+            >
+              <SelectTrigger className="bg-black/40 border-zinc-800">
+                <SelectValue placeholder="Select a provider" />
+              </SelectTrigger>
+              <SelectContent className="bg-black/90 border-zinc-800">
+                {providers.map((provider) => (
+                  <SelectItem key={provider} value={provider}>
+                    {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
@@ -79,25 +165,6 @@ export default function ApiKeyConfig() {
               onChange={(e) => setApiKey(e.target.value)}
               className="bg-black/40 border-zinc-800"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Select model</Label>
-            <Select
-              value={selectedModel}
-              onValueChange={(value: string) =>
-                setSelectedModel(value as AnthropicModel)
-              }
-            >
-              <SelectTrigger className="bg-black/40 border-zinc-800">
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent className="bg-black/90 border-zinc-800">
-                <SelectItem value={AnthropicModel.Sonnet3_5}>
-                  Claude 3.5 Sonnet
-                </SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="flex justify-between">

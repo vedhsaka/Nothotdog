@@ -1,11 +1,12 @@
 export const runtime = 'edge';
 
 import { ModelFactory } from '@/services/llm/modelfactory';
-import { AnthropicModel } from '@/services/llm/enums';
+import { AnthropicModel, OpenAIModel } from '@/services/llm/enums';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
 import { NextResponse } from 'next/server'
 import { JsonOutputParser } from '@langchain/core/output_parsers';
+import { getLLMConfigForActiveModel } from '@/utils/getLLMConfigForActiveModel';
 
 const validationTemplate = ChatPromptTemplate.fromMessages([
   ["user", `You are a test validation system. Compare if the actual response matches the expected output semantically.
@@ -30,20 +31,50 @@ Focus on semantic meaning rather than exact wording. Consider:
 4. Similar level of specificity`]
 ]);
 
-
 export async function POST(req: Request) {
   try {
-    const { actualResponse, expectedOutput } = await req.json()
-    const apiKey = localStorage.getItem('anthropic_api_key');
-    if (!apiKey) {
-      throw new Error('Anthropic API key not found. Please add your API key in settings.');
+    const { actualResponse, expectedOutput } = await req.json();
+
+    // Try getting config from headers first (OpenAI configuration)
+    const config = getLLMConfigForActiveModel(req.headers);
+    let model;
+
+    if (config) {
+      // Use the config if available
+      model = ModelFactory.createLangchainModel(
+        config.model as AnthropicModel | OpenAIModel,
+        config.apiKey
+      );
+    } else {
+      // Fallback to localStorage for Anthropic API key
+      let apiKey;
+      
+      if (typeof window !== 'undefined') {
+        apiKey = localStorage.getItem('anthropic_api_key');
+        if (!apiKey) {
+          return NextResponse.json(
+            { 
+              error: 'Anthropic API key not found',
+              details: 'Please add your API key in settings.'
+            },
+            { status: 400 }
+          );
+        }
+      } else {
+        return NextResponse.json(
+          { 
+            error: 'No valid LLM configuration found',
+            details: 'Neither header configuration nor localStorage API key available'
+          },
+          { status: 400 }
+        );
+      }
+
+      model = ModelFactory.createLangchainModel(
+        AnthropicModel.Sonnet3_5,
+        apiKey
+      );
     }
-
-    const model = ModelFactory.createLangchainModel(
-      AnthropicModel.Sonnet3_5, 
-      apiKey
-    );
-
 
     const chain = RunnableSequence.from([
       validationTemplate,
@@ -59,15 +90,33 @@ export async function POST(req: Request) {
       actualResponse
     });
 
+    // Store validation result in localStorage if available
+    if (typeof window !== 'undefined') {
+      try {
+        const existingValidations = JSON.parse(localStorage.getItem('validationResults') || '[]');
+        const newValidation = {
+          ...validation,
+          timestamp: new Date().toISOString(),
+          expectedOutput,
+          actualResponse
+        };
+        localStorage.setItem('validationResults', 
+          JSON.stringify([...existingValidations, newValidation])
+        );
+      } catch (error) {
+        console.warn('Failed to store validation result in localStorage:', error);
+      }
+    }
+
     return NextResponse.json(validation);
   } catch (error) {
-    console.error('Validation error:', error)
+    console.error('Validation error:', error);
     return NextResponse.json(
       {
         error: 'Failed to validate response',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
-    )
+    );
   }
-} 
+}

@@ -6,7 +6,7 @@ import { useTestRuns } from './useTestRuns';
 import { storageService } from '@/services/storage/localStorage';
 import { QaAgent } from '@/services/agents/claude/qaAgent';
 import { Rule } from '@/services/agents/claude/types';
-import { AnthropicModel } from '@/services/llm/enums';
+import { AnthropicModel, OpenAIModel } from '@/services/llm/enums';
 
 export type TestExecutionStatus = 'idle' | 'connecting' | 'running' | 'completed' | 'failed';
 export type TestExecutionError = {
@@ -16,7 +16,6 @@ export type TestExecutionError = {
 };
 
 export function useTestExecution() {
-  // Destructure runs and state management from useTestRuns:
   const { runs, addRun, updateRun, selectedRun, setSelectedRun } = useTestRuns();
   const [status, setStatus] = useState<TestExecutionStatus>('idle');
   const [error, setError] = useState<TestExecutionError | null>(null);
@@ -25,8 +24,6 @@ export function useTestExecution() {
   const [isTyping, setIsTyping] = useState(false);
   const [selectedChat, setSelectedChat] = useState<TestChat | null>(null);
   
-  // Remove the local runs effect (do not call setRuns here)
-  // You can still load saved tests if needed:
   const [savedTests, setSavedTests] = useState<Array<{ id: string, name: string }>>([]);
   useEffect(() => {
     const tests = JSON.parse(localStorage.getItem('savedTests') || '[]');
@@ -36,7 +33,7 @@ export function useTestExecution() {
     })));
   }, []);
 
-  const executeTest = async (testId: string) => {
+  const executeTest = async (testId: string, model: AnthropicModel | OpenAIModel) => {
     setStatus('connecting');
     setError(null);
     setProgress({ completed: 0, total: 0 });
@@ -45,15 +42,19 @@ export function useTestExecution() {
     const ruleTemplates = storageService.getRuleTemplates() as Record<string, Rule[]>;
     const personas = storageService.getPersonaMappings();
     const testToRun = allTests.find(t => t.id === testId);
+    
     if (!testToRun) {
       throw new Error('Test configuration not found');
     }
+    
     const testVariations = storageService.getTestVariations();
     const variations = testVariations[testId] || [];
     const latestVariation = variations[variations.length - 1];
+    
     if (!latestVariation) {
       throw new Error('No test variations found');
     }
+    
     const scenarios = latestVariation.cases || [];
     const selectedPersonas = personas[testId]?.personaIds || [];
     const totalRuns = scenarios.length * selectedPersonas.length;
@@ -62,7 +63,6 @@ export function useTestExecution() {
       setStatus('running');
       setProgress({ completed: 0, total: totalRuns });
 
-      // Create and add a new test run
       const newRun: TestRun = {
         id: uuidv4(),
         name: testToRun.name,
@@ -91,7 +91,7 @@ export function useTestExecution() {
           try {
             const agent = new QaAgent({
               headers: { ...testToRun.headers },
-              modelId: AnthropicModel.Sonnet3_5,
+              modelId: model,
               endpointUrl: testToRun.agentEndpoint,
               apiConfig: {
                 inputFormat: testToRun.input ? JSON.parse(testToRun.input) : {},
@@ -106,7 +106,6 @@ export function useTestExecution() {
               scenario.expectedOutput || ''
             );
 
-            
             const messagesFromAgent: ChatMessage[] = result.conversation.allMessages.map((msg: TestMessage) => ({
               id: uuidv4(),
               role: msg.role as "user" | "assistant",
@@ -119,7 +118,6 @@ export function useTestExecution() {
             }));
 
             setCurrentMessages(prev => [...prev, ...messagesFromAgent]);
-
 
             const chat: TestChat = {
               id: uuidv4(),
@@ -144,9 +142,7 @@ export function useTestExecution() {
 
             completedChats.push(chat);
             newRun.metrics.passed += 1;
-            newRun.metrics.failed += 0;
             newRun.metrics.correct += 1;
-            newRun.metrics.incorrect += 0;
           } catch (error: any) {
             console.error('Error in test execution:', error);
             const chat: TestChat = {
@@ -172,9 +168,7 @@ export function useTestExecution() {
             };
             completedChats.push(chat);
             newRun.metrics.passed += 1;
-            newRun.metrics.failed += 0;
             newRun.metrics.correct += 1;
-            newRun.metrics.incorrect += 0;
           }
           completedCount++;
           setProgress({ completed: completedCount, total: totalRuns });
