@@ -13,10 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Play, ChevronDown } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
-import { QaAgent } from '@/services/agents/claude/qaAgent';
-import { AnthropicModel } from '@/services/llm/enums';
-import { storageService } from '@/services/storage/localStorage';
 import { useTestExecution } from '@/hooks/useTestExecution';
 
 function CollapsibleJson({ content }: { content: string }) {
@@ -52,7 +48,7 @@ export function TestRunsDashboard() {
     setSelectedRun,
     selectedChat,
     setSelectedChat,
-    savedTests,
+    savedAgentConfigs,
     executeTest
   } = useTestExecution();
 
@@ -193,8 +189,8 @@ export function TestRunsDashboard() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="cursor-pointer">
-            {savedTests.length > 0 ? (
-              savedTests.map((test) => (
+            {savedAgentConfigs.length > 0 ? (
+              savedAgentConfigs.map((test) => (
                 <DropdownMenuItem 
                   key={test.id}
                   onSelect={() => executeTest(test.id)}

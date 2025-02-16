@@ -24,17 +24,22 @@ export function useTestExecution() {
   const [isTyping, setIsTyping] = useState(false);
   const [selectedChat, setSelectedChat] = useState<TestChat | null>(null);
   
-  const [savedTests, setSavedTests] = useState<Array<{ id: string, name: string }>>([]);
-  
+  const [savedAgentConfigs, setSavedAgentConfigs] = useState<Array<{ id: string, name: string }>>([]);
+
   useEffect(() => {
-    const loadTests = async () => {
-      const tests = await dbService.getSavedTests();
-      setSavedTests(tests.map(test => ({
-        id: test.id,
-        name: test.name
-      })));
-    };
-    loadTests();
+    async function fetchAgents() {
+      try {
+        const res = await fetch("/api/tools/agent-config");
+        const data = await res.json();
+        setSavedAgentConfigs(data.map((cfg: any) => ({
+          id: cfg.id,
+          name: cfg.name
+        })));
+      } catch (err) {
+        console.error("Failed to fetch agent configs:", err);
+      }
+    }
+    fetchAgents();
   }, []);
 
   const executeTest = async (testId: string) => {
@@ -43,21 +48,21 @@ export function useTestExecution() {
     setProgress({ completed: 0, total: 0 });
 
 
-    const allTests = await dbService.getSavedTests();
+    const allTests = await dbService.getAgentConfigs();
     const personas = await dbService.getPersonaMappings();
     const testToRun = allTests.find(t => t.id === testId);
     if (!testToRun) {
       throw new Error('Test configuration not found');
     }
     
-    const variations = await dbService.getTestVariations();
-    const testVariations = variations[testId] || [];
-    const latestVariation = testVariations[testVariations.length - 1];
-    if (!latestVariation) {
-      throw new Error('No test variations found');
-    }
-    
-    const scenarios = latestVariation.cases || [];
+    const testVariations = await dbService.getTestVariations(testId);
+    // const testVariations = variations[testId] || [];
+    // const latestVariation = testVariations[testVariations.length - 1];
+    // if (!latestVariation) {
+    //   throw new Error('No test variations found');
+    // }
+    const scenarios = testVariations.testCases;
+    // const scenarios = latestVariation.cases || [];
     const selectedPersonas = personas[testId]?.personaIds || [];
     const totalRuns = scenarios.length * selectedPersonas.length;
 
@@ -214,6 +219,6 @@ export function useTestExecution() {
     setSelectedRun,
     selectedChat,
     setSelectedChat,
-    savedTests
+    savedAgentConfigs
   };
 }
