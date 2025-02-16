@@ -51,7 +51,11 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
 
   const generateTestCases = async () => {
     if (!selectedTest) return;
-    const apiKey = localStorage.getItem("anthropic_api_key");
+    // const apiKey = localStorage.getItem("anthropic_api_key");
+    let apiKey = localStorage.getItem("anthropic_api_key");
+    while (!apiKey) {
+      apiKey = prompt("Anthropic API key not found. Please enter your API key");
+    }
 
     setLoading(true);
 
