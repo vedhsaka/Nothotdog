@@ -35,18 +35,15 @@ export async function POST(req: Request) {
   try {
     const { actualResponse, expectedOutput } = await req.json();
 
-    // Try getting config from headers first (OpenAI configuration)
     const config = getLLMConfigForActiveModel(req.headers);
     let model;
 
     if (config) {
-      // Use the config if available
       model = ModelFactory.createLangchainModel(
         config.model as AnthropicModel | OpenAIModel,
         config.apiKey
       );
     } else {
-      // Fallback to localStorage for Anthropic API key
       let apiKey;
       
       if (typeof window !== 'undefined') {
@@ -90,7 +87,6 @@ export async function POST(req: Request) {
       actualResponse
     });
 
-    // Store validation result in localStorage if available
     if (typeof window !== 'undefined') {
       try {
         const existingValidations = JSON.parse(localStorage.getItem('validationResults') || '[]');

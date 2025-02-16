@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Settings } from "lucide-react";
+import { Badge, Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,56 +28,59 @@ export default function ApiKeyConfig() {
   const [activeModel, setActiveModel] = useState("");
   const [llmConfig, setLLMConfig] = useState<Record<string, string>>({});
   const [isOpen, setIsOpen] = useState(false);
+  const [availableModels, setAvailableModels] = useState<{ name: string; value: string }[]>([]);
 
   const providers = Object.values(LLMProvider);
 
   useEffect(() => {
     const storedConfig = localStorage.getItem("llm_config");
     if (storedConfig) {
-      setLLMConfig(JSON.parse(storedConfig));
+      const config = JSON.parse(storedConfig);
+      setLLMConfig(config);
+      updateAvailableModels(config);
     }
     const storedModel = localStorage.getItem("active_model");
     if (storedModel) setActiveModel(storedModel);
   }, []);
 
   const formatModelName = (key: string): string => {
-    switch (key) {
-      case AnthropicModel.Sonnet3_5:
-        return "Claude 3.5 Sonnet";
-      case OpenAIModel.GPT4:
-        return "GPT-4";
-      case OpenAIModel.GPT35Turbo:
-        return "GPT-3.5 Turbo";
-      default:
-        return key;
-    }
+    const modelNames = {
+      [AnthropicModel.Sonnet3_5]: "Claude 3.5 Sonnet",
+      [OpenAIModel.GPT4]: "GPT-4",
+      [OpenAIModel.GPT35Turbo]: "GPT-3.5 Turbo"
+    };
+    return modelNames[key as keyof typeof modelNames] || key;
   };
 
   const getModelsForProvider = (provider: string) => {
-    switch (provider.toLowerCase()) {
-      case LLMProvider.Anthropic:
-        return Object.values(AnthropicModel).map(value => ({
-          name: formatModelName(value),
-          value: value
-        }));
-      case LLMProvider.OpenAI:
-        return Object.values(OpenAIModel).map(value => ({
-          name: formatModelName(value),
-          value: value
-        }));
-      default:
-        return [];
-    }
+    const modelMapping = {
+      [LLMProvider.Anthropic]: Object.values(AnthropicModel),
+      [LLMProvider.OpenAI]: Object.values(OpenAIModel)
+    };
+
+    return modelMapping[provider as LLMProvider]?.map(value => ({
+      name: formatModelName(value),
+      value: value
+    })) || [];
   };
 
-  const getAllAvailableModels = () => {
+  const updateAvailableModels = (config: Record<string, string>) => {
     const models: { name: string; value: string }[] = [];
-    providers.forEach(provider => {
-      getModelsForProvider(provider).forEach(model => {
-        models.push(model);
-      });
-    });
-    return models;
+    
+    if (config[LLMProvider.Anthropic]) {
+      models.push(...getModelsForProvider(LLMProvider.Anthropic));
+    }
+    
+    if (config[LLMProvider.OpenAI]) {
+      models.push(...getModelsForProvider(LLMProvider.OpenAI));
+    }
+    
+    setAvailableModels(models);
+
+    if (activeModel && !models.some(model => model.value === activeModel)) {
+      setActiveModel('');
+      localStorage.removeItem('active_model');
+    }
   };
 
   const handleSave = () => {
@@ -86,7 +89,9 @@ export default function ApiKeyConfig() {
     
     localStorage.setItem("llm_config", JSON.stringify(newConfig));
     setLLMConfig(newConfig);
+    updateAvailableModels(newConfig);
     setIsOpen(false);
+    setApiKey("");
   };
 
   return (
@@ -112,27 +117,29 @@ export default function ApiKeyConfig() {
           </DialogClose>
         </DialogHeader>
         <div className="space-y-6 py-4">
-          <div className="flex items-center space-x-2">
-            <Label>Active Model:</Label>
-            <Select
-              value={activeModel}
-              onValueChange={(value: string) => {
-                setActiveModel(value);
-                localStorage.setItem("active_model", value);
-              }}
-            >
-              <SelectTrigger className="w-[180px] bg-black/40 border-zinc-800">
-                <SelectValue placeholder="Select active model" />
-              </SelectTrigger>
-              <SelectContent className="bg-black/90 border-zinc-800">
-                {getAllAvailableModels().map(({ name, value }) => (
-                  <SelectItem key={value} value={value}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {availableModels.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <Label>Active Model:</Label>
+              <Select
+                value={activeModel}
+                onValueChange={(value: string) => {
+                  setActiveModel(value);
+                  localStorage.setItem("active_model", value);
+                }}
+              >
+                <SelectTrigger className="w-[180px] bg-black/40 border-zinc-800">
+                  <SelectValue placeholder="Select active model" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90 border-zinc-800">
+                  {availableModels.map(({ name, value }) => (
+                    <SelectItem key={value} value={value}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Select LLM Provider</Label>
@@ -167,12 +174,24 @@ export default function ApiKeyConfig() {
             />
           </div>
 
+          <p className="text-sm text-zinc-400 italic">
+            * Your LLM Keys aren't stored in our servers
+          </p>
+
           <div className="flex justify-between">
-            <Button onClick={handleSave} className="w-full mr-2">
+            <Button 
+              onClick={handleSave} 
+              className="w-full mr-2"
+              disabled={!selectedProvider || !apiKey}
+            >
               Save Configuration
             </Button>
             <Button
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                setIsOpen(false);
+                setApiKey("");
+                setSelectedProvider("");
+              }}
               variant="outline"
               className="w-full"
             >

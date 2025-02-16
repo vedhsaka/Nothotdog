@@ -81,9 +81,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
         },
         body: JSON.stringify({
           inputExample: selectedTest.input,
-          expectedOutput: selectedTest.expectedOutput,
-          agentDescription: "AI Test Agent",
-          userDescription: "Test User"
+          expectedOutput: selectedTest.expectedOutput
         }),
       });
 
