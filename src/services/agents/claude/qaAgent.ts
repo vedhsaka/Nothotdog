@@ -26,9 +26,27 @@ export class QaAgent {
   constructor(config: QaAgentConfig) {
     this.config = config;
 
-    const apiKey = localStorage.getItem('anthropic_api_key');
+    // const apiKey = localStorage.getItem('anthropic_api_key');
+    // if (!apiKey) {
+    //   throw new Error('Anthropic API key not found. Please add your API key in settings.');
+    // }
+    let apiKey = localStorage.getItem("anthropic_api_key");
     if (!apiKey) {
-      throw new Error('Anthropic API key not found. Please add your API key in settings.');
+      // Display an alert to the user
+      apiKey = prompt(
+        "Anthropic API key not found. Please enter your API key"
+      );
+      // If the user entered an API key, save it to localStorage
+      if (apiKey) {
+        localStorage.setItem("anthropic_api_key", apiKey);
+      } else {
+        // If the user cancels the prompt, show a different alert
+        alert("Anthropic API key is required to continue.");
+        throw new Error(
+          "Anthropic API key not found. Please add your API key in settings."
+        );
+        return;
+      }
     }
 
     this.model = ModelFactory.createLangchainModel(
