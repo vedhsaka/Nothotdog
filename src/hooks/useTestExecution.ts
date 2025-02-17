@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { TestMessage, TestRun } from '@/types/runs';
 import { ChatMessage, TestChat } from '@/types/chat';
 import { useTestRuns } from './useTestRuns';
-import { dbService } from '@/services/db';
 import { QaAgent } from '@/services/agents/claude/qaAgent';
 import { AnthropicModel } from '@/services/llm/enums';
 
@@ -47,15 +46,25 @@ export function useTestExecution() {
     setError(null);
     setProgress({ completed: 0, total: 0 });
 
+    const resTests = await fetch('/api/tools/agent-config');
+    const allTests = await resTests.json();
 
-    const allTests = await dbService.getAgentConfigs();
-    const personas = await dbService.getPersonaMappings();
+    const resPersonas = await fetch(`/api/persona-mapping?agentId=${testId}`);
+    const personaMapping = await resPersonas.json();
+    
+
+    const resVariations = await fetch(`/api/tools/test-variations?testId=${testId}`);
+    const testVariations = await resVariations.json();
+
+    // const resRules = await fetch(`/api/validation-rules?name=${testToRun.name}`); // Create this endpoint if needed
+    // const testRules = await resRules.json();
+
+
     const testToRun = allTests.find(t => t.id === testId);
     if (!testToRun) {
       throw new Error('Test configuration not found');
     }
     
-    const testVariations = await dbService.getTestVariations(testId);
     // const testVariations = variations[testId] || [];
     // const latestVariation = testVariations[testVariations.length - 1];
     // if (!latestVariation) {
@@ -63,7 +72,7 @@ export function useTestExecution() {
     // }
     const scenarios = testVariations.testCases;
     // const scenarios = latestVariation.cases || [];
-    const selectedPersonas = personas[testId]?.personaIds || [];
+    const selectedPersonas = personaMapping.personaIds || [];
     const totalRuns = scenarios.length * selectedPersonas.length;
 
     try {
@@ -90,7 +99,6 @@ export function useTestExecution() {
       addRun(newRun);
 
       const completedChats: TestChat[] = [];
-      const testRules = await dbService.getValidationRules(testToRun.name) || [];
       setCurrentMessages([]);
 
       let completedCount = 0;

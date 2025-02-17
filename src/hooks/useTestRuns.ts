@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { TestRun } from '@/types/runs';
-import { dbService } from '@/services/db';
 
 export function useTestRuns() {
   const [runs, setRuns] = useState<TestRun[]>([]);
@@ -11,17 +10,26 @@ export function useTestRuns() {
   }, []);
 
   const loadRuns = async () => {
-    const savedRuns = await dbService.getTestRuns();
-    setRuns(savedRuns);
+    const res = await fetch('/api/test-runs');
+    const savedRuns = await res.json();
+    setRuns(savedRuns);    
   };
 
   const addRun = async (newRun: TestRun) => {
-    await dbService.createTestRun(newRun);
-    setRuns(prev => [newRun, ...prev]);
+    await fetch('/api/test-runs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newRun)
+    });
+    setRuns(prev => [newRun, ...prev]);    
   };
 
   const updateRun = async (updatedRun: TestRun) => {
-    await dbService.updateTestRun(updatedRun); // Note: In production, this would be updateTestRun
+    await fetch('/api/test-runs', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedRun)
+    });
     setRuns(prev => {
       const index = prev.findIndex(run => run.id === updatedRun.id);
       if (index === -1) return prev;

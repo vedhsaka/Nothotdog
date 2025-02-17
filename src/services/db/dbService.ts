@@ -470,8 +470,39 @@ async deleteTestVariation(variation: TestVariation) {
   return { deletedCount: result.count };
 }
 
+async getPersonaMappingByAgentId(agentId: string): Promise<{ personaIds: string[] }> {
+  const rows = await prisma.agent_persona_mappings.findMany({
+    where: { agent_id: agentId },
+  });
+  return { personaIds: rows.map(row => row.persona_id) };
 }
 
+async createPersonaMapping(agentId: string, personaId: string): Promise<{ personaIds: string[] }> {
+  await prisma.agent_persona_mappings.create({
+    data: {
+      agent_id: agentId,
+      persona_id: personaId,
+    },
+  });
+  return this.getPersonaMappingByAgentId(agentId);
+}
+
+async deletePersonaMapping(agentId: string, personaId: string): Promise<{ personaIds: string[] }> {
+  await prisma.agent_persona_mappings.deleteMany({
+    where: {
+      agent_id: agentId,
+      persona_id: personaId,
+    },
+  });
+  return this.getPersonaMappingByAgentId(agentId);
+}
+
+async getPersonas(): Promise<any[]> {
+  return prisma.personas.findMany({
+    where: { org_id: '00000000-0000-0000-0000-000000000000' },
+  });
+}
+}
 
 
 export const dbService = DbService.getInstance();
