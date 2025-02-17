@@ -1,0 +1,62 @@
+"use client";
+import React, { useState } from "react";
+import { TriangleAlert, Settings } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
+interface WarningDialogProps {
+  onClose?: () => void; // Make onClose optional
+}
+
+export default function WarningDialog({ onClose }: WarningDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    if (onClose) {
+      onClose(); // Call the onClose prop if it exists
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute bottom-4 left-4 h-10 w-10"
+          onClick={() => setIsOpen(true)}
+        >
+          <TriangleAlert className="h-5 w-5" />
+        </Button>
+      </DialogTrigger>
+      <div className={`modal-overlay ${isOpen ? "block" : "hidden"}`} />
+      <DialogContent className="sm:max-w-[425px] bg-black/90 border-zinc-800">
+        <DialogHeader>
+          <DialogTitle className="flex items-center">
+            <TriangleAlert className="mr-2" />
+            LLM Keys not configured. Please navigate to Settings (
+            <Settings className="mr-2" />) and set up preferred LLM.
+          </DialogTitle>
+          <DialogClose asChild>
+            <Button variant="ghost" size="icon">
+              <span>X</span>
+            </Button>
+          </DialogClose>
+        </DialogHeader>
+        <div className="flex justify-end mt-4">
+          <Button onClick={handleClose} variant="outline">
+            Close
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
