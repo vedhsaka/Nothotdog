@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash } from "lucide-react";
 import { TestVariation } from "@/types/variations";
 import { Loading } from "../common/Loading";
+import {getActiveModelConfig} from "@/utils/modelUtils"
 
 interface TestCase {
   id: string;
@@ -52,7 +53,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   const generateTestCases = async () => {
     if (!selectedTest) return;
 
-    // Get LLM configuration from localStorage
     const llmConfig = JSON.parse(localStorage.getItem('llm_config') || '{}');
     const activeModel = localStorage.getItem('active_model');
 
@@ -61,11 +61,9 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
       return;
     }
 
-    const provider = activeModel.includes('gpt') ? 'openai' : 'anthropic';
-    const apiKey = llmConfig[provider];
-
-    if (!apiKey) {
-      console.error("No API key found for provider:", provider);
+    const activeModelConfig = getActiveModelConfig(llmConfig, activeModel);
+    if (!activeModelConfig) {
+      console.error("No API key found for active model");
       return;
     }
 
@@ -77,11 +75,11 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
         headers: {
           "Content-Type": "application/json",
           "active-model": activeModel,
-          "llm-config": JSON.stringify(llmConfig)
+          "llm-config": JSON.stringify(activeModelConfig)
         },
         body: JSON.stringify({
           inputExample: selectedTest.input,
-          expectedOutput: selectedTest.expectedOutput
+          expectedOutput: selectedTest.expectedOutput,
         }),
       });
 
@@ -92,7 +90,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
         return;
       }
 
-      if (data.testCases && Array.isArray(data.testCases)) {
+      if (data.testCases) {
         const newCases = data.testCases.map((tc: any) => ({
           id: crypto.randomUUID(),
           sourceTestId: selectedTest.id,

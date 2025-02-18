@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Badge, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AnthropicModel, OpenAIModel, LLMProvider } from "@/services/llm/enums";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ApiKeyConfig() {
   const [apiKey, setApiKey] = useState("");
@@ -109,96 +110,111 @@ export default function ApiKeyConfig() {
       <div className={`modal-overlay ${isOpen ? "block" : "hidden"}`} />
       <DialogContent className="sm:max-w-[425px] bg-black/90 border-zinc-800">
         <DialogHeader className="flex flex-row justify-between items-center">
-          <DialogTitle>LLM Configuration</DialogTitle>
+          <DialogTitle>LLM Settings</DialogTitle>
           <DialogClose asChild>
             <Button variant="ghost" size="icon">
               <span>X</span>
             </Button>
           </DialogClose>
         </DialogHeader>
-        <div className="space-y-6 py-4">
-          {availableModels.length > 0 && (
-            <div className="flex items-center space-x-2">
-              <Label>Active Model:</Label>
+
+        <Tabs defaultValue="config" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="config">Configuration</TabsTrigger>
+            <TabsTrigger value="model" disabled={availableModels.length === 0}>
+              Model Selection
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="config" className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label>Select LLM Provider</Label>
               <Select
-                value={activeModel}
+                value={selectedProvider}
                 onValueChange={(value: string) => {
-                  setActiveModel(value);
-                  localStorage.setItem("active_model", value);
+                  setSelectedProvider(value);
                 }}
               >
-                <SelectTrigger className="w-[180px] bg-black/40 border-zinc-800">
-                  <SelectValue placeholder="Select active model" />
+                <SelectTrigger className="bg-black/40 border-zinc-800">
+                  <SelectValue placeholder="Select a provider" />
                 </SelectTrigger>
                 <SelectContent className="bg-black/90 border-zinc-800">
-                  {availableModels.map(({ name, value }) => (
-                    <SelectItem key={value} value={value}>
-                      {name}
+                  {providers.map((provider) => (
+                    <SelectItem key={provider} value={provider}>
+                      {provider.charAt(0).toUpperCase() + provider.slice(1)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label>Select LLM Provider</Label>
-            <Select
-              value={selectedProvider}
-              onValueChange={(value: string) => {
-                setSelectedProvider(value);
-              }}
-            >
-              <SelectTrigger className="bg-black/40 border-zinc-800">
-                <SelectValue placeholder="Select a provider" />
-              </SelectTrigger>
-              <SelectContent className="bg-black/90 border-zinc-800">
-                {providers.map((provider) => (
-                  <SelectItem key={provider} value={provider}>
-                    {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="apiKey">API key</Label>
+              <Input
+                id="apiKey"
+                type="password"
+                placeholder="API key"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="bg-black/40 border-zinc-800"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="apiKey">API key</Label>
-            <Input
-              id="apiKey"
-              type="password"
-              placeholder="API key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="bg-black/40 border-zinc-800"
-            />
-          </div>
+            <p className="text-sm text-zinc-400 italic">
+              * Your LLM Keys aren't stored in our servers
+            </p>
 
-          <p className="text-sm text-zinc-400 italic">
-            * Your LLM Keys aren't stored in our servers
-          </p>
+            <div className="flex justify-between">
+              <Button 
+                onClick={handleSave} 
+                className="w-full mr-2"
+                disabled={!selectedProvider || !apiKey}
+              >
+                Save Configuration
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsOpen(false);
+                  setApiKey("");
+                  setSelectedProvider("");
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                Cancel
+              </Button>
+            </div>
+          </TabsContent>
 
-          <div className="flex justify-between">
-            <Button 
-              onClick={handleSave} 
-              className="w-full mr-2"
-              disabled={!selectedProvider || !apiKey}
-            >
-              Save Configuration
-            </Button>
-            <Button
-              onClick={() => {
-                setIsOpen(false);
-                setApiKey("");
-                setSelectedProvider("");
-              }}
-              variant="outline"
-              className="w-full"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
+          <TabsContent value="model" className="space-y-6 py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Active Model</Label>
+                <Select
+                  value={activeModel}
+                  onValueChange={(value: string) => {
+                    setActiveModel(value);
+                    localStorage.setItem("active_model", value);
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-black/40 border-zinc-800">
+                    <SelectValue placeholder="Select active model" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-black/90 border-zinc-800">
+                    {availableModels.map(({ name, value }) => (
+                      <SelectItem key={value} value={value}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-sm text-zinc-400 italic">
+                * Select the model you want to use for generation
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

@@ -19,6 +19,7 @@ import { AnthropicModel, OpenAIModel } from '@/services/llm/enums';
 import { storageService } from '@/services/storage/localStorage';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import { ModelFactory } from '@/services/llm/modelfactory';
+import { getModelProvider, castToModelType } from '@/utils/modelUtils';
 
 function CollapsibleJson({ content }: { content: string }) {
  let formattedContent = content;
@@ -66,7 +67,7 @@ export function TestRunsDashboard() {
       return;
     }
 
-    const provider = activeModel.includes('gpt') ? 'openai' : 'anthropic';
+    const provider = getModelProvider(activeModel);
     const apiKey = llmConfig[provider];
 
     if (!apiKey) {
@@ -74,7 +75,7 @@ export function TestRunsDashboard() {
       return;
     }
 
-    const selectedModel = provider === 'openai' ? OpenAIModel.GPT4 : AnthropicModel.Sonnet3_5;
+    const selectedModel = castToModelType(activeModel);
     await executeTest(testId, selectedModel);
   };
 

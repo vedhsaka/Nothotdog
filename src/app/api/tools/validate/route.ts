@@ -106,13 +106,13 @@ export async function POST(req: Request) {
 
     return NextResponse.json(validation);
   } catch (error) {
-    console.error('Validation error:', error);
+    console.error('Validation error:', error)
     return NextResponse.json(
       {
         error: 'Failed to validate response',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
-    );
-  }
+    )
+  } 
 }

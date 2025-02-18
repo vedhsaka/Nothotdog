@@ -75,7 +75,7 @@ User Description: ${userDescription || 'Not provided'}`;
 
     const response = await model.invoke([{
       role: 'user',
-      content: prompt
+      content: prompt as string
     }]);
       
     let evaluations = extractJSON(response.content as string);

@@ -6,6 +6,7 @@ import { ModelFactory } from '@/services/llm/modelfactory';
 import { AnthropicModel, OpenAIModel } from '@/services/llm/enums';
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { SYSTEM_PROMPTS } from "@/services/prompts";
+import { getModelProvider, castToModelType } from '@/utils/modelUtils';
 
 export class ConversationChain {
   private model: BaseChatModel;
@@ -21,9 +22,7 @@ export class ConversationChain {
 
     let selectedModel;
     if (activeModel) {
-      selectedModel = activeModel.includes('gpt') 
-        ? OpenAIModel.GPT4 
-        : AnthropicModel.Sonnet3_5;
+      selectedModel = castToModelType(activeModel);
     } else {
       selectedModel = AnthropicModel.Sonnet3_5; // Default fallback
     }
@@ -60,7 +59,7 @@ export class ConversationChain {
     const llmConfig = config?.llmConfig || 
       JSON.parse(localStorage.getItem('llm_config') || '{}');
     
-    const provider = activeModel.includes('gpt') ? 'openai' : 'anthropic';
+    const provider = getModelProvider(activeModel);
     const apiKey = llmConfig[provider];
 
     if (!apiKey) {
