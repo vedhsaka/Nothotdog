@@ -49,15 +49,15 @@ export function useTestExecution() {
     const resTests = await fetch('/api/tools/agent-config');
     const allTests = await resTests.json();
 
-    const resPersonas = await fetch(`/api/persona-mapping?agentId=${testId}`);
+    const resPersonas = await fetch(`/api/tools/persona-mapping?agentId=${testId}`);
     const personaMapping = await resPersonas.json();
     
 
     const resVariations = await fetch(`/api/tools/test-variations?testId=${testId}`);
     const testVariations = await resVariations.json();
 
-    // const resRules = await fetch(`/api/validation-rules?name=${testToRun.name}`); // Create this endpoint if needed
-    // const testRules = await resRules.json();
+    const resRules = await fetch(`/api/tools/validation-rules?name=${testToRun.name}`);
+    const testRules = await resRules.json();
 
 
     const testToRun = allTests.find(t => t.id === testId);

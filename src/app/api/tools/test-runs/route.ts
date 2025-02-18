@@ -1,4 +1,3 @@
-// app/api/tools/test-runs/route.ts
 import { NextResponse } from 'next/server';
 import { dbService } from '@/services/db';
 

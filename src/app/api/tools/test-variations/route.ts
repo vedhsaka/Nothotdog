@@ -1,6 +1,4 @@
-// app/api/test-variations/route.ts
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { dbService } from '@/services/db';
 
 export async function GET(request: Request) {

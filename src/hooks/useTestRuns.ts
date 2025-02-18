@@ -16,7 +16,7 @@ export function useTestRuns() {
   };
 
   const addRun = async (newRun: TestRun) => {
-    await fetch('/api/test-runs', {
+    await fetch('/api/tools/test-runs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newRun)
@@ -25,7 +25,7 @@ export function useTestRuns() {
   };
 
   const updateRun = async (updatedRun: TestRun) => {
-    await fetch('/api/test-runs', {
+    await fetch('/api/tools/test-runs', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedRun)
