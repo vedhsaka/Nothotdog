@@ -2,11 +2,12 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 import { validateAnalyzeResultsRequest } from '@/lib/validations';
-import { AnthropicModel } from '@/services/llm/enums';
+import { AnthropicModel, OpenAIModel } from '@/services/llm/enums';
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { JsonOutputParser } from "@langchain/core/output_parsers";
 import { ModelFactory } from '@/services/llm/modelfactory';
+import { getLLMConfigForActiveModel } from '@/utils/getLLMConfigForActiveModel';
 
 interface AnalysisResult {
   categorizedResults: Record<string, {
@@ -36,15 +37,18 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { results } = validateAnalyzeResultsRequest(body);
-
-    const apiKey = localStorage.getItem('anthropic_api_key');
-    if (!apiKey) {
-      throw new Error('Anthropic API key not found. Please add your API key in settings.');
+    const config = getLLMConfigForActiveModel(req.headers);
+    
+    if (!config) {
+      return NextResponse.json(
+        { error: 'Missing or invalid LLM configuration' },
+        { status: 400 }
+      );
     }
 
     const model = ModelFactory.createLangchainModel(
-      AnthropicModel.Sonnet3_5,
-      apiKey
+      config.model as AnthropicModel | OpenAIModel,
+      config.apiKey
     );
 
     const analysisChain = RunnableSequence.from([
