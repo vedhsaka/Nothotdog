@@ -41,10 +41,10 @@ export default function ApiKeyConfig() {
         <Button
           variant="ghost"
           size="icon"
-          className="absolute bottom-4 left-4 h-10 w-10"
+          className="absolute bottom-4 left-4 !h-14 !w-14"
           onClick={() => setIsOpen(true)}
-        >
-          <Settings className="h-5 w-5" />
+        >  
+          <Settings className="!h-8 !w-8" />
         </Button>
       </DialogTrigger>
       <div className={`modal-overlay ${isOpen ? "block" : "hidden"}`} />
