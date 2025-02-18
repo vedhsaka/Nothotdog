@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import WarningDialog from "@/components/config/WarningDialog";
 import { Plus, Edit, Trash } from "lucide-react";
 import { TestVariation } from "@/types/variations";
 import { Loading } from "../common/Loading";
@@ -33,6 +34,7 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [showApiKeyWarning, setShowApiKeyWarning] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -51,10 +53,13 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
 
   const generateTestCases = async () => {
     if (!selectedTest) return;
-    // const apiKey = localStorage.getItem("anthropic_api_key");
     let apiKey = localStorage.getItem("anthropic_api_key");
-    while (!apiKey) {
-      apiKey = prompt("Anthropic API key not found. Please enter your API key");
+
+    // Check if API key is present
+    if (!apiKey) {
+      // alert("Anthropic API key not found. Please enter your API key");
+      setShowApiKeyWarning(true); // Show the warning dialog
+      return; // Stop the function execution
     }
 
     setLoading(true);
@@ -196,7 +201,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     const updatedCases = generatedCases.filter(
       (tc) => !selectedIds.includes(tc.id)
     );
-    setGeneratedCases(updatedCases);
 
     // Update local storage after deletion
     saveVariations(selectedTest.id, updatedCases);
@@ -221,13 +225,6 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
     <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
       <CardHeader>
         <div className="flex justify-between items-center">
-          {/* <CardTitle>Generated Scenarios</CardTitle>
-          {selectedTest && (
-            <Button size="sm" onClick={addNewTestCase}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Test Case
-            </Button>
-          )} */}
           {loading && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
               <Loading size="lg" message="Generating test cases..." />
@@ -380,6 +377,14 @@ export function TestCaseVariations({ selectedTest }: TestCaseVariationsProps) {
           </div>
         )}
       </CardContent>
+
+      {/* Render the WarningDialog component conditionally */}
+      {showApiKeyWarning && (
+        <WarningDialog
+          isOpen={showApiKeyWarning}
+          onClose={() => setShowApiKeyWarning(false)}
+        />
+      )}
     </Card>
   );
 }
