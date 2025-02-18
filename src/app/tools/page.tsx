@@ -1,15 +1,16 @@
-"use client";
+"use client"
 
-import { useAgentConfig } from "@/hooks/useAgentConfig";
-import AgentSetup from "@/components/tools/AgentSetup";
-import AgentInput from "@/components/tools/AgentInput";
-import AgentResponse from "@/components/tools/AgentResponse";
-import AgentRules from "@/components/tools/AgentRules";
-import AgentDescription from "@/components/tools/agentDescription";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Check } from "lucide-react";
+import { useState, useEffect } from "react"
+import { useAgentConfig } from "@/hooks/useAgentConfig"
+import AgentSetup from "@/components/tools/AgentSetup"
+import AgentInput from "@/components/tools/AgentInput"
+import AgentResponse from "@/components/tools/AgentResponse"
+import AgentRules from "@/components/tools/AgentRules"
+import AgentDescription from "@/components/tools/agentDescription"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ChevronDown } from "lucide-react"
 
 export default function ToolsPage() {
   const {
@@ -35,13 +36,28 @@ export default function ToolsPage() {
     loadAgent,
     testManually,
     saveTest,
-  } = useAgentConfig();
+  } = useAgentConfig()
+
+  const [isCompleted, setIsCompleted] = useState(false)
+
+  useEffect(() => {
+    const allFieldsFilled = testName && agentEndpoint && headers && manualInput && agentDescription && userDescription
+
+    setIsCompleted(allFieldsFilled)
+  }, [testName, agentEndpoint, headers, manualInput, agentDescription, userDescription])
+
+  const handleNextClick = () => {
+    if (isCompleted) {
+      setIsCompleted(true)
+    }
+  }
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-semibold">Manual Testing</h2>
+          {isCompleted && <div className="bg-green-500 text-white px-2 py-1 rounded-full text-sm">Completed</div>}
         </div>
         <div className="flex gap-2">
           <DropdownMenu>
@@ -101,6 +117,12 @@ export default function ToolsPage() {
           <AgentRules manualResponse={manualResponse} rules={rules} setRules={setRules} />
         </div>
       </div>
+      <div className="mt-6 flex justify-end">
+        <Button onClick={handleNextClick} disabled={!isCompleted}>
+          Next
+        </Button>
+      </div>
     </div>
-  );
+  )
 }
+
