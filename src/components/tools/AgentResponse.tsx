@@ -10,11 +10,11 @@ import { Rule } from "@/services/agents/claude/types";
 interface Props {
   manualResponse: string;
   responseTime: number;
+  rules: Rule[];
+  setRules: React.Dispatch<React.SetStateAction<Rule[]>>;
 }
 
-export default function AgentResponse({ manualResponse, responseTime }: Props) {
-
-const [rules, setRules] = useState<Rule[]>([]);
+export default function AgentResponse({ manualResponse, responseTime, rules, setRules }: Props) {
 
   return (
     <Card className="bg-black/40 border-zinc-800">

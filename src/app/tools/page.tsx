@@ -35,6 +35,7 @@ export default function ToolsPage() {
     loadAgent,
     testManually,
     saveTest,
+    currentAgentId,
   } = useAgentConfig();
 
   return (
@@ -95,10 +96,20 @@ export default function ToolsPage() {
             testManually={testManually}
             loading={loading}
           />
-          <AgentResponse manualResponse={manualResponse} responseTime={responseTime} />
+          <AgentResponse
+            manualResponse={manualResponse}
+            responseTime={responseTime}
+            rules={rules}
+            setRules={setRules}
+          />
         </div>
         <div className="col-span-4">
-          <AgentRules manualResponse={manualResponse} rules={rules} setRules={setRules} />
+        <AgentRules
+          manualResponse={manualResponse}
+          rules={rules}
+          setRules={setRules}
+          agentId={currentAgentId}
+        />
         </div>
       </div>
     </div>

@@ -10,7 +10,7 @@ export function useTestRuns() {
   }, []);
 
   const loadRuns = async () => {
-    const res = await fetch('/api/test-runs');
+    const res = await fetch('/api/tools/test-runs');
     const savedRuns = await res.json();
     setRuns(savedRuns);    
   };

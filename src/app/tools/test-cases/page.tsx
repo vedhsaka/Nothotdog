@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Trash } from "lucide-react";
 import { TestCaseVariations } from "@/components/tools/TestCaseVariations";
 import PersonaSelector from "@/components/tools/personaSelector";

@@ -1,7 +1,7 @@
 "use client";
 
+import { Rule } from "@/services/agents/claude/types";
 import { useState, useEffect } from "react";
-import { Rule } from "@/components/tools/types";
 
 interface Header {
   key: string;
@@ -30,7 +30,6 @@ export function useAgentConfig() {
   const [userDescription, setUserDescription] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentAgentId, setCurrentAgentId] = useState<string | null>(null);
-
 
   useEffect(() => {
     async function fetchAgents() {
@@ -146,6 +145,7 @@ export function useAgentConfig() {
     agentDescription, setAgentDescription,
     userDescription, setUserDescription,
     isEditMode, setIsEditMode,
+    currentAgentId,
     loadAgent, testManually, saveTest
   };
 }

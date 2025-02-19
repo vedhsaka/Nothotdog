@@ -14,7 +14,6 @@ export type TestExecutionError = {
 };
 
 export function useTestExecution() {
-  // Destructure runs and state management from useTestRuns:
   const { runs, addRun, updateRun, selectedRun, setSelectedRun } = useTestRuns();
   const [status, setStatus] = useState<TestExecutionStatus>('idle');
   const [error, setError] = useState<TestExecutionError | null>(null);
@@ -46,32 +45,22 @@ export function useTestExecution() {
     setError(null);
     setProgress({ completed: 0, total: 0 });
 
-    const resTests = await fetch('/api/tools/agent-config');
-    const allTests = await resTests.json();
-
-    const resPersonas = await fetch(`/api/tools/persona-mapping?agentId=${testId}`);
-    const personaMapping = await resPersonas.json();
-    
-
-    const resVariations = await fetch(`/api/tools/test-variations?testId=${testId}`);
-    const testVariations = await resVariations.json();
-
-    const resRules = await fetch(`/api/tools/validation-rules?name=${testToRun.name}`);
-    const testRules = await resRules.json();
-
-
-    const testToRun = allTests.find(t => t.id === testId);
+    const resTest = await fetch(`/api/tools/agent-config?id=${testId}`);
+    const testToRun = await resTest.json();
     if (!testToRun) {
       throw new Error('Test configuration not found');
     }
+
+    const resRules = await fetch(`/api/tools/agent-rules?agentId=${testId}`);
+    const testRules = await resRules.json();
+
+    const resPersonas = await fetch(`/api/tools/persona-mapping?agentId=${testId}`);
+    const personaMapping = await resPersonas.json();
+
+    const resVariations = await fetch(`/api/tools/test-variations?testId=${testId}`);
+    const testVariations = await resVariations.json();  
     
-    // const testVariations = variations[testId] || [];
-    // const latestVariation = testVariations[testVariations.length - 1];
-    // if (!latestVariation) {
-    //   throw new Error('No test variations found');
-    // }
     const scenarios = testVariations.testCases;
-    // const scenarios = latestVariation.cases || [];
     const selectedPersonas = personaMapping.personaIds || [];
     const totalRuns = scenarios.length * selectedPersonas.length;
 
@@ -94,7 +83,9 @@ export function useTestExecution() {
           incorrect: 0
         },
         chats: [],
-        results: []
+        results: [],
+        agentId: testToRun.id,
+        createdBy: testToRun.created_by || "default"
       };
       addRun(newRun);
 
@@ -157,7 +148,8 @@ export function useTestExecution() {
                   notContainsFailures: []
                 }
               },
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              personaId: personaId
             };
 
             completedChats.push(chat);
@@ -186,7 +178,8 @@ export function useTestExecution() {
                 }
               },
               timestamp: new Date().toISOString(),
-              error: error.message || 'Unknown error occurred'
+              error: error.message || 'Unknown error occurred',
+              personaId: personaId
             };
             completedChats.push(chat);
           }
