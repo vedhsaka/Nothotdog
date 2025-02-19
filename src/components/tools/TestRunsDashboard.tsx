@@ -1,28 +1,32 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TestRun, TestMessage } from '@/types/runs';
-import { TestChat } from '@/types/chat'
-import { TestScenario } from '@/types/test';
+import { TestRun, TestMessage } from "@/types/runs";
+import { TestChat } from "@/types/chat";
+import { TestScenario } from "@/types/test";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Play, ChevronDown } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
-import { QaAgent } from '@/services/agents/claude/qaAgent';
-import { AnthropicModel } from '@/services/llm/enums';
-import { storageService } from '@/services/storage/localStorage';
-import { useTestExecution } from '@/hooks/useTestExecution';
+import { Play, ChevronDown } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
+import { QaAgent } from "@/services/agents/claude/qaAgent";
+import { AnthropicModel } from "@/services/llm/enums";
+import { storageService } from "@/services/storage/localStorage";
+import { useTestExecution } from "@/hooks/useTestExecution";
+import WarningDialog from "@/components/config/WarningDialog";
 
 function CollapsibleJson({ content }: { content: string }) {
   let formattedContent = content;
   try {
-    if (typeof content === 'string' && (content.startsWith('{') || content.startsWith('['))) {
+    if (
+      typeof content === "string" &&
+      (content.startsWith("{") || content.startsWith("["))
+    ) {
       const parsed = JSON.parse(content);
       formattedContent = JSON.stringify(parsed, null, 2);
       return (
@@ -53,8 +57,59 @@ export function TestRunsDashboard() {
     selectedChat,
     setSelectedChat,
     savedTests,
-    executeTest
+    executeTest: baseExecuteTest, // Rename the original executeTest
   } = useTestExecution();
+
+  const [showWarningDialog, setShowWarningDialog] = useState(false); // State to control the WarningDialog dialog
+  const [testIdToExecute, setTestIdToExecute] = useState<string | null>(null); // State to store the test ID to execute after API key check
+
+  // Wrap the original executeTest function
+  const executeTest = useCallback(
+    async (testId: string) => {
+      const apiKey = localStorage.getItem("anthropic_api_key");
+      if (!apiKey) {
+        // alert("API key is missing");
+        setShowWarningDialog(true); // Show the warning dialog if API key is missing
+        setTestIdToExecute(testId); // Store the test ID to execute later
+        return; // **Crucially, RETURN here to prevent further execution!**
+      }
+
+      try {
+        await baseExecuteTest(testId); // Call the original executeTest function
+      } catch (error: any) {
+        // More robust error checking
+        if (error && typeof error === "object") {
+          const errorMessage = (
+            error.message || error.toString()
+          ).toLowerCase();
+
+          if (
+            errorMessage.includes("401") &&
+            errorMessage.includes("invalid x-api-key")
+          ) {
+            setShowWarningDialog(true);
+            setTestIdToExecute(testId);
+          } else {
+            console.error("Error in test execution:", error);
+          }
+        } else {
+          // Handle cases where the error is not an object with a message property
+          console.error("Unexpected error format:", error);
+        }
+      }
+    },
+    [baseExecuteTest]
+  );
+
+  // Function to be called after the WarningDialog dialog is closed
+  const onWarningDialogClose = useCallback(() => {
+    setShowWarningDialog(false);
+    // If a test ID was stored, execute the test
+    if (testIdToExecute) {
+      executeTest(testIdToExecute); // Use the wrapped executeTest
+      setTestIdToExecute(null); // Clear the stored test ID
+    }
+  }, [executeTest, testIdToExecute]);
 
   if (selectedChat) {
     return (
@@ -64,57 +119,67 @@ export function TestRunsDashboard() {
             ← Back to Run
           </Button>
           <div className="flex items-center gap-2">
-            <span className="text-green-500">{selectedChat.metrics.correct} Correct</span>
-            <span className="text-red-500">{selectedChat.metrics.incorrect} Incorrect</span>
+            <span className="text-green-500">
+              {selectedChat.metrics.correct} Correct
+            </span>
+            <span className="text-red-500">
+              {selectedChat.metrics.incorrect} Incorrect
+            </span>
           </div>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold">{selectedChat.name}</h2>
-          <p className="text-sm text-zinc-400">View conversation and responses</p>
+          <p className="text-sm text-zinc-400">
+            View conversation and responses
+          </p>
         </div>
 
         <div className="space-y-6 max-w-[800px] mx-auto">
-        {selectedChat.messages.map((message: TestMessage) => (
-          <div key={message.id} className="space-y-2">
-            {message.role === 'user' ? (
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm">👤</span>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <div className="bg-blue-500/20 rounded-lg">
-                    <CollapsibleJson content={message.content} />
+          {selectedChat.messages.map((message: TestMessage) => (
+            <div key={message.id} className="space-y-2">
+              {message.role === "user" ? (
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">👤</span>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <div className="bg-blue-500/20 rounded-lg">
+                      <CollapsibleJson content={message.content} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-start gap-3">
-                <div className="flex-1 overflow-hidden">
-                  <div className="bg-emerald-500/10 rounded-lg">
-                    <CollapsibleJson content={message.content} />
+              ) : (
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 overflow-hidden">
+                    <div className="bg-emerald-500/10 rounded-lg">
+                      <CollapsibleJson content={message.content} />
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge
+                        variant={message.isCorrect ? "outline" : "destructive"}
+                        className={
+                          message.isCorrect
+                            ? "bg-green-500/10"
+                            : "bg-red-500/10"
+                        }
+                      >
+                        {message.isCorrect ? "Correct" : "Incorrect"}
+                      </Badge>
+                      {message.explanation && (
+                        <span className="text-xs text-zinc-400">
+                          {message.explanation}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge 
-                      variant={message.isCorrect ? "outline" : "destructive"} 
-                      className={message.isCorrect ? "bg-green-500/10" : "bg-red-500/10"}
-                    >
-                      {message.isCorrect ? "Correct" : "Incorrect"}
-                    </Badge>
-                    {message.explanation && (
-                      <span className="text-xs text-zinc-400">
-                        {message.explanation}
-                      </span>
-                    )}
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">🤖</span>
                   </div>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm">🤖</span>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -129,18 +194,19 @@ export function TestRunsDashboard() {
               ← Back to Runs
             </Button>
           </div>
-        
         </div>
 
         <div className="space-y-1">
           <h2 className="text-xl font-semibold">Run #{selectedRun.name}</h2>
-          <p className="text-sm text-zinc-400">All conversations in this test run</p>
+          <p className="text-sm text-zinc-400">
+            All conversations in this test run
+          </p>
         </div>
 
         <div className="space-y-2">
           {(selectedRun.chats || []).map((chat) => (
-            <div 
-              key={chat.id} 
+            <div
+              key={chat.id}
               className="flex items-center p-4 bg-black/20 border border-zinc-800 rounded-lg cursor-pointer hover:bg-black/30"
               onClick={() => setSelectedChat(chat)}
             >
@@ -166,9 +232,11 @@ export function TestRunsDashboard() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold">Test Runs</h2>
-          <p className="text-sm text-zinc-400">History of all test executions</p>
+          <p className="text-sm text-zinc-400">
+            History of all test executions
+          </p>
         </div>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button>
@@ -180,7 +248,7 @@ export function TestRunsDashboard() {
           <DropdownMenuContent align="end" className="cursor-pointer">
             {savedTests.length > 0 ? (
               savedTests.map((test) => (
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   key={test.id}
                   onSelect={() => executeTest(test.id)}
                   className="cursor-pointer"
@@ -189,9 +257,7 @@ export function TestRunsDashboard() {
                 </DropdownMenuItem>
               ))
             ) : (
-              <DropdownMenuItem disabled>
-                No saved tests found
-              </DropdownMenuItem>
+              <DropdownMenuItem disabled>No saved tests found</DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -199,8 +265,8 @@ export function TestRunsDashboard() {
 
       <div className="space-y-2">
         {runs.map((run) => (
-          <div 
-            key={run.id} 
+          <div
+            key={run.id}
             className="flex items-center p-4 bg-black/20 border border-zinc-800 rounded-lg cursor-pointer hover:bg-black/30"
             onClick={() => setSelectedRun(run)}
           >
@@ -210,9 +276,11 @@ export function TestRunsDashboard() {
                 {new Date(run.timestamp).toLocaleString()}
               </span>
             </div>
-            
+
             <div className="w-[50%] flex items-center gap-4">
-              <span className="text-zinc-400">Tests: {run.metrics.total || 0}</span>
+              <span className="text-zinc-400">
+                Tests: {run.metrics.total || 0}
+              </span>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
                   <span className="text-green-500">✓</span>
@@ -238,6 +306,13 @@ export function TestRunsDashboard() {
           </div>
         )}
       </div>
+      {/* Render the WarningDialog component conditionally */}
+      {showWarningDialog && (
+        <WarningDialog
+          isOpen={showWarningDialog}
+          onClose={() => setShowWarningDialog(false)}
+        />
+      )}
     </div>
   );
 }
