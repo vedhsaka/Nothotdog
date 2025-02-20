@@ -25,6 +25,15 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
   const [editingState, setEditingState] = useState<EditingState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const { 
+    variationData, 
+    loading, 
+    error, 
+    addVariation,
+    updateVariation,
+    deleteVariation,
+    setLoading
+  } = useTestVariations(selectedTestId);
 
   const { 
     variationData, 
@@ -46,14 +55,12 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
       );
     }
   }, [variationData, selectedTestId]);
-
-
   const generateTestCases = async () => {
     if (!selectedTestId) {
       console.error("Missing selected test ID");
       return;
     }
-  
+    
     if (!apiKey) {
       setShowApiKeyWarning(true);
       return;
@@ -75,8 +82,6 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
         console.error("Generation error:", data.error);
         return;
       }
-  
-      console.log("Generated test cases:", data);
       setGeneratedCases(data.testCases);
     } catch (error) {
       console.error("Failed to generate test cases:", error);
@@ -171,6 +176,7 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
   // Replace your deleteTestCase and deleteSelectedCases functions with this unified function:
     const deleteTestCases = async (idsToDelete: string[]) => {
       if (!selectedTestId) return;
+
 
       const updatedCases = generatedCases.filter(tc => !idsToDelete.includes(tc.id));
       const variation = {

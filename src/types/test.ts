@@ -1,7 +1,6 @@
 import { Evaluation } from '.';
 import { MessageRole } from './base';
 
-
 export interface TestScenario {
   id: string;
   scenario: string;

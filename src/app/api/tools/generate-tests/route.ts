@@ -7,7 +7,6 @@ import { TEST_CASES_PROMPT } from '@/services/prompts';
 import { Evaluation } from '@/types';
 import { dbService } from '@/services/db';
 
-
 function extractJSON(text: string): any {
   try {
     // Find the array start
@@ -66,8 +65,6 @@ export async function POST(req: Request) {
 
     const agentDescription = agentConfig.agent_descriptions?.[0]?.description || "Not provided";
     const userDescription = agentConfig.agent_user_descriptions?.[0]?.description || "Not provided";
-
-    console.log("Fetched descriptions:", { agentDescription, userDescription });
 
     const apiKey = req.headers.get("x-api-key");
     if (!apiKey) {
