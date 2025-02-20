@@ -39,7 +39,7 @@ export function MessageDisplay({
           role === 'user' ? "bg-zinc-800" : "bg-emerald-900/50"
         )}>
           <p className="text-sm">{content}</p>
-          {role === 'assistant' && isCorrect !== undefined && (
+          {/* {role === 'assistant' && isCorrect !== undefined && (
             <div className="flex items-center gap-2 mt-2">
               {isCorrect ? (
                 <Badge variant="default" className="bg-emerald-500/20 text-emerald-400">
@@ -53,7 +53,7 @@ export function MessageDisplay({
                 </Badge>
               )}
             </div>
-          )}
+          )} */}
           {explanation && (
             <p className="text-sm text-zinc-400 mt-2">{explanation}</p>
           )}

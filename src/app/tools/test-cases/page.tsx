@@ -12,6 +12,11 @@ export default function TestCasesPage() {
   const [agentCases, setAgentCases] = useState<AgentConfig[]>([]);
   const [selectedCase, setSelectedCase] = useState<AgentConfig | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchSavedTests = async () => {
@@ -50,31 +55,17 @@ export default function TestCasesPage() {
     }
   };
 
-  // const deleteSelectedCases = () => {
-  //   const updatedCases = agentCases.filter(
-  //     (test) => !selectedIds.includes(test.id)
-  //   );
-  //   localStorage.setItem("savedTests", JSON.stringify(updatedCases));
-  //   setAgentCases(updatedCases);
-  //   setSelectedIds([]);
-  //   if (selectedCase && selectedIds.includes(selectedCase.id)) {
-  //     setSelectedCase(null);
-  //   }
-  // };
+  const showBulkActions = agentCases.length > 1 && selectedIds.length > 0;
 
-  // const deleteAgentCase = (id: string) => {
-  //   const updatedCases = agentCases.filter((test) => test.id !== id);
-  //   localStorage.setItem("savedTests", JSON.stringify(updatedCases));
-  //   setAgentCases(updatedCases);
-  //   if (selectedCase?.id === id) {
-  //     setSelectedCase(null);
-  //   }
-  // };
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <div className="grid grid-cols-12 gap-4 p-6">
+      {/* Agent Cases Column */}
       <div className="col-span-4">
-        <Card className="bg-black/40 border-zinc-800">
+        <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Agent Cases</CardTitle>
@@ -150,11 +141,14 @@ export default function TestCasesPage() {
         </Card>
       </div>
 
+      {/* Persona Selector Column moved to the middle */}
       <div className="col-span-4">
         <TestCaseVariations selectedTestId={selectedCase?.id || null} />
       </div>
+
+      {/* Test Case Variations Column moved to the right */}
       <div className="col-span-4">
-        <PersonaSelector selectedTest={selectedCase?.id || ""} />
+        <TestCaseVariations selectedTest={selectedCase} />
       </div>
     </div>
   );
