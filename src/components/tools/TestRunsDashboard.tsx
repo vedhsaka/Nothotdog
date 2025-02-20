@@ -64,42 +64,42 @@ export function TestRunsDashboard() {
   const [testIdToExecute, setTestIdToExecute] = useState<string | null>(null); // State to store the test ID to execute after API key check
 
   // Wrap the original executeTest function
-  const executeTest = useCallback(
-    async (testId: string) => {
-      const apiKey = localStorage.getItem("anthropic_api_key");
-      if (!apiKey) {
-        // alert("API key is missing");
-        setShowWarningDialog(true); // Show the warning dialog if API key is missing
-        setTestIdToExecute(testId); // Store the test ID to execute later
-        return; // **Crucially, RETURN here to prevent further execution!**
-      }
+  // const executeTest = useCallback(
+  //   async (testId: string) => {
+  //     const apiKey = localStorage.getItem("anthropic_api_key");
+  //     if (!apiKey) {
+  //       // alert("API key is missing");
+  //       setShowWarningDialog(true); // Show the warning dialog if API key is missing
+  //       setTestIdToExecute(testId); // Store the test ID to execute later
+  //       return; // **Crucially, RETURN here to prevent further execution!**
+  //     }
 
-      try {
-        await baseExecuteTest(testId); // Call the original executeTest function
-      } catch (error: any) {
-        // More robust error checking
-        if (error && typeof error === "object") {
-          const errorMessage = (
-            error.message || error.toString()
-          ).toLowerCase();
+  //     try {
+  //       await baseExecuteTest(testId); // Call the original executeTest function
+  //     } catch (error: any) {
+  //       // More robust error checking
+  //       if (error && typeof error === "object") {
+  //         const errorMessage = (
+  //           error.message || error.toString()
+  //         ).toLowerCase();
 
-          if (
-            errorMessage.includes("401") &&
-            errorMessage.includes("invalid x-api-key")
-          ) {
-            setShowWarningDialog(true);
-            setTestIdToExecute(testId);
-          } else {
-            console.error("Error in test execution:", error);
-          }
-        } else {
-          // Handle cases where the error is not an object with a message property
-          console.error("Unexpected error format:", error);
-        }
-      }
-    },
-    [baseExecuteTest]
-  );
+  //         if (
+  //           errorMessage.includes("401") &&
+  //           errorMessage.includes("invalid x-api-key")
+  //         ) {
+  //           setShowWarningDialog(true);
+  //           setTestIdToExecute(testId);
+  //         } else {
+  //           console.error("Error in test execution:", error);
+  //         }
+  //       } else {
+  //         // Handle cases where the error is not an object with a message property
+  //         console.error("Unexpected error format:", error);
+  //       }
+  //     }
+  //   },
+  //   [baseExecuteTest]
+  // );
 
   // Function to be called after the WarningDialog dialog is closed
   const onWarningDialogClose = useCallback(() => {
