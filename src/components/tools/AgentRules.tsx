@@ -124,7 +124,6 @@ export default function AgentRules({ manualResponse, rules, setRules, agentId }:
                             throw new Error("Failed to update rules");
                         }
                         setOriginalRules(rules);
-                        console.log("Rules updated successfully!");
                         } catch (error) {
                         console.error("Failed to update rules:", error);
                         }

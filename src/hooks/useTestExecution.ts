@@ -85,7 +85,7 @@ export function useTestExecution() {
         chats: [],
         results: [],
         agentId: testToRun.id,
-        createdBy: testToRun.created_by || "default"
+        createdBy: testToRun.created_by || "11111111-1111-1111-1111-111111111111"
       };
       addRun(newRun);
 
@@ -99,10 +99,10 @@ export function useTestExecution() {
             const agent = new QaAgent({
               headers: { ...testToRun.headers },
               modelId: AnthropicModel.Sonnet3_5,
-              endpointUrl: testToRun.agentEndpoint,
+              endpointUrl: testToRun.endpoint,
               apiConfig: {
-                inputFormat: testToRun.input ? JSON.parse(testToRun.input) : {},
-                outputFormat: testToRun.expectedOutput ? JSON.parse(testToRun.expectedOutput) : {},
+                inputFormat: testToRun.inputFormat ? testToRun.inputFormat : {},
+                outputFormat: testToRun.latestOutput ? testToRun.latestOutput: {},
                 rules: testRules
               },
               persona: personaId

@@ -13,11 +13,9 @@ export class ConversationChain {
   private prompt: ChatPromptTemplate;
 
   constructor(apiKey: string) {
-    console.log('Initializing ConversationChain');
     if (!apiKey) {
       throw new Error('API key is required for ConversationChain');
     }
-    console.log('API key provided:', apiKey ? 'Yes' : 'No');
 
     this.model = ModelFactory.createLangchainModel(
       AnthropicModel.Sonnet3_5,
@@ -36,11 +34,9 @@ export class ConversationChain {
       ["human", "{input}"],
     ]);
 
-    console.log('ConversationChain initialized');
   }
 
   async call(input: string): Promise<string> {
-    console.log('Calling ConversationChain with input:', input);
     try {
       const chain = RunnableSequence.from([
         {
@@ -55,15 +51,12 @@ export class ConversationChain {
         new StringOutputParser()
       ]);
 
-      console.log('Chain created, invoking...');
       const response = await chain.invoke(input);
-      console.log('Chain response received');
 
       await this.memory.saveContext(
         { input },
         { output: response }
       );
-      console.log('Context saved to memory');
 
       return response;
     } catch (error) {
@@ -73,7 +66,6 @@ export class ConversationChain {
   }
 
   async reset(): Promise<void> {
-    console.log('Resetting ConversationChain memory');
     await this.memory.clear();
   }
 }

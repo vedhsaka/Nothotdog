@@ -123,7 +123,6 @@ export function useAgentConfig() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
-        console.log(res);
         if (!res.ok) throw new Error("Failed to save agent config");
         // Optionally update your state with the new config info.
         setIsEditMode(false);

@@ -72,8 +72,6 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
         console.error("Generation error:", data.error);
         return;
       }
-  
-      console.log("Generated test cases:", data);
       setGeneratedCases(data.testCases);
     } catch (error) {
       console.error("Failed to generate test cases:", error);

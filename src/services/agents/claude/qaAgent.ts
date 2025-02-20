@@ -21,6 +21,7 @@ export class QaAgent {
   private prompt: ChatPromptTemplate;
 
   constructor(config: QaAgentConfig) {
+
     this.config = config;
 
     const apiKey = localStorage.getItem('anthropic_api_key');
@@ -76,6 +77,7 @@ export class QaAgent {
 
       // Initial message
       const formattedInput = ApiHandler.formatInput(testMessage, this.config.apiConfig.inputFormat);
+
       let apiResponse = await ApiHandler.callEndpoint(
         this.config.endpointUrl, 
         this.config.headers, 
@@ -121,6 +123,7 @@ export class QaAgent {
           startTime = Date.now();
           
           const followUpInput = ApiHandler.formatInput(followUpMessage, this.config.apiConfig.inputFormat);
+
 
           try {
             apiResponse = await ApiHandler.callEndpoint(
