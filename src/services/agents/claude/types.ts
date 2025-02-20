@@ -36,8 +36,14 @@ export interface Rule {
       formatValid: boolean;
       conditionMet: boolean;
       explanation: string;
+      conversationResult?: {
+        isCorrect: boolean;
+        explanation: string;
+      };
       metrics: {
         responseTime: number;
       };
     };
   }
+
+  

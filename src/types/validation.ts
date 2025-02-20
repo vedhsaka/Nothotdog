@@ -1,10 +1,5 @@
 import { Message } from './message';
 
-export interface Evaluation {
-  scenario: string;
-  expectedOutput: string;
-}
-
 export interface TestResult {
     conversation: {
       chatId: string;
@@ -22,4 +17,5 @@ export interface TestResult {
       };
     };
   }
+
   

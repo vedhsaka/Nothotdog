@@ -1,5 +1,4 @@
 import { BufferMemory } from "langchain/memory";
-import { BaseMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
@@ -169,26 +168,26 @@ export class QaAgent {
       const formatValid = ResponseValidator.validateResponseFormat(apiResponse, this.config.apiConfig.outputFormat);
       const conditionMet = ResponseValidator.validateCondition(apiResponse, this.config.apiConfig.rules);
 
-      // Final analysis
-      const analysisResult = await chain.invoke({
-        input: `Analyze if this conversation met our test expectations:
+      const fullConversation = allMessages
+      .map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`)
+      .join('\n\n');
 
-Original scenario: ${scenario}
-Expected behavior: ${expectedOutput}
-
-Conversation:
-${allMessages.map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`).join('\n\n')}
-
-Consider that the response format was ${formatValid ? 'valid' : 'invalid'}
-and the condition was ${conditionMet ? 'met' : 'not met'}.
-
-Did the interaction meet our expectations? Explain why or why not.`
-      });
-
-      await this.memory.saveContext(
-        { input: testMessage },
-        { output: chatResponse }
+      // Validate entire conversation
+      const conversationValidation = await this.validateFullConversation(
+        fullConversation,
+        scenario,
+        expectedOutput
       );
+
+      const validatedMessages = allMessages.map(msg => ({
+        ...msg,
+        isCorrect: msg.id === allMessages[allMessages.length - 1].id ? 
+          conversationValidation.isCorrect : 
+          true,
+        explanation: msg.id === allMessages[allMessages.length - 1].id ? 
+          conversationValidation.explanation : 
+          undefined
+      }));
 
       return {
         conversation: {
@@ -196,31 +195,103 @@ Did the interaction meet our expectations? Explain why or why not.`
           rawInput: formattedInput,
           rawOutput: apiResponse,
           chatResponse,
-          allMessages
+          allMessages: validatedMessages
         },
         validation: {
-          passedTest: formatValid && conditionMet,
+          passedTest: formatValid && conditionMet && conversationValidation.isCorrect,
           formatValid,
           conditionMet,
-          explanation: analysisResult,
+          explanation: conversationValidation.explanation,
+          conversationResult: conversationValidation,
           metrics: {
             responseTime: totalResponseTime
           }
         }
       };
-
     } catch (error) {
       console.error('Error in runTest:', error);
       throw error;
     }
   }
 
-  async getHistory(): Promise<BaseMessage[]> {
-    const memoryVars = await this.memory.loadMemoryVariables({});
-    return memoryVars.chat_history || [];
-  }
-
-  async reset(): Promise<void> {
-    await this.memory.clear();
+  private async validateFullConversation(
+    fullConversation: string,
+    scenario: string,
+    expectedOutput: string
+  ) {
+    const prompt = `Evaluate if this complete conversation fulfills the test scenario:
+  Test Scenario: ${scenario}
+  Expected Behavior: ${expectedOutput}
+  Complete Conversation:
+  ${fullConversation}
+  Evaluate if the conversation achieved the expected behavior. Consider the entire context.
+  Return JSON: { "isCorrect": boolean, "explanation": "why" }`;
+  
+    const result = await this.model.invoke([{
+      role: 'user',
+      content: prompt
+    }]);
+  
+    try {
+      const content = typeof result.content === 'string'
+        ? result.content
+        : JSON.stringify(result.content);
+      return JSON.parse(content);
+    } catch (error) {
+      console.error('Failed to parse validation result:', error);
+      return { isCorrect: false, explanation: 'Validation failed' };
+    }
   }
 }
+
+//       // Final analysis
+//       const analysisResult = await chain.invoke({
+//         input: `Analyze if this conversation met our test expectations:
+
+// Original scenario: ${scenario}
+// Expected behavior: ${expectedOutput}
+
+// Conversation:
+// ${allMessages.map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`).join('\n\n')}
+
+// Consider that the response format was ${formatValid ? 'valid' : 'invalid'}
+// and the condition was ${conditionMet ? 'met' : 'not met'}.
+
+// Did the interaction meet our expectations? Explain why or why not.`
+//       });
+
+//       await this.memory.saveContext(
+//         { input: testMessage },
+//         { output: chatResponse }
+//       );
+
+//       return {
+//         conversation: {
+//           humanMessage: testMessage,
+//           rawInput: formattedInput,
+//           rawOutput: apiResponse,
+//           chatResponse,
+//           allMessages
+//         },
+//         validation: {
+//           passedTest: formatValid && conditionMet,
+//           formatValid,
+//           conditionMet,
+//           explanation: analysisResult,
+//           metrics: {
+//             responseTime: totalResponseTime
+//           }
+//         }
+//       };
+
+//     } catch (error) {
+//       console.error('Error in runTest:', error);
+//       throw error;
+//     }
+//   }
+
+
+//   async reset(): Promise<void> {
+//     await this.memory.clear();
+//   }
+// }

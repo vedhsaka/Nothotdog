@@ -36,20 +36,3 @@ export function calculateRunMetrics(chats: TestChat[]): TestMetrics {
     { total: 0, passed: 0, failed: 0, chats: 0, correct: 0, incorrect: 0 }
   );
 }
-
-export function formatTimestamp(timestamp: string): string {
-  return new Date(timestamp).toLocaleString();
-}
-
-export function getStatusColor(status: TestRun['status']): string {
-  switch (status) {
-    case 'running':
-      return 'text-yellow-400';
-    case 'completed':
-      return 'text-green-400';
-    case 'failed':
-      return 'text-red-400';
-    default:
-      return 'text-gray-400';
-  }
-} 

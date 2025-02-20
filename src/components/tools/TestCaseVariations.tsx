@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import WarningDialog from "@/components/config/WarningDialog";
 import { Plus, Edit, Trash } from "lucide-react";
 import { Loading } from "../common/Loading";
 import { useTestVariations } from "@/hooks/useTestVariations";
@@ -24,6 +25,15 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
   const [editingState, setEditingState] = useState<EditingState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const { 
+    variationData, 
+    loading, 
+    error, 
+    addVariation,
+    updateVariation,
+    deleteVariation,
+    setLoading
+  } = useTestVariations(selectedTestId);
 
   const { 
     variationData, 
@@ -35,7 +45,6 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
     setLoading
   } = useTestVariations(selectedTestId);
   
-
   useEffect(() => {
     if (variationData && selectedTestId) {
       setGeneratedCases(
@@ -46,15 +55,16 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
       );
     }
   }, [variationData, selectedTestId]);
-
-
   const generateTestCases = async () => {
     if (!selectedTestId) {
       console.error("Missing selected test ID");
       return;
     }
-  
-    const apiKey = localStorage.getItem("anthropic_api_key");
+    
+    if (!apiKey) {
+      setShowApiKeyWarning(true);
+      return;
+    }
     setLoading(true);
   
     try {
@@ -167,10 +177,8 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
     const deleteTestCases = async (idsToDelete: string[]) => {
       if (!selectedTestId) return;
 
-      // Filter out the test cases that should be deleted
-      const updatedCases = generatedCases.filter(tc => !idsToDelete.includes(tc.id));
 
-      // Create a variation object with the remaining test cases.
+      const updatedCases = generatedCases.filter(tc => !idsToDelete.includes(tc.id));
       const variation = {
         id: crypto.randomUUID(),
         testId: selectedTestId,
@@ -179,20 +187,16 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
         cases: updatedCases,
       };
 
-      // Call the deletion function from your hook (which sends a DELETE request)
       await deleteVariation(variation);
 
-      // Update your state
       setGeneratedCases(updatedCases);
       setSelectedIds(prev => prev.filter(id => !idsToDelete.includes(id)));
 
-      // If currently editing one of the test cases that was deleted, clear the editing state.
       if (editingId && idsToDelete.includes(editingId)) {
         setEditingId(null);
         setEditingState(null);
       }
     };
-
   
   const startEditing = (testCase: TestCase) => {
     setEditingId(testCase.id);
@@ -202,17 +206,16 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
     });
   };
 
+  const showBulkActions = generatedCases.length > 1 && selectedIds.length > 0;
+
+  if (!isMounted) {
+    return null;
+  }
+
   return (
-    <Card className="bg-black/40 border-zinc-800">
+    <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
       <CardHeader>
         <div className="flex justify-between items-center">
-          {/* <CardTitle>Generated Scenarios</CardTitle>
-          {selectedTest && (
-            <Button size="sm" onClick={addNewTestCase}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Test Case
-            </Button>
-          )} */}
           {loading && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
               <Loading size="lg" message="Generating test cases..." />
@@ -226,16 +229,11 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
                 Add Test Case
               </Button>
             ) : (
-              <Button
-                size="sm"
-                onClick={generateTestCases}
-                disabled={loading}
-              >
+              <Button size="sm" onClick={generateTestCases} disabled={loading}>
                 <Plus className="h-4 w-4 mr-2" />
                 Generate Scenarios
               </Button>
-            )
-          )}
+            ))}
         </div>
 
         <div className="flex gap-2 mt-2">
@@ -364,6 +362,13 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
           </div>
         )}
       </CardContent>
+
+      {showApiKeyWarning && (
+        <WarningDialog
+          isOpen={showApiKeyWarning}
+          onClose={() => setShowApiKeyWarning(false)}
+        />
+      )}
     </Card>
   );
 }
