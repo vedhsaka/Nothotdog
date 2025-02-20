@@ -2,9 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash } from "lucide-react";
 import { TestCaseVariations } from "@/components/tools/TestCaseVariations";
-import PersonaSelector from "@/components/tools/personaSelector";
 import { AgentConfig } from "@/types";
 
 
@@ -74,18 +72,6 @@ export default function TestCasesPage() {
               </Badge>
             </div>
             <div className="flex mt-2">
-              {/* <Button size="sm" onClick={selectAllCases}>
-                {selectedIds.length === agentCases.length
-                  ? "Deselect All"
-                  : "Select All"}
-              </Button>
-              <Button size="sm"
-                onClick={deleteSelectedCases}
-                variant="destructive"
-                className="ml-2"
-              >
-                Delete Selected
-              </Button> */}
             </div>
           </CardHeader>
           <CardContent className="max-h-[calc(100vh-12rem)] overflow-y-auto">
@@ -112,18 +98,6 @@ export default function TestCasesPage() {
                         {test.name || "Unnamed Test"}
                       </h3>
                     </div>
-                    {/* <div className="flex items-center gap-4">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteAgentCase(test.id);
-                        }}
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div> */}
                   </div>
                   <p className="text-sm text-zinc-400 mt-1 truncate max-w-[300px]">
                     Endpoint: {test.endpoint}

@@ -25,16 +25,7 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
   const [editingState, setEditingState] = useState<EditingState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const { 
-    variationData, 
-    loading, 
-    error, 
-    addVariation,
-    updateVariation,
-    deleteVariation,
-    setLoading
-  } = useTestVariations(selectedTestId);
-
+  const [showApiKeyWarning, setShowApiKeyWarning] = useState(false);
   const { 
     variationData, 
     loading, 
@@ -60,7 +51,8 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
       console.error("Missing selected test ID");
       return;
     }
-    
+
+    let apiKey = localStorage.getItem("anthropic_api_key");
     if (!apiKey) {
       setShowApiKeyWarning(true);
       return;
@@ -208,9 +200,9 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
 
   const showBulkActions = generatedCases.length > 1 && selectedIds.length > 0;
 
-  if (!isMounted) {
-    return null;
-  }
+  // if (!isMounted) {
+  //   return null;
+  // }
 
   return (
     <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
