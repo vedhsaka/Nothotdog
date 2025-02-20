@@ -23,7 +23,11 @@ export interface TestRun {
   metrics: Metrics;
   chats: TestChat[];
   results: Array<{ scenarioId: string; responseTime: number }>;
+  agentId: string;
+  createdBy: string;
 }
+
+
 
 export type TestRunStatus = 'pending' | 'running' | 'completed' | 'failed';
 

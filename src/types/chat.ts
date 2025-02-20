@@ -64,4 +64,28 @@ export interface TestChat {
   };
   error?: string | null;
   timestamp: string;
+  personaId: string;
 }
+
+
+// export interface TestChat {
+//   id: string;
+//   name: string;
+//   scenario: string;
+//   status: 'running' | 'passed' | 'failed';
+//   messages: TestMessage[];
+//   metrics: {
+//     correct: number;
+//     incorrect: number;
+//     responseTime: number[];
+//     validationScores: number[];
+//     contextRelevance: number[];
+//     validationDetails?: {
+//       customFailure?: boolean;
+//       containsFailures?: string[];
+//       notContainsFailures?: string[];
+//     };
+//   };
+//   error?: string | null;
+//   timestamp: string;
+// }

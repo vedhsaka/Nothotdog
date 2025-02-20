@@ -13,10 +13,3 @@ export interface Evaluation {
   scenario: string;
   expectedOutput: string;
 }
-
-interface StoredTestSet {
-  id: string;
-  name: string;
-  description: string;
-  scenarios: Array<{ id: string; name: string }>;
-}

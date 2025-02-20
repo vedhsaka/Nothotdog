@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model agent_configs {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                  String                    @db.Uuid
+  name                    String
+  endpoint                String
+  input_format            Json?
+  created_by              String                    @db.Uuid
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  profiles                profiles                  @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organizations           organizations             @relation(fields: [org_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  agent_descriptions      agent_descriptions[]
+  agent_headers           agent_headers[]
+  agent_outputs           agent_outputs[]
+  agent_persona_mappings  agent_persona_mappings[]
+  agent_user_descriptions agent_user_descriptions[]
+  test_runs               test_runs[]
+  test_scenarios          test_scenarios[]
+  validation_rules        validation_rules[]
+
+  @@index([org_id], map: "idx_agent_configs_org")
+}
+
+model agent_descriptions {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id      String        @db.Uuid
+  description   String
+  updated_by    String?       @db.Uuid
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  agent_configs agent_configs @relation(fields: [agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles      profiles?     @relation(fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([agent_id], map: "idx_agent_descriptions_agent")
+}
+
+model agent_headers {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id      String        @db.Uuid
+  key           String
+  value         String
+  is_sensitive  Boolean?      @default(false)
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  agent_configs agent_configs @relation(fields: [agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "agent_headers_config_id_fkey")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model agent_outputs {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id      String        @db.Uuid
+  response_data Json
+  response_time Int?
+  status        String
+  error_message String?
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  agent_configs agent_configs @relation(fields: [agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([agent_id], map: "idx_agent_outputs_agent")
+}
+
+model agent_persona_mappings {
+  id            String        @id(map: "config_persona_mappings_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id      String        @db.Uuid
+  persona_id    String        @db.Uuid
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  agent_configs agent_configs @relation(fields: [agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "config_persona_mappings_config_id_fkey")
+  personas      personas      @relation(fields: [persona_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "config_persona_mappings_persona_id_fkey")
+
+  @@unique([agent_id, persona_id], map: "config_persona_mappings_config_id_persona_id_key")
+}
+
+model agent_user_descriptions {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id      String        @db.Uuid
+  description   String
+  updated_by    String?       @db.Uuid
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  agent_configs agent_configs @relation(fields: [agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles      profiles?     @relation(fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([agent_id], map: "idx_agent_user_descriptions_agent")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conversation_messages {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversation_id    String             @db.Uuid
+  role               String
+  content            String
+  is_correct         Boolean?
+  response_time      Int?
+  validation_score   Float?
+  metrics            Json?
+  created_at         DateTime?          @default(now()) @db.Timestamptz(6)
+  test_conversations test_conversations @relation(fields: [conversation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([conversation_id], map: "idx_conversation_messages_conv")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model org_members {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  user_id       String        @db.Uuid
+  role          String
+  status        String
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles      profiles      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model organizations {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  description   String?
+  created_at    DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?       @default(now()) @db.Timestamptz(6)
+  agent_configs agent_configs[]
+  org_members   org_members[]
+  personas      personas[]
+  profiles      profiles[]
+}
+
+model personas {
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                 String                   @db.Uuid
+  name                   String
+  description            String?
+  system_prompt          String
+  min_conversation_turns Int?                     @default(1)
+  example_messages       Json?
+  created_at             DateTime?                @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime?                @default(now()) @db.Timestamptz(6)
+  agent_persona_mappings agent_persona_mappings[]
+  organizations          organizations            @relation(fields: [org_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  test_conversations     test_conversations[]
+
+  @@index([org_id], map: "idx_personas_org")
+}
+
+model profiles {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clerk_id                String                    @unique
+  org_id                  String?                   @db.Uuid
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  agent_configs           agent_configs[]
+  agent_descriptions      agent_descriptions[]
+  agent_user_descriptions agent_user_descriptions[]
+  org_members             org_members[]
+  organizations           organizations?            @relation(fields: [org_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  test_runs               test_runs[]
+
+  @@index([org_id], map: "idx_profiles_org")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model test_conversations {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  run_id                String                  @db.Uuid
+  scenario_id           String                  @db.Uuid
+  persona_id            String                  @db.Uuid
+  status                String
+  error_message         String?
+  created_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  conversation_messages conversation_messages[]
+  personas              personas                @relation(fields: [persona_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  test_runs             test_runs               @relation(fields: [run_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  test_scenarios        test_scenarios          @relation(fields: [scenario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([run_id], map: "idx_test_conversations_run")
+  @@index([status], map: "idx_test_conversations_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model test_runs {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id           String               @db.Uuid
+  name               String
+  status             String
+  total_tests        Int?                 @default(0)
+  passed_tests       Int?                 @default(0)
+  failed_tests       Int?                 @default(0)
+  started_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?            @db.Timestamptz(6)
+  created_by         String               @db.Uuid
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  test_conversations test_conversations[]
+  agent_configs      agent_configs        @relation(fields: [agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "test_runs_config_id_fkey")
+  profiles           profiles             @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([agent_id], map: "idx_test_runs_config")
+  @@index([status], map: "idx_test_runs_status")
+}
+
+model test_scenarios {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id           String               @db.Uuid
+  name               String
+  description        String?
+  input              String
+  expected_output    String
+  category           String?
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  test_conversations test_conversations[]
+  agent_configs      agent_configs        @relation(fields: [agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "test_scenarios_config_id_fkey")
+}
+
+model validation_rules {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id       String        @db.Uuid
+  path           String
+  condition      String
+  expected_value String
+  description    String?
+  created_at     DateTime?     @default(now()) @db.Timestamptz(6)
+  agent_configs  agent_configs @relation(fields: [agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "validation_rules_config_id_fkey")
+}

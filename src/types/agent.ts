@@ -1,3 +1,12 @@
+export interface AgentConfig {
+  id: string;
+  name: string;
+  endpoint: string;
+  headers: Header[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Header {
   key: string;
   value: string;

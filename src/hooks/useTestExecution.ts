@@ -3,9 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { TestMessage, TestRun } from '@/types/runs';
 import { ChatMessage, TestChat } from '@/types/chat';
 import { useTestRuns } from './useTestRuns';
-import { storageService } from '@/services/storage/localStorage';
 import { QaAgent } from '@/services/agents/claude/qaAgent';
-import { Rule } from '@/services/agents/claude/types';
 import { AnthropicModel } from '@/services/llm/enums';
 
 export type TestExecutionStatus = 'idle' | 'connecting' | 'running' | 'completed' | 'failed';
@@ -16,7 +14,6 @@ export type TestExecutionError = {
 };
 
 export function useTestExecution() {
-  // Destructure runs and state management from useTestRuns:
   const { runs, addRun, updateRun, selectedRun, setSelectedRun } = useTestRuns();
   const [status, setStatus] = useState<TestExecutionStatus>('idle');
   const [error, setError] = useState<TestExecutionError | null>(null);
@@ -25,15 +22,22 @@ export function useTestExecution() {
   const [isTyping, setIsTyping] = useState(false);
   const [selectedChat, setSelectedChat] = useState<TestChat | null>(null);
   
-  // Remove the local runs effect (do not call setRuns here)
-  // You can still load saved tests if needed:
-  const [savedTests, setSavedTests] = useState<Array<{ id: string, name: string }>>([]);
+  const [savedAgentConfigs, setSavedAgentConfigs] = useState<Array<{ id: string, name: string }>>([]);
+
   useEffect(() => {
-    const tests = JSON.parse(localStorage.getItem('savedTests') || '[]');
-    setSavedTests(tests.map((test: any) => ({
-      id: test.id,
-      name: test.name || 'Unnamed Test'
-    })));
+    async function fetchAgents() {
+      try {
+        const res = await fetch("/api/tools/agent-config");
+        const data = await res.json();
+        setSavedAgentConfigs(data.map((cfg: any) => ({
+          id: cfg.id,
+          name: cfg.name
+        })));
+      } catch (err) {
+        console.error("Failed to fetch agent configs:", err);
+      }
+    }
+    fetchAgents();
   }, []);
 
   const executeTest = async (testId: string) => {
@@ -41,21 +45,23 @@ export function useTestExecution() {
     setError(null);
     setProgress({ completed: 0, total: 0 });
 
-    const allTests = storageService.getSavedTests();
-    const ruleTemplates = storageService.getRuleTemplates() as Record<string, Rule[]>;
-    const personas = storageService.getPersonaMappings();
-    const testToRun = allTests.find(t => t.id === testId);
+    const resTest = await fetch(`/api/tools/agent-config?id=${testId}`);
+    const testToRun = await resTest.json();
     if (!testToRun) {
       throw new Error('Test configuration not found');
     }
-    const testVariations = storageService.getTestVariations();
-    const variations = testVariations[testId] || [];
-    const latestVariation = variations[variations.length - 1];
-    if (!latestVariation) {
-      throw new Error('No test variations found');
-    }
-    const scenarios = latestVariation.cases || [];
-    const selectedPersonas = personas[testId]?.personaIds || [];
+
+    const resRules = await fetch(`/api/tools/agent-rules?agentId=${testId}`);
+    const testRules = await resRules.json();
+
+    const resPersonas = await fetch(`/api/tools/persona-mapping?agentId=${testId}`);
+    const personaMapping = await resPersonas.json();
+
+    const resVariations = await fetch(`/api/tools/test-variations?testId=${testId}`);
+    const testVariations = await resVariations.json();  
+    
+    const scenarios = testVariations.testCases;
+    const selectedPersonas = personaMapping.personaIds || [];
     const totalRuns = scenarios.length * selectedPersonas.length;
 
     try {
@@ -77,12 +83,13 @@ export function useTestExecution() {
           incorrect: 0
         },
         chats: [],
-        results: []
+        results: [],
+        agentId: testToRun.id,
+        createdBy: testToRun.created_by || "default"
       };
       addRun(newRun);
 
       const completedChats: TestChat[] = [];
-      const testRules = ruleTemplates[testToRun.name] || [];
       setCurrentMessages([]);
 
       let completedCount = 0;
@@ -139,7 +146,8 @@ export function useTestExecution() {
                   notContainsFailures: []
                 }
               },
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              personaId: personaId
             };
 
             completedChats.push(chat);
@@ -168,7 +176,8 @@ export function useTestExecution() {
                 }
               },
               timestamp: new Date().toISOString(),
-              error: error.message || 'Unknown error occurred'
+              error: error.message || 'Unknown error occurred',
+              personaId: personaId
             };
             completedChats.push(chat);
             newRun.metrics.passed += 1;
@@ -213,6 +222,6 @@ export function useTestExecution() {
     setSelectedRun,
     selectedChat,
     setSelectedChat,
-    savedTests
+    savedAgentConfigs
   };
 }

@@ -1,12 +1,11 @@
-export const runtime = 'edge';
-
 import { NextResponse } from 'next/server';
 import { validateGenerateTestsRequest } from '@/lib/validations';
 import { jsonrepair } from 'jsonrepair';
 import { AnthropicModel } from '@/services/llm/enums';
 import { ModelFactory } from '@/services/llm/modelfactory';
 import { TEST_CASES_PROMPT } from '@/services/prompts';
-import { Evaluation } from '@/types/test-sets';
+import { Evaluation } from '@/types';
+import { dbService } from '@/services/db';
 
 
 function extractJSON(text: string): any {
@@ -51,37 +50,46 @@ function isValidEvaluation(evaluation: any): evaluation is Evaluation {
   );
 }
 
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { agentDescription, userDescription } = validateGenerateTestsRequest(body);
+    const testId = body.testId;
 
-    const apiKey = req.headers.get('x-api-key');
-    if (!apiKey) {
-      throw new Error('API key not found in request headers');
+    if (!testId) {
+      return NextResponse.json({ error: "Missing testId" }, { status: 400 });
     }
 
-    const model = ModelFactory.createLangchainModel(
-      AnthropicModel.Sonnet3_5,
-      apiKey
-    );
+    const agentConfig = await dbService.getAgentConfig(testId);
+    if (!agentConfig) {
+      return NextResponse.json({ error: "Agent config not found" }, { status: 404 });
+    }
 
-    const context = `Agent Description: ${agentDescription || 'Not provided'}
-User Description: ${userDescription || 'Not provided'}`;
+    const agentDescription = agentConfig.agent_descriptions?.[0]?.description || "Not provided";
+    const userDescription = agentConfig.agent_user_descriptions?.[0]?.description || "Not provided";
 
-    const prompt = TEST_CASES_PROMPT
-      .replace('{context}', context)
+    console.log("Fetched descriptions:", { agentDescription, userDescription });
 
-      const response = await model.invoke([{
-        role: 'user',
-        content: prompt as string
-       }]);
-      
-      let evaluations = extractJSON(response.content as string);
+    const apiKey = req.headers.get("x-api-key");
+    if (!apiKey) {
+      return NextResponse.json({ error: "API key required" }, { status: 401 });
+    }
 
+    const model = ModelFactory.createLangchainModel(AnthropicModel.Sonnet3_5, apiKey);
 
-    // Validate the structure and filter out invalid entries
+    const context = `Agent Description: ${agentDescription}
+User Description: ${userDescription}`;
+
+    const prompt = TEST_CASES_PROMPT.replace("{context}", context);
+
+    const response = await model.invoke([
+      {
+        role: "user",
+        content: prompt as string,
+      },
+    ]);
+
+    let evaluations = extractJSON(response.content as string);
+
     if (!evaluations?.evaluations || !Array.isArray(evaluations.evaluations)) {
       evaluations = { evaluations: [] };
     }
@@ -90,35 +98,43 @@ User Description: ${userDescription || 'Not provided'}`;
       .filter(isValidEvaluation)
       .map((evaluation: Evaluation) => ({
         scenario: evaluation.scenario.trim(),
-        expectedOutput: evaluation.expectedOutput.trim()
+        expectedOutput: evaluation.expectedOutput.trim(),
       }));
 
     if (validEvaluations.length === 0) {
-      throw new Error('No valid evaluations generated');
+      return NextResponse.json({ error: "No valid test cases generated" }, { status: 500 });
     }
 
-    console.log(`Filtered ${evaluations.evaluations.length - validEvaluations.length} invalid evaluations`);
-
-    return NextResponse.json({ 
-      testCases: validEvaluations.map((evaluation: Evaluation) => ({
+    const variation = {
+      id: crypto.randomUUID(),
+      testId,
+      sourceTestId: testId,
+      timestamp: new Date().toISOString(),
+      cases: validEvaluations.map((evaluation: Evaluation) => ({
         id: crypto.randomUUID(),
+        sourceTestId: testId,
         scenario: evaluation.scenario,
-        expectedOutput: evaluation.expectedOutput
+        expectedOutput: evaluation.expectedOutput,
       })),
+    };
+
+    await dbService.createTestVariation(variation);
+
+    return NextResponse.json({
+      testCases: variation.cases,
       stats: {
         total: evaluations.evaluations.length,
         valid: validEvaluations.length,
-        filtered: evaluations.evaluations.length - validEvaluations.length
-      }
+        filtered: evaluations.evaluations.length - validEvaluations.length,
+      },
     });
-  } catch (error) {
-    console.error('Test generation error:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to generate evaluations',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }, 
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Test generation error:", error);
+      return NextResponse.json({ error: "Failed to generate evaluations", details: error.message }, { status: 500 });
+    } else {
+      console.error("Test generation error:", error);
+      return NextResponse.json({ error: "Failed to generate evaluations", details: "Unknown error" }, { status: 500 });
+    }
   }
 }

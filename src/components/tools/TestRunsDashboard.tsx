@@ -56,8 +56,8 @@ export function TestRunsDashboard() {
     setSelectedRun,
     selectedChat,
     setSelectedChat,
-    savedTests,
-    executeTest: baseExecuteTest, // Rename the original executeTest
+    savedAgentConfigs,
+    executeTest
   } = useTestExecution();
 
   const [showWarningDialog, setShowWarningDialog] = useState(false); // State to control the WarningDialog dialog
@@ -246,9 +246,9 @@ export function TestRunsDashboard() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="cursor-pointer">
-            {savedTests.length > 0 ? (
-              savedTests.map((test) => (
-                <DropdownMenuItem
+            {savedAgentConfigs.length > 0 ? (
+              savedAgentConfigs.map((test) => (
+                <DropdownMenuItem 
                   key={test.id}
                   onSelect={() => executeTest(test.id)}
                   className="cursor-pointer"
@@ -306,7 +306,6 @@ export function TestRunsDashboard() {
           </div>
         )}
       </div>
-      {/* Render the WarningDialog component conditionally */}
       {showWarningDialog && (
         <WarningDialog
           isOpen={showWarningDialog}

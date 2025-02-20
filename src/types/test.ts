@@ -1,6 +1,6 @@
+import { Evaluation } from '.';
+import { MessageRole } from './base';
 
-import { MessageRole, TestRunStatus } from './base';
-import { Evaluation } from './test-sets';
 
 export interface TestScenario {
   id: string;
@@ -44,24 +44,3 @@ export interface TestSet {
   createdAt: Date;
   updatedAt: Date;
 }
-
-// export interface TestChat {
-//   id: string;
-//   scenario: string;
-//   status: TestRunStatus;
-//   messages: Message[];
-//   metrics: ChatMetrics;
-//   error?: string | null;
-//   timestamp: string;
-// }
-
-// export interface TestRun {
-//   id: string;
-//   name: string;
-//   timestamp: string;
-//   status: TestRunStatus;
-//   metrics: TestMetrics;
-//   chats: TestChat[];
-//   currentMessages?: Message[];
-//   results?: Array<{ scenarioId: string; responseTime: number }>;
-// }
