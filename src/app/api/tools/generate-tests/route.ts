@@ -4,8 +4,8 @@ import { jsonrepair } from 'jsonrepair';
 import { AnthropicModel } from '@/services/llm/enums';
 import { ModelFactory } from '@/services/llm/modelfactory';
 import { TEST_CASES_PROMPT } from '@/services/prompts';
-import { Evaluation } from '@/types';
 import { dbService } from '@/services/db';
+import { Evaluation } from '@/types/test-sets';
 
 function extractJSON(text: string): any {
   try {

@@ -1,5 +1,5 @@
-import { Evaluation } from '.';
 import { MessageRole } from './base';
+import { Evaluation } from './test-sets';
 
 export interface TestScenario {
   id: string;

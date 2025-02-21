@@ -474,6 +474,37 @@ export class DbService {
       createdBy: run.created_by,
     }));
   }
+
+  async createUserWithOrganization(clerkId: string, email?: string | null) {
+    const orgName = email ? `${email.split('@')[0]}'s Organization` : 'My Organization';
+    
+    const organization = await prisma.organizations.create({
+      data: {
+        id: crypto.randomUUID(),
+        name: orgName
+      }
+    });
+  
+    const profile = await prisma.profiles.create({
+      data: {
+        id: crypto.randomUUID(),
+        clerk_id: clerkId,
+        org_id: organization.id
+      }
+    });
+  
+    await prisma.org_members.create({
+      data: {
+        id: crypto.randomUUID(),
+        org_id: organization.id,
+        user_id: profile.id,
+        role: 'owner',
+        status: 'active'
+      }
+    });
+  
+    return { organization, profile };
+  }
   
 
 }
