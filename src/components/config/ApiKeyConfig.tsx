@@ -44,6 +44,14 @@ export default function ApiKeyConfig() {
     if (storedModel) setActiveModel(storedModel);
   }, []);
 
+  useEffect(() => {
+  if (selectedProvider && llmConfig[selectedProvider.toLowerCase()]) {
+    setApiKey(llmConfig[selectedProvider.toLowerCase()]);
+  } else {
+    setApiKey("");
+  }
+}, [selectedProvider, llmConfig]);
+
   const formatModelName = (key: string): string => {
     const modelNames = {
       [AnthropicModel.Sonnet3_5]: "Claude 3.5 Sonnet",
@@ -93,6 +101,7 @@ export default function ApiKeyConfig() {
     updateAvailableModels(newConfig);
     setIsOpen(false);
     setApiKey("");
+    setSelectedProvider("");
   };
 
   return (
