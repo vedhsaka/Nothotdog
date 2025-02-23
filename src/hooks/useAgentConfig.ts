@@ -2,6 +2,8 @@
 
 import { Rule } from "@/services/agents/claude/types";
 import { useState, useEffect } from "react";
+import { useUser } from '@clerk/nextjs';
+
 
 interface Header {
   key: string;
@@ -30,6 +32,8 @@ export function useAgentConfig() {
   const [userDescription, setUserDescription] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentAgentId, setCurrentAgentId] = useState<string | null>(null);
+  const { isSignedIn, user } = useUser();
+  const [orgId, setOrgId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchAgents() {
@@ -48,6 +52,24 @@ export function useAgentConfig() {
     }
     fetchAgents();
   }, []);
+
+  // useEffect(() => {
+  //   if (isSignedIn && user && user.id) {
+  //     async function loadOrgDetails() {
+  //       try {
+  //         const res = await fetch(`/api/auth/user-details?clerkId=${user?.id}`);
+  //         const data = await res.json();
+  //         if (data.organization) {
+  //           setOrgId(data.organization.id);
+  //         }
+  //       } catch (err) {
+  //         console.error("Failed to load organization details:", err);
+  //       }
+  //     }
+  //     loadOrgDetails();
+  //   }
+  // }, [isSignedIn, user]);
+  
   
 
   const loadAgent = async (agentId: string) => {
@@ -56,8 +78,6 @@ export function useAgentConfig() {
         if (!res.ok) throw new Error("Failed to fetch agent config");
         const data = await res.json();
         if (!data) return;
-        setManualInput(data.input || "");
-        setManualResponse(data.expectedOutput || "");
         setTestName(data.name || "");
         setAgentEndpoint(data.endpoint || "");
         setHeaders(

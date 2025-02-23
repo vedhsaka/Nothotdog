@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { dbService } from '@/services/db/dbService';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(request: Request) {
   try {
@@ -9,7 +10,11 @@ export async function GET(request: Request) {
       const config = await dbService.getAgentConfigAll(id);
       return NextResponse.json(config);
     }
-    const configs = await dbService.getAgentConfigs();
+    const { userId } = await auth();
+    if (!userId) {
+        return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
+    }
+    const configs = await dbService.getAgentConfigs(userId);
     return NextResponse.json(configs);
   } catch (error) {
     console.error('Error fetching agent configs:', error);
