@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAgentConfig } from "@/hooks/useAgentConfig";
 import AgentSetup from "@/components/tools/AgentSetup";
 import AgentInput from "@/components/tools/AgentInput";
@@ -8,7 +9,13 @@ import AgentRules from "@/components/tools/AgentRules";
 import AgentDescription from "@/components/tools/agentDescription";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 
 export default function ToolsPage() {
@@ -38,12 +45,13 @@ export default function ToolsPage() {
     currentAgentId,
   } = useAgentConfig();
 
+  const [activeTab, setActiveTab] = useState("description");
+  const [body, setBody] = useState("");
+
   return (
-    <div className="p-6">
+    <div className="relative min-h-screen p-6">
       <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold">Manual Testing</h2>
-        </div>
+        <h2 className="text-xl font-semibold">Manual Testing</h2>
         <div className="flex gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -55,7 +63,10 @@ export default function ToolsPage() {
             <DropdownMenuContent align="end" className="w-[200px]">
               {savedAgents.length > 0 ? (
                 savedAgents.map((agent) => (
-                  <DropdownMenuItem key={agent.id} onClick={() => loadAgent(agent.id)}>
+                  <DropdownMenuItem
+                    key={agent.id}
+                    onClick={() => loadAgent(agent.id)}
+                  >
                     {agent.name}
                   </DropdownMenuItem>
                 ))
@@ -75,43 +86,72 @@ export default function ToolsPage() {
           </Button>
         </div>
       </div>
-      <AgentDescription
-        agentDescription={agentDescription}
-        userDescription={userDescription}
-        onAgentDescriptionChange={setAgentDescription}
-        onUserDescriptionChange={setUserDescription}
-      />
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-8 space-y-4">
-          <AgentSetup
-            agentEndpoint={agentEndpoint}
-            setAgentEndpoint={setAgentEndpoint}
-            headers={headers}
-            setHeaders={setHeaders}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList className="flex gap-4 justify-start bg-transparent rounded-lg border-b border-gray-700">
+          <TabsTrigger
+            value="description"
+            className="relative pb-2 data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-1/2 data-[state=active]:after:w-auto data-[state=active]:after:h-0.5 data-[state=active]:after:bg-white data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:rounded-full data-[state=active]:after:px-2"
+          >
+            <span className="relative">Agent Description</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="testing"
+            className="relative pb-2 data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-1/2 data-[state=active]:after:w-auto data-[state=active]:after:h-0.5 data-[state=active]:after:bg-white data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:rounded-full data-[state=active]:after:px-2"
+          >
+            <span className="relative">Testing Setup</span>
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="description">
+          <AgentDescription
+            agentDescription={agentDescription}
+            userDescription={userDescription}
+            onAgentDescriptionChange={setAgentDescription}
+            onUserDescriptionChange={setUserDescription}
           />
-          <AgentInput
-            manualInput={manualInput}
-            setManualInput={setManualInput}
-            agentEndpoint={agentEndpoint}
-            testManually={testManually}
-            loading={loading}
-          />
-          <AgentResponse
-            manualResponse={manualResponse}
-            responseTime={responseTime}
-            rules={rules}
-            setRules={setRules}
-          />
-        </div>
-        <div className="col-span-4">
-        <AgentRules
-          manualResponse={manualResponse}
-          rules={rules}
-          setRules={setRules}
-          agentId={currentAgentId}
-        />
-        </div>
-      </div>
+          <div className="flex justify-end mt-4">
+            <Button onClick={() => setActiveTab("testing")}>Next</Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="testing">
+          <div className="flex gap-6">
+            <div className="w-2/3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+              <AgentSetup
+                agentEndpoint={agentEndpoint}
+                setAgentEndpoint={setAgentEndpoint}
+                headers={headers}
+                setHeaders={setHeaders}
+                body={body}
+                setBody={setBody}
+              />
+            </div>
+            <div className="w-1/3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+              <AgentRules
+                manualResponse={manualResponse}
+                rules={rules}
+                setRules={setRules}
+                agentId={currentAgentId}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col mt-6 w-full space-y-4">
+            <AgentInput
+              manualInput={manualInput}
+              setManualInput={setManualInput}
+              agentEndpoint={agentEndpoint}
+              testManually={testManually}
+              loading={loading}
+            />
+            <AgentResponse
+              manualResponse={manualResponse}
+              responseTime={responseTime}
+              rules={rules}
+              setRules={setRules}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
