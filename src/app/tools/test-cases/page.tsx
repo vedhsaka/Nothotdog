@@ -4,6 +4,7 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TestCaseVariations } from "@/components/tools/TestCaseVariations";
 import { AgentConfig } from "@/types";
+import PersonaSelector from "@/components/tools/personaSelector";
 
 
 export default function TestCasesPage() {
@@ -146,7 +147,7 @@ export default function TestCasesPage() {
 
       {/* Test Case Variations Column moved to the right */}
       <div className="col-span-4">
-        <TestCaseVariations selectedTest={selectedCase} />
+        <PersonaSelector selectedTestId={selectedCase?.id || null} />
       </div>
     </div>
   );

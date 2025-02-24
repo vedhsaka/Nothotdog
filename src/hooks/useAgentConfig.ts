@@ -34,6 +34,7 @@ export function useAgentConfig() {
   const [currentAgentId, setCurrentAgentId] = useState<string | null>(null);
   const { isSignedIn, user } = useUser();
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchAgents() {
@@ -53,22 +54,23 @@ export function useAgentConfig() {
     fetchAgents();
   }, []);
 
-  // useEffect(() => {
-  //   if (isSignedIn && user && user.id) {
-  //     async function loadOrgDetails() {
-  //       try {
-  //         const res = await fetch(`/api/auth/user-details?clerkId=${user?.id}`);
-  //         const data = await res.json();
-  //         if (data.organization) {
-  //           setOrgId(data.organization.id);
-  //         }
-  //       } catch (err) {
-  //         console.error("Failed to load organization details:", err);
-  //       }
-  //     }
-  //     loadOrgDetails();
-  //   }
-  // }, [isSignedIn, user]);
+  useEffect(() => {
+    if (isSignedIn && user && user.id) {
+      async function loadOrgDetails() {
+        try {
+          const res = await fetch(`/api/auth/user-details?clerkId=${user?.id}`);
+          const data = await res.json();
+          if (data.organization) {
+            setOrgId(data.organization.id);
+            setUserId(data.profile.id);
+          }
+        } catch (err) {
+          console.error("Failed to load organization details:", err);
+        }
+      }
+      loadOrgDetails();
+    }
+  }, [isSignedIn, user]);
   
   
 
@@ -135,6 +137,8 @@ export function useAgentConfig() {
         agentDescription,
         userDescription,
         timestamp: new Date().toISOString(),
+        org_id: orgId,
+        created_by: userId
         };
     
         try {
@@ -168,3 +172,4 @@ export function useAgentConfig() {
     loadAgent, testManually, saveTest
   };
 }
+

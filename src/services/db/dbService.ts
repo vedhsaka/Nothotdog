@@ -53,7 +53,6 @@ export class DbService {
         agent_descriptions: true,
         agent_user_descriptions: true,
         validation_rules: true,
-        // Remove test_scenarios since we don't need them
         agent_outputs: {
           orderBy: { created_at: 'desc' },
           take: 1
@@ -89,91 +88,95 @@ export class DbService {
   }
 
   async saveAgentConfig(configData: any) {
-    const parsedResponse = this.safeJsonParse(configData.agent_response);
-    let input_format = this.safeJsonParse(configData.input);
-
-    if (configData.id) {
-      // Update existing config
-      return prisma.agent_configs.update({
-        where: { id: configData.id },
-        data: {
-          name: configData.name,
-          endpoint: configData.endpoint,
-          input_format: input_format,
-          agent_headers: {
-            deleteMany: {},
-            create: Object.entries(configData.headers).map(([key, value]) => ({
-              key,
-              value: String(value),
-            }))
-          },
-          agent_descriptions: {
-            deleteMany: {},
-            create: { description: configData.agentDescription }
-          },
-          agent_user_descriptions: {
-            deleteMany: {},
-            create: { description: configData.userDescription }
-          },
-          validation_rules: {
-            deleteMany: {},
-            create: configData.rules.map((rule: any) => ({
-              path: rule.path,
-              condition: rule.condition,
-              expected_value: rule.value,
-              description: rule.description || ""
-            }))
-          },
-          agent_outputs: {
-            deleteMany: {},
-            create: {
-              response_data: parsedResponse,
-              response_time: configData.responseTime,
-              status: "success",
-              error_message: ""
+    try {
+      const parsedResponse = this.safeJsonParse(configData.agent_response);
+      let input_format = this.safeJsonParse(configData.input);
+  
+      if (configData.id) {
+        // Update existing config
+        return prisma.agent_configs.update({
+          where: { id: configData.id },
+          data: {
+            name: configData.name,
+            endpoint: configData.endpoint,
+            input_format: input_format,
+            agent_headers: {
+              deleteMany: {},
+              create: Object.entries(configData.headers).map(([key, value]) => ({
+                key,
+                value: String(value),
+              }))
+            },
+            agent_descriptions: {
+              deleteMany: {},
+              create: { description: configData.agentDescription }
+            },
+            agent_user_descriptions: {
+              deleteMany: {},
+              create: { description: configData.userDescription }
+            },
+            validation_rules: {
+              deleteMany: {},
+              create: configData.rules.map((rule: any) => ({
+                path: rule.path,
+                condition: rule.condition,
+                expected_value: rule.value,
+                description: rule.description || ""
+              }))
+            },
+            agent_outputs: {
+              deleteMany: {},
+              create: {
+                response_data: parsedResponse,
+                response_time: configData.responseTime,
+                status: "success",
+                error_message: ""
+              }
             }
           }
-        }
-      });
-    } else {
-      // Create new config
-      return prisma.agent_configs.create({
-        data: {
-          name: configData.name,
-          endpoint: configData.endpoint,
-          input_format: input_format,
-          org_id: configData.org_id,
-          created_by: configData.created_by,
-          agent_headers: {
-            create: Object.entries(configData.headers).map(([key, value]) => ({
-              key,
-              value: String(value),
-            }))
-          },
-          agent_descriptions: {
-            create: { description: configData.agentDescription }
-          },
-          agent_user_descriptions: {
-            create: { description: configData.userDescription }
-          },
-          validation_rules: {
-            create: configData.rules.map((rule: any) => ({
-              path: rule.path,
-              condition: rule.condition,
-              expected_value: rule.value,
-              description: rule.description || ""
-            }))
-          },
-          agent_outputs: {
-            create: {
-              response_data: parsedResponse,
-              response_time: configData.responseTime,
-              status: "success",
-              error_message: ""
+        });
+      } else {
+        return prisma.agent_configs.create({
+          data: {
+            name: configData.name,
+            endpoint: configData.endpoint,
+            input_format: input_format,
+            org_id: configData.org_id,
+            created_by: configData.created_by,
+            agent_headers: {
+              create: Object.entries(configData.headers).map(([key, value]) => ({
+                key,
+                value: String(value),
+              }))
+            },
+            agent_descriptions: {
+              create: { description: configData.agentDescription }
+            },
+            agent_user_descriptions: {
+              create: { description: configData.userDescription }
+            },
+            validation_rules: {
+              create: configData.rules.map((rule: any) => ({
+                path: rule.path,
+                condition: rule.condition,
+                expected_value: rule.value,
+                description: rule.description || ""
+              }))
+            },
+            agent_outputs: {
+              create: {
+                response_data: parsedResponse,
+                response_time: configData.responseTime,
+                status: "success",
+                error_message: ""
+              }
             }
           }
-        }
-      });
+        });
+      }
+    } catch (error) {
+      console.error("Error saving agent config:", error);
+      throw error;
     }
   }
   
@@ -509,7 +512,6 @@ export class DbService {
   }
 
   async getProfileByClerkId(clerkId: string) {
-    console.log(clerkId);
     return prisma.profiles.findUnique({
       where: { clerk_id: clerkId }
     });

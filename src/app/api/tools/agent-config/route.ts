@@ -39,6 +39,10 @@ export async function DELETE(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+        return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
+    }
     const configData = await request.json();
     const result = await dbService.saveAgentConfig(configData);
     return NextResponse.json(result);

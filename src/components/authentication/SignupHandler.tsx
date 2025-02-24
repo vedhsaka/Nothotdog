@@ -13,11 +13,9 @@ export default function SignupHandler() {
         const lastSignInAt = user.lastSignInAt?.getTime();
   
         if (createdAt && lastSignInAt) {
-          // Round down to seconds
           const createdAtSec = Math.floor(createdAt / 1000);
           const lastSignInAtSec = Math.floor(lastSignInAt / 1000);
   
-          // Check if both timestamps are the same at the seconds level
           const isNewUser = createdAtSec === lastSignInAtSec;
   
           if (isNewUser) {
