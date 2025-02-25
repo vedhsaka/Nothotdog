@@ -142,12 +142,12 @@ export default function TestCasesPage() {
 
       {/* Persona Selector Column moved to the middle */}
       <div className="col-span-4">
-        <TestCaseVariations selectedTestId={selectedCase?.id || null} />
+        <TestCaseVariations selectedTestId={selectedCase?.id || ""} />
       </div>
 
       {/* Test Case Variations Column moved to the right */}
       <div className="col-span-4">
-        <PersonaSelector selectedTestId={selectedCase?.id || null} />
+        <PersonaSelector selectedTest={selectedCase?.id || ""} />
       </div>
     </div>
   );

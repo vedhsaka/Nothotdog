@@ -353,19 +353,29 @@ export class DbService {
   }
 
   async getPersonas(userId: string): Promise<any[]> {
-    return prisma.personas.findMany({
-      where: {
-        organizations: {
-          profiles: {
-            some: {
-              clerk_id: userId,
-            },
-          },
-        },
-      },
-    });
+    try {
+      const profile = await prisma.profiles.findUnique({
+        where: { clerk_id: userId }
+      });
+      
+      if (!profile || !profile.org_id) {
+        return [];
+      }
+      
+      const personas = await prisma.personas.findMany({
+        where: {
+          OR: [
+            { org_id: profile.org_id },
+            { org_id: '00000000-0000-0000-0000-000000000000'}
+          ]
+        }
+      });
+      
+      return personas;
+    } catch (error) {
+      return [];
+    }
   }
-  
 
   async updateValidationRules(agentId: string, rules: Rule[]) {
     return prisma.agent_configs.update({

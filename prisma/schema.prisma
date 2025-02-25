@@ -142,6 +142,7 @@ model personas {
   example_messages       Json?
   created_at             DateTime?                @default(now()) @db.Timestamptz(6)
   updated_at             DateTime?                @default(now()) @db.Timestamptz(6)
+  is_default             Boolean                  @default(false)
   agent_persona_mappings agent_persona_mappings[]
   organizations          organizations            @relation(fields: [org_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   test_conversations     test_conversations[]
