@@ -22,7 +22,7 @@ export function TestSetsList() {
   }, []);
 
   return (
-    <Card className="bg-black/40 border-zinc-800">
+    <Card className="border border-border bg-background">
       <CardHeader>
         <CardTitle>Test Sets</CardTitle>
       </CardHeader>
@@ -31,7 +31,7 @@ export function TestSetsList() {
           {testSets.map((testSet) => (
             <div
               key={testSet.id}
-              className="p-4 bg-black/20 rounded-lg hover:bg-black/30 transition-colors cursor-pointer"
+              className="p-4 bg-background rounded-[var(--radius)] hover:bg-background/30 transition-colors cursor-pointer"
             >
               <div className="flex justify-between items-start">
                 <div>

@@ -28,7 +28,7 @@ export function TestSetCreator() {
   };
 
   return (
-    <Card className="bg-black/40 border-zinc-800">
+    <Card className="border border-border bg-background">
       <CardHeader>
         <CardTitle>Create Test Set</CardTitle>
       </CardHeader>

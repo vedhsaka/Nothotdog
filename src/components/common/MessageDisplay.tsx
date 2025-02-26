@@ -30,32 +30,32 @@ export function MessageDisplay({
       )}>
         <div className={cn(
           "h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium",
-          role === 'user' ? "bg-zinc-700" : "bg-emerald-600"
+          role === 'user' ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground"
         )}>
           {role === 'user' ? 'U' : 'A'}
         </div>
         <div className={cn(
-          "rounded-lg p-4",
-          role === 'user' ? "bg-zinc-800" : "bg-emerald-900/50"
+          "rounded-[var(--radius)] p-4",
+          role === 'user' ? "bg-secondary/50" : "bg-primary/10"
         )}>
           <p className="text-sm">{content}</p>
-          {/* {role === 'assistant' && isCorrect !== undefined && (
+          {role === 'assistant' && isCorrect !== undefined && (
             <div className="flex items-center gap-2 mt-2">
               {isCorrect ? (
-                <Badge variant="default" className="bg-emerald-500/20 text-emerald-400">
+                <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
                   <Check className="w-3 h-3 mr-1" />
                   Correct
                 </Badge>
               ) : (
-                <Badge variant="default" className="bg-red-500/20 text-red-400">
+                <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                   <X className="w-3 h-3 mr-1" />
                   Incorrect
                 </Badge>
               )}
             </div>
-          )} */}
+          )}
           {explanation && (
-            <p className="text-sm text-zinc-400 mt-2">{explanation}</p>
+            <p className="text-sm text-muted-foreground mt-2">{explanation}</p>
           )}
         </div>
       </div>
@@ -71,7 +71,7 @@ export function MessageDisplay({
             {isExpanded ? 'Hide Expected' : 'View Expected'}
           </Button>
           {isExpanded && (
-            <p className="text-sm text-zinc-400">{expectedOutput}</p>
+            <p className="text-sm text-muted-foreground">{expectedOutput}</p>
           )}
         </div>
       )}

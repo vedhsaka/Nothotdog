@@ -63,11 +63,11 @@ export default function TestCasesPage() {
     <div className="grid grid-cols-12 gap-4 p-6">
       {/* Agent Cases Column */}
       <div className="col-span-4">
-        <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+        <Card className="bg-background border-border border max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Agent Cases</CardTitle>
-              <Badge variant="outline" className="bg-black/40">
+              <Badge variant="outline" className="bg-background">
                 {agentCases.length} Cases
               </Badge>
             </div>
@@ -79,10 +79,10 @@ export default function TestCasesPage() {
               {agentCases.map((test) => (
                 <div
                   key={test.id}
-                  className={`p-4 rounded-lg cursor-pointer transition-colors ${
+                  className={`p-4 rounded-[var(--radius)] cursor-pointer transition-colors ${
                     selectedCase?.id === test.id
-                      ? "bg-black/60 border border-zinc-700"
-                      : "bg-black/20 hover:bg-black/30"
+                      ? "bg-background border border-zinc-700"
+                      : "bg-background hover:bg-background"
                   }`}
                   onClick={() => handleCaseSelect(test)}
                 >

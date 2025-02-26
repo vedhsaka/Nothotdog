@@ -15,7 +15,7 @@ interface Props {
 
 export default function AgentInput({ manualInput, setManualInput, agentEndpoint, testManually, loading }: Props) {
   return (
-    <Card className="bg-black/40 border-zinc-800">
+    <Card className="border border-border bg-background">
       <CardHeader>
         <CardTitle>Input</CardTitle>
         <CardDescription>Enter your test input</CardDescription>
@@ -25,7 +25,7 @@ export default function AgentInput({ manualInput, setManualInput, agentEndpoint,
           value={manualInput ?? ""}
           onChange={(e) => setManualInput(e.target.value)}
           placeholder="Enter your test input..."
-          className="min-h-[200px] bg-black/20"
+          className="min-h-[200px] bg-background "
         />
         <Button
           onClick={testManually}

@@ -8,7 +8,7 @@ export default function ToolsLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex h-screen bg-[#0A0A0A] text-white">
+    <div className="flex h-screen bg-background text-foreground transition-colors">
       <Sidebar />
       <div className="flex-1 overflow-auto">
         {children}

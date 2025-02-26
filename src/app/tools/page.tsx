@@ -51,7 +51,7 @@ export default function ToolsPage() {
   return (
     <div className="relative min-h-screen p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Manual Testing</h2>
+        <h2 className="text-xl font-semibold">Configue Agent</h2>
         <div className="flex gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -79,7 +79,7 @@ export default function ToolsPage() {
             placeholder="Enter test name"
             value={testName ?? ""}
             onChange={(e) => setTestName(e.target.value)}
-            className="w-64 bg-black/20"
+            className="w-64 bg-background"
           />
           <Button onClick={saveTest} disabled={!manualResponse || !testName}>
             {isEditMode ? "Update Test" : "Save Test"}
@@ -88,20 +88,39 @@ export default function ToolsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="flex gap-4 justify-start bg-transparent rounded-lg border-b border-gray-700">
+        <TabsList className="bg-transparent p-0 border-b border-border gap-2">
           <TabsTrigger
             value="description"
-            className="relative pb-2 data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-1/2 data-[state=active]:after:w-auto data-[state=active]:after:h-0.5 data-[state=active]:after:bg-white data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:rounded-full data-[state=active]:after:px-2"
+            className="
+              px-3
+              py-1
+              text-sm
+              text-muted-foreground
+              transition-colors
+              data-[state=active]:bg-gray-700
+              data-[state=active]:text-white
+              data-[state=active]:rounded-md
+            "
           >
-            <span className="relative">Agent Description</span>
+            Agent Description
           </TabsTrigger>
           <TabsTrigger
             value="testing"
-            className="relative pb-2 data-[state=active]:after:content-[''] data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-1/2 data-[state=active]:after:w-auto data-[state=active]:after:h-0.5 data-[state=active]:after:bg-white data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:rounded-full data-[state=active]:after:px-2"
+            className="
+              px-3
+              py-1
+              text-sm
+              text-muted-foreground
+              transition-colors
+              data-[state=active]:bg-gray-700
+              data-[state=active]:text-white
+              data-[state=active]:rounded-md
+            "
           >
-            <span className="relative">Testing Setup</span>
+            Testing Setup
           </TabsTrigger>
         </TabsList>
+
         <TabsContent value="description">
           <AgentDescription
             agentDescription={agentDescription}
@@ -115,8 +134,8 @@ export default function ToolsPage() {
         </TabsContent>
 
         <TabsContent value="testing">
-          <div className="flex gap-6">
-            <div className="w-2/3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+          <div className="grid grid-cols-[2fr_1fr] items-stretch gap-6">
+            <div>
               <AgentSetup
                 agentEndpoint={agentEndpoint}
                 setAgentEndpoint={setAgentEndpoint}
@@ -126,7 +145,7 @@ export default function ToolsPage() {
                 setBody={setBody}
               />
             </div>
-            <div className="w-1/3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+            <div className="flex flex-col">
               <AgentRules
                 manualResponse={manualResponse}
                 rules={rules}
@@ -136,13 +155,7 @@ export default function ToolsPage() {
             </div>
           </div>
           <div className="flex flex-col mt-6 w-full space-y-4">
-            <AgentInput
-              manualInput={manualInput}
-              setManualInput={setManualInput}
-              agentEndpoint={agentEndpoint}
-              testManually={testManually}
-              loading={loading}
-            />
+
             <AgentResponse
               manualResponse={manualResponse}
               responseTime={responseTime}

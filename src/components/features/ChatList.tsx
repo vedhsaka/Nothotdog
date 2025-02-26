@@ -43,10 +43,10 @@ export function ChatList({ chats }: ChatListProps) {
                 <div 
                   key={`${chat.id}-${index}`}
                   className={cn(
-                    "p-3 rounded-lg",
+                    "p-3 rounded-[var(--radius)]",
                     message.role === 'user' 
                       ? "bg-blue-500/20 ml-0 mr-12" 
-                      : "bg-zinc-800/40 ml-12 mr-0"
+                      : "bg-background/40 ml-12 mr-0"
                   )}
                 >
                   <div className="flex items-center gap-2 mb-1">
@@ -66,7 +66,7 @@ export function ChatList({ chats }: ChatListProps) {
             </div>
 
             {chat.error && (
-              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-[var(--radius)]">
                 <p className="text-sm text-red-200">{chat.error}</p>
               </div>
             )}

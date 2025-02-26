@@ -20,7 +20,7 @@ export function TestCard({
   children 
 }: TestCardProps) {
   return (
-    <div className="p-4 bg-black/20 rounded-lg">
+    <div className="p-4 bg-backgroundrounded-[var(--radius)]">
       <div className="flex justify-between mb-2">
         {category && <Badge>{category}</Badge>}
         <div className="flex gap-2">

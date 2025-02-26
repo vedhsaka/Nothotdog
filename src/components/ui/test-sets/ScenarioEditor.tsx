@@ -44,7 +44,7 @@ export function ScenarioEditor({ scenario, onChange, onDelete }: ScenarioEditorP
   };
 
   return (
-    <Card className="bg-black/60 border-zinc-800">
+    <Card className="border border-border bg-background">
       <CardContent className="pt-4">
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-2">
@@ -71,7 +71,7 @@ export function ScenarioEditor({ scenario, onChange, onDelete }: ScenarioEditorP
             </div>
             
             {(scenario.steps || []).map((step, index) => (
-              <Card key={index} className="bg-black/40 border-zinc-800">
+              <Card key={index} className="border border-border bg-background">
                 <CardContent className="pt-4 space-y-2">
                   <div className="flex justify-between items-center">
                     <Badge variant={step.role === 'user' ? 'default' : 'secondary'}>

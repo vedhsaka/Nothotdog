@@ -32,9 +32,9 @@ export default function WarningDialog({ isOpen, onClose }: WarningDialogProps) {
   return (
     <Dialog open={internalIsOpen} onOpenChange={setInternalIsOpen}>
       <div className={`modal-overlay ${isOpen ? "block" : "hidden"}`} />
-      {/* <div className="fixed inset-0 bg-black/50 z-40" aria-hidden="true" />{" "} */}
+      {/* <div className="fixed inset-0 bg-background/50 z-40" aria-hidden="true" />{" "} */}
       {/* Backdrop */}
-      <DialogContent className="sm:max-w-[425px] border-zinc-800 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+      <DialogContent className="sm:max-w-[425px] border-border fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
         <DialogHeader>
           <DialogTitle className="flex items-center text-lg font-semibold">
             <TriangleAlert className="mr-2 h-5 w-5 text-yellow-500" />
