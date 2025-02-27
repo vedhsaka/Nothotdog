@@ -2,16 +2,16 @@ import { Badge } from "@/components/ui/badge";
 
 export function Header() {
   return (
-    <header className="border-b border-zinc-800 bg-black/40 p-4">
-      <div className="flex justify-between items-center">
+    <header className="border-b border-border bg-background sticky top-0 z-30 px-4 py-3">
+      <div className="flex justify-between items-center max-w-screen-2xl mx-auto">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
-            NotHotDog
-          </h1>
-          <p className="text-zinc-400 mt-2">Test. Evaluate. Analyze.</p>
+        <h1 className="text-2xl font-bold text-orange-500">
+          NotHotDog
+        </h1>
+          <p className="text-sm text-muted-foreground">Agent Testing Framework</p>
         </div>
-        <Badge variant="outline" className="bg-black/40 text-emerald-400 border-emerald-400/30">
-          Open Source Edition
+        <Badge variant="outline" className="text-xs px-3 py-1 border-blue-500/30 text-blue-400 dark:border-blue-400/30">
+          Developer Beta
         </Badge>
       </div>
     </header>

@@ -20,7 +20,7 @@ export default function AgentDescription({
   const [isCollapsed, setIsCollapsed] = React.useState(false);
 
   return (
-    <div className="rounded-lg border bg-black/40 border-zinc-800 mb-4">
+    <div className="rounded-[var(--radius)] border bg-background border-border mb-6">
       <div 
         className="flex justify-between items-center p-6 cursor-pointer"
         onClick={() => setIsCollapsed(!isCollapsed)}
@@ -35,15 +35,15 @@ export default function AgentDescription({
       </div>
       
       {!isCollapsed && (
-        <div className="p-6 pt-0 space-y-4">
+        <div className="p-6 space-y-4">
           <div className="space-y-4">
             <div>
               <Label className="text-sm text-zinc-400">Agent Description</Label>
               <Textarea
-                placeholder="Describe the agent's personality, behavior, and knowledge domain in detail..."
+                placeholder="Describe the agent's personality, behavior, and knowledge domain in detail"
                 value={agentDescription}
                 onChange={(e) => onAgentDescriptionChange(e.target.value)}
-                className="mt-1.5 bg-black/40 border-zinc-800"
+                className="mt-1.5 bg-background border-border border h-32 "
               />
             </div>
             <div>
@@ -52,7 +52,7 @@ export default function AgentDescription({
                 placeholder="Describe characteristics of an ideal user interacting with this agent..."
                 value={userDescription}
                 onChange={(e) => onUserDescriptionChange(e.target.value)}
-                className="mt-1.5 bg-black/40 border-zinc-800"
+                className="mt-1.5 bg-background border-border border h-32 "
               />
             </div>
           </div>

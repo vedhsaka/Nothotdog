@@ -3,9 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TestRun, TestMessage } from "@/types/runs";
-import { TestChat } from "@/types/chat";
-import { TestScenario } from "@/types/test";
+import { TestMessage } from "@/types/runs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,10 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Play, ChevronDown } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
-import { QaAgent } from "@/services/agents/claude/qaAgent";
-import { AnthropicModel } from "@/services/llm/enums";
-import { storageService } from "@/services/storage/localStorage";
 import { useTestExecution } from "@/hooks/useTestExecution";
 import WarningDialog from "@/components/config/WarningDialog";
 
@@ -30,7 +24,7 @@ function CollapsibleJson({ content }: { content: string }) {
       const parsed = JSON.parse(content);
       formattedContent = JSON.stringify(parsed, null, 2);
       return (
-        <pre className="font-mono text-sm p-4 rounded-lg overflow-x-auto whitespace-pre-wrap max-w-full">
+        <pre className="font-mono text-sm p-4 rounded-[var(--radius)] overflow-x-auto whitespace-pre-wrap max-w-full">
           {formattedContent}
         </pre>
       );
@@ -144,7 +138,7 @@ export function TestRunsDashboard() {
                     <span className="text-sm">👤</span>
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <div className="bg-blue-500/20 rounded-lg">
+                    <div className="bg-blue-500/20 rounded-[var(--radius)]">
                       <CollapsibleJson content={message.content} />
                     </div>
                   </div>
@@ -152,7 +146,7 @@ export function TestRunsDashboard() {
               ) : (
                 <div className="flex items-start gap-3">
                   <div className="flex-1 overflow-hidden">
-                    <div className="bg-emerald-500/10 rounded-lg">
+                    <div className="bg-emerald-500/10 rounded-[var(--radius)]">
                       <CollapsibleJson content={message.content} />
                     </div>
                     <div className="flex items-center gap-2 mt-2">
@@ -207,7 +201,7 @@ export function TestRunsDashboard() {
           {(selectedRun.chats || []).map((chat) => (
             <div
               key={chat.id}
-              className="flex items-center p-4 bg-black/20 border border-zinc-800 rounded-lg cursor-pointer hover:bg-black/30"
+              className="flex items-center p-4 bg-background border border-border rounded-[var(--radius)] cursor-pointer hover:bg-background/30"
               onClick={() => setSelectedChat(chat)}
             >
               <div className="w-[60%] truncate">
@@ -267,7 +261,7 @@ export function TestRunsDashboard() {
         {runs.map((run) => (
           <div
             key={run.id}
-            className="flex items-center p-4 bg-black/20 border border-zinc-800 rounded-lg cursor-pointer hover:bg-black/30"
+            className="flex items-center p-4 bg-background border border-border rounded-[var(--radius)] cursor-pointer hover:bg-background/30"
             onClick={() => setSelectedRun(run)}
           >
             <div className="w-[30%] flex items-center gap-2">

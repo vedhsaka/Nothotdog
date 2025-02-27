@@ -26,7 +26,7 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
             <div
               key={step.id}
               className={cn(
-                "p-4 rounded-lg",
+                "p-4 rounded-[var(--radius)]",
                 "transition-all duration-200",
                 step.role === "user" ? "bg-blue-50 ml-8" : "bg-gray-50 mr-8",
                 currentStep === step.id && "ring-2 ring-blue-500"

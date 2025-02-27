@@ -1,6 +1,7 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
+import { ThemeProvider } from './providers'
 import ApiKeyConfig from '@/components/config/ApiKeyConfig';
 import SignupHandler from '@/components/authentication/SignupHandler';
 
@@ -12,22 +13,29 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
-      <SignupHandler />
-      <html lang="en" className="dark">
-        <body className={`${inter.className} min-h-screen bg-[#0A0A0A] text-white antialiased`}>
-          <SignedOut>
+   <ClerkProvider>
+    <SignupHandler />
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} min-h-screen antialiased`}>
+           <SignedOut>
             <SignInButton />
           </SignedOut>
           <SignedIn>
             <UserButton />
           </SignedIn>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
           <main className="flex min-h-screen flex-col">
             {children}
             <ApiKeyConfig />
           </main>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ThemeProvider>
+      </body>
+    </html>
+  </ClerkProvider>
   )
 }

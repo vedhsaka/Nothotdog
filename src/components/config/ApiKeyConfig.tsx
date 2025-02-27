@@ -48,7 +48,7 @@ export default function ApiKeyConfig() {
         </Button>
       </DialogTrigger>
       <div className={`modal-overlay ${isOpen ? "block" : "hidden"}`} />
-      <DialogContent className="sm:max-w-[425px] bg-black/90 border-zinc-800">
+      <DialogContent className="sm:max-w-[425px] bg-background/90 border-border">
         <DialogHeader className="flex flex-row justify-between items-center">
           <DialogTitle>Add Anthropic Config</DialogTitle>
           <DialogClose asChild>
@@ -65,7 +65,7 @@ export default function ApiKeyConfig() {
               placeholder="Key name"
               value={keyName}
               onChange={(e) => setKeyName(e.target.value)}
-              className="bg-black/40 border-zinc-800"
+              className="border border-border bg-background"
             />
           </div>
 
@@ -77,7 +77,7 @@ export default function ApiKeyConfig() {
               placeholder="API key"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              className="bg-black/40 border-zinc-800"
+              className="border border-border bg-background"
             />
           </div>
 
@@ -89,10 +89,10 @@ export default function ApiKeyConfig() {
                 setSelectedModel(value as AnthropicModel)
               }
             >
-              <SelectTrigger className="bg-black/40 border-zinc-800">
+              <SelectTrigger className="border border-border bg-background">
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
-              <SelectContent className="bg-black/90 border-zinc-800">
+              <SelectContent className="bg-background/90 border-border">
                 <SelectItem value={AnthropicModel.Sonnet3_5}>
                   Claude 3.5 Sonnet
                 </SelectItem>

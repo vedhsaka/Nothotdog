@@ -64,27 +64,15 @@ export default function TestCasesPage() {
     <div className="grid grid-cols-12 gap-4 p-6">
       {/* Agent Cases Column */}
       <div className="col-span-4">
-        <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+        <Card className="bg-background border-border border max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Agent Cases</CardTitle>
-              <Badge variant="outline" className="bg-black/40">
+              <Badge variant="outline" className="bg-background">
                 {agentCases.length} Cases
               </Badge>
             </div>
             <div className="flex mt-2">
-              {/* <Button size="sm" onClick={selectAllCases}>
-                {selectedIds.length === agentCases.length
-                  ? "Deselect All"
-                  : "Select All"}
-              </Button>
-              <Button size="sm"
-                onClick={deleteSelectedCases}
-                variant="destructive"
-                className="ml-2"
-              >
-                Delete Selected
-              </Button> */}
             </div>
           </CardHeader>
           <CardContent className="max-h-[calc(100vh-12rem)] overflow-y-auto">
@@ -92,10 +80,10 @@ export default function TestCasesPage() {
               {agentCases.map((test) => (
                 <div
                   key={test.id}
-                  className={`p-4 rounded-lg cursor-pointer transition-colors ${
+                  className={`p-4 rounded-[var(--radius)] cursor-pointer transition-colors ${
                     selectedCase?.id === test.id
-                      ? "bg-black/60 border border-zinc-700"
-                      : "bg-black/20 hover:bg-black/30"
+                      ? "bg-background border border-zinc-700"
+                      : "bg-background hover:bg-background"
                   }`}
                   onClick={() => handleCaseSelect(test)}
                 >
@@ -111,18 +99,6 @@ export default function TestCasesPage() {
                         {test.name || "Unnamed Test"}
                       </h3>
                     </div>
-                    {/* <div className="flex items-center gap-4">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteAgentCase(test.id);
-                        }}
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div> */}
                   </div>
                   <p className="text-sm text-zinc-400 mt-1 truncate max-w-[300px]">
                     Endpoint: {test.endpoint}

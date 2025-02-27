@@ -20,7 +20,11 @@ interface EditingState {
   expectedOutput: string;
 }
 
-export function TestCaseVariations({ selectedTestId }: { selectedTestId: string | undefined }) {
+export function TestCaseVariations({
+  selectedTestId,
+}: {
+  selectedTestId: string | undefined;
+}) {
   const [generatedCases, setGeneratedCases] = useState<TestCase[]>([]);
   const [editingState, setEditingState] = useState<EditingState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -35,11 +39,10 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
     deleteVariation,
     setLoading
   } = useTestVariations(selectedTestId);
-  
   useEffect(() => {
     if (variationData && selectedTestId) {
       setGeneratedCases(
-        variationData.testCases.map(tc => ({
+        variationData.testCases.map((tc) => ({
           ...tc,
           sourceTestId: selectedTestId,
         }))
@@ -58,7 +61,7 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
       return;
     }
     setLoading(true);
-  
+
     try {
       const response = await fetch(`/api/tools/generate-tests`, {
         method: "POST",
@@ -68,7 +71,7 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
         },
         body: JSON.stringify({ testId: selectedTestId }),
       });
-  
+
       const data = await response.json();
       if (data.error) {
         console.error("Generation error:", data.error);
@@ -81,7 +84,6 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
       setLoading(false);
     }
   };
-  
 
   const addNewTestCase = () => {
     if (!selectedTestId) return;
@@ -100,21 +102,20 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
     setGeneratedCases([newCase, ...generatedCases]);
   };
 
-  
   const saveEdit = async () => {
     if (!selectedTestId || !editingState || !editingId) return;
-  
+
     const editedTestCase: TestCase = {
       id: editingId,
       sourceTestId: selectedTestId,
       scenario: editingState.scenario,
       expectedOutput: editingState.expectedOutput,
     };
-  
+
     const existsInServer =
       variationData &&
-      variationData.testCases.some(tc => tc.id === editingId);
-  
+      variationData.testCases.some((tc) => tc.id === editingId);
+
     const payload: TestVariation = {
       id: existsInServer ? editingId : crypto.randomUUID(),
       testId: selectedTestId,
@@ -122,16 +123,16 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
       timestamp: new Date().toISOString(),
       cases: [editedTestCase],
     };
-  
+
     try {
       if (existsInServer) {
         await updateVariation(payload);
       } else {
         await addVariation(payload);
       }
-  
-      setGeneratedCases(prev => {
-        const index = prev.findIndex(tc => tc.id === editingId);
+
+      setGeneratedCases((prev) => {
+        const index = prev.findIndex((tc) => tc.id === editingId);
         if (index > -1) {
           const updated = [...prev];
           updated[index] = editedTestCase;
@@ -146,9 +147,7 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
       setEditingState(null);
     }
   };
-  
-  
-  
+
   const toggleSelectCase = (id: string) => {
     setSelectedIds((prevSelected) =>
       prevSelected.includes(id)
@@ -166,30 +165,31 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
   };
 
   // Replace your deleteTestCase and deleteSelectedCases functions with this unified function:
-    const deleteTestCases = async (idsToDelete: string[]) => {
-      if (!selectedTestId) return;
+  const deleteTestCases = async (idsToDelete: string[]) => {
+    if (!selectedTestId) return;
 
-
-      const updatedCases = generatedCases.filter(tc => !idsToDelete.includes(tc.id));
-      const variation = {
-        id: crypto.randomUUID(),
-        testId: selectedTestId,
-        sourceTestId: selectedTestId,
-        timestamp: new Date().toISOString(),
-        cases: updatedCases,
-      };
-
-      await deleteVariation(variation);
-
-      setGeneratedCases(updatedCases);
-      setSelectedIds(prev => prev.filter(id => !idsToDelete.includes(id)));
-
-      if (editingId && idsToDelete.includes(editingId)) {
-        setEditingId(null);
-        setEditingState(null);
-      }
+    const updatedCases = generatedCases.filter(
+      (tc) => !idsToDelete.includes(tc.id)
+    );
+    const variation = {
+      id: crypto.randomUUID(),
+      testId: selectedTestId,
+      sourceTestId: selectedTestId,
+      timestamp: new Date().toISOString(),
+      cases: updatedCases,
     };
-  
+
+    await deleteVariation(variation);
+
+    setGeneratedCases(updatedCases);
+    setSelectedIds((prev) => prev.filter((id) => !idsToDelete.includes(id)));
+
+    if (editingId && idsToDelete.includes(editingId)) {
+      setEditingId(null);
+      setEditingState(null);
+    }
+  };
+
   const startEditing = (testCase: TestCase) => {
     setEditingId(testCase.id);
     setEditingState({
@@ -205,17 +205,17 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
   // }
 
   return (
-    <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+    <Card className="bg-background border-border border max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
       <CardHeader>
         <div className="flex justify-between items-center">
           {loading && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="fixed inset-0 flex items-center justify-center bg-background bg-opacity-50 z-50">
               <Loading size="lg" message="Generating test cases..." />
             </div>
           )}
 
-          {selectedTestId && (
-            generatedCases.length > 0 ? (
+          {selectedTestId &&
+            (generatedCases.length > 0 ? (
               <Button size="sm" onClick={addNewTestCase}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Test Case
@@ -234,7 +234,11 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
               ? "Deselect All"
               : "Select All"}
           </Button>
-          <Button size="sm" onClick={() => deleteTestCases(selectedIds)} variant="destructive">
+          <Button
+            size="sm"
+            onClick={() => deleteTestCases(selectedIds)}
+            variant="destructive"
+          >
             Delete Selected
           </Button>
         </div>
@@ -251,7 +255,7 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
                 className="mr-2"
               />
               {editingId === testCase.id ? (
-                <Card className="bg-black/20 border-zinc-800 p-4 flex-1">
+                <Card className="bg-background border-border border p-4 flex-1">
                   <CardContent className="pt-4 space-y-4 flex-1">
                     <div>
                       <label className="text-sm text-zinc-400">
@@ -266,7 +270,7 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
                           }))
                         }
                         placeholder="Describe the test scenario in plain English..."
-                        className="mt-1 w-full"
+                        className="mt-1 w-full h-24 overflow-y-auto"
                       />
                     </div>
                     <div>
@@ -282,13 +286,14 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
                           }))
                         }
                         placeholder="Describe what should happen..."
-                        className="mt-1 w-full"
+                        className="mt-1 w-full h-28 overflow-y-auto"
                       />
                     </div>
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 mb-2">
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="border border-zinc-800"
                         onClick={() => {
                           setEditingId(null);
                           setEditingState(null);
@@ -303,7 +308,7 @@ export function TestCaseVariations({ selectedTestId }: { selectedTestId: string 
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="bg-black/20 border-zinc-800">
+                <Card className="border border-border bg-background">
                   <CardContent className="pt-4">
                     <div className="flex justify-between items-start">
                       <div className="flex-1 space-y-4">
