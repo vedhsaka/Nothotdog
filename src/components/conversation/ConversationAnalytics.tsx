@@ -43,7 +43,7 @@ export function ConversationAnalytics({ history, aggregateMetrics }: Conversatio
     <div className="space-y-4">
       {/* Summary Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-black/40 border-zinc-800">
+        <Card className="border border-border bg-background">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Success Rate</CardTitle>
           </CardHeader>
@@ -54,7 +54,7 @@ export function ConversationAnalytics({ history, aggregateMetrics }: Conversatio
           </CardContent>
         </Card>
         
-        <Card className="bg-black/40 border-zinc-800">
+        <Card className="border border-border bg-background">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Avg Response Time</CardTitle>
           </CardHeader>
@@ -65,7 +65,7 @@ export function ConversationAnalytics({ history, aggregateMetrics }: Conversatio
           </CardContent>
         </Card>
         
-        <Card className="bg-black/40 border-zinc-800">
+        <Card className="border border-border bg-background">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Validation Score</CardTitle>
           </CardHeader>
@@ -76,7 +76,7 @@ export function ConversationAnalytics({ history, aggregateMetrics }: Conversatio
           </CardContent>
         </Card>
         
-        <Card className="bg-black/40 border-zinc-800">
+        <Card className="border border-border bg-background">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Context Relevance</CardTitle>
           </CardHeader>
@@ -89,7 +89,7 @@ export function ConversationAnalytics({ history, aggregateMetrics }: Conversatio
       </div>
 
       {/* Metrics Over Time */}
-      <Card className="bg-black/40 border-zinc-800">
+      <Card className="border border-border bg-background">
         <CardHeader>
           <CardTitle>Metrics Over Time</CardTitle>
         </CardHeader>

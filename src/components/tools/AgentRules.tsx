@@ -25,7 +25,7 @@ export default function AgentRules({ manualResponse, rules, setRules, agentId }:
       }, [originalRules, rules]);
 
     return (
-        <Card className="bg-black/40 border-zinc-800">
+        <Card className="border border-border bg-background  h-full">
         <CardHeader>
             <CardTitle>Validation Rules</CardTitle>
             <CardDescription>Click + next to response fields to add rules</CardDescription>
@@ -37,7 +37,7 @@ export default function AgentRules({ manualResponse, rules, setRules, agentId }:
                 {rules.map((rule, index) => (
                     <div
                     key={rule.id || `${rule.path}-${index}`}
-                    className="group bg-black/20 rounded-lg border border-zinc-800/50 hover:border-zinc-700/50 p-3"
+                    className="group bg-background rounded-[var(--radius)] border border-border/50 hover:border-zinc-700/50 p-3"
                     >
                     {/* Display the JSON path (read-only) */}
                     <div className="flex items-center gap-2 mb-2">
@@ -45,7 +45,7 @@ export default function AgentRules({ manualResponse, rules, setRules, agentId }:
                         type="text"
                         readOnly
                         value={rule.path}
-                        className="bg-black/20 border border-zinc-800 text-sm py-1 px-2 rounded-md flex-1 text-zinc-400 cursor-not-allowed"
+                        className="bg-background border border-border text-sm py-1 px-2 rounded-[var(--radius)] flex-1 text-zinc-400 cursor-not-allowed"
                         />
                         {/* Delete button */}
                         <Button
@@ -68,7 +68,7 @@ export default function AgentRules({ manualResponse, rules, setRules, agentId }:
                             updatedRules[index].condition = e.target.value as Rule["condition"];
                             setRules(updatedRules);
                         }}
-                        className="bg-black/20 border border-zinc-800 text-sm py-1 px-2 rounded-md"
+                        className="bg-background border border-border text-sm py-1 px-2 rounded-[var(--radius)]"
                         >
                         <option value="=">=</option>
                         <option value="!=">!=</option>
@@ -98,7 +98,7 @@ export default function AgentRules({ manualResponse, rules, setRules, agentId }:
                             updatedRules[index].value = e.target.value;
                             setRules(updatedRules);
                             }}
-                            className="flex-1 bg-black/20 border border-zinc-800 text-sm py-1 px-2 rounded-md"
+                            className="flex-1 bg-background border border-border text-sm py-1 px-2 rounded-[var(--radius)]"
                         />
                         )}
                     </div>
@@ -134,12 +134,12 @@ export default function AgentRules({ manualResponse, rules, setRules, agentId }:
                 </div>
                 </div>
             ) : (
-                <div className="text-zinc-500 text-center py-8 px-4 bg-black/20 rounded-lg border border-dashed border-zinc-800">
+                <div className="text-zinc-500 text-center py-8 px-4 bg-background rounded-[var(--radius)] border border-dashed border-border">
                 Click + next to response fields to add validation rules
                 </div>
             )
             ) : (
-            <div className="text-zinc-500 text-center py-8 px-4 bg-black/20 rounded-lg border border-dashed border-zinc-800">
+            <div className="text-zinc-500 text-center py-8 px-4 bg-background rounded-[var(--radius)] border border-dashed border-border">
                 Test the agent to add validation rules
             </div>
             )}

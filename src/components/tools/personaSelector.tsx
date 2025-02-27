@@ -59,7 +59,7 @@ export default function PersonaSelector({ selectedTest }: PersonaSelectorProps) 
     
 
     return (
-      <Card className="bg-black/40 border-zinc-800 h-full">
+      <Card className="bg-background border-border border h-full">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold">Select Testing Personas</CardTitle>
         </CardHeader>
@@ -72,7 +72,7 @@ export default function PersonaSelector({ selectedTest }: PersonaSelectorProps) 
                   className={cn(
                     "relative w-full h-auto p-4 flex flex-col items-start justify-start",
                     "text-left whitespace-normal break-words min-h-[80px]",
-                    selectedPersonas.includes(persona.id) ? "bg-zinc-800/50 hover:bg-zinc-800/70" : "bg-black/20 hover:bg-black/30"
+                    selectedPersonas.includes(persona.id) ? "bg-background/50 hover:bg-background/70" : "bg-background hover:bg-background/30"
                   )}
                   onClick={() => handlePersonaSelect(persona.id)}
                 >

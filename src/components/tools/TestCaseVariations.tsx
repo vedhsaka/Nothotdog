@@ -206,11 +206,11 @@ export function TestCaseVariations({
   // }
 
   return (
-    <Card className="bg-black/40 border-zinc-800 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+    <Card className="bg-background border-border border max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
       <CardHeader>
         <div className="flex justify-between items-center">
           {loading && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="fixed inset-0 flex items-center justify-center bg-background bg-opacity-50 z-50">
               <Loading size="lg" message="Generating test cases..." />
             </div>
           )}
@@ -256,8 +256,8 @@ export function TestCaseVariations({
                 className="mr-2"
               />
               {editingId === testCase.id ? (
-                <Card className="bg-black/20 border-zinc-800 p-1 flex-1 mb-2">
-                  <CardContent className="space-y-4 flex-1 mt-2">
+                <Card className="bg-background border-border border p-4 flex-1">
+                  <CardContent className="pt-4 space-y-4 flex-1">
                     <div>
                       <label className="text-sm text-zinc-400">
                         Test Scenario
@@ -309,7 +309,7 @@ export function TestCaseVariations({
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="bg-black/20 border-zinc-800">
+                <Card className="border border-border bg-background">
                   <CardContent className="pt-4">
                     <div className="flex justify-between items-start">
                       <div className="flex-1 space-y-4">

@@ -96,7 +96,7 @@
 //   return (
 //     <div className="space-y-4">
 //       {rules.length > 0 && (
-//         <Card className="bg-black/40 border-zinc-800">
+//         <Card className="bg-background/40 border-border">
 //           <CardContent className="pt-4 space-y-2">
 //             {rules.map((rule, index) => (
 //               <div key={index} className="flex items-center gap-2">
@@ -104,7 +104,7 @@
 //                 <select
 //                   value={rule.condition}
 //                   onChange={(e) => updateRule(index, { condition: e.target.value as Rule['condition'] })}
-//                   className="w-[120px] bg-black/40 border border-zinc-800 rounded-md px-2 py-1 text-sm"
+//                   className="w-[120px] bg-background/40 border border-border rounded-[var(--radius)] px-2 py-1 text-sm"
 //                 >
 //                   <option value="=">=</option>
 //                   <option value=">">{">"}</option>

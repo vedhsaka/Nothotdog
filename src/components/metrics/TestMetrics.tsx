@@ -12,7 +12,7 @@ export function TestMetrics({ run }: TestMetricsProps) {
   const overallSuccess = run.metrics.total > 0 ? (run.metrics.passed / run.metrics.total) : 0;
 
   return (
-    <Card className="bg-black/40 border-zinc-800">
+    <Card className="border border-border bg-background">
       <CardHeader>
         <CardTitle>Test Metrics</CardTitle>
       </CardHeader>
