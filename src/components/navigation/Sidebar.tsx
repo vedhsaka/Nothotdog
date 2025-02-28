@@ -7,6 +7,7 @@ import {
   Users,
   PlayCircle,
   Moon,
+  ChartBarStacked,
   Sun,
 } from 'lucide-react'
 import { useTheme } from "next-themes"
@@ -35,6 +36,11 @@ export default function Sidebar() {
       label: 'Runs',
       icon: PlayCircle,
       href: '/tools/runs'
+    },
+    {
+      label: 'Metrics',
+      icon: ChartBarStacked,
+      href: '/tools/metrics'
     }
   ]
   
