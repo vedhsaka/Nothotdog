@@ -21,7 +21,7 @@ export function useAgentConfig() {
   const [testName, setTestName] = useState("");
   const [agentEndpoint, setAgentEndpoint] = useState("");
   const [headers, setHeaders] = useState<Header[]>([{ key: "", value: "" }]);
-  const [manualInput, setManualInput] = useState("");
+  const [body, setbody] = useState("");
   const [manualResponse, setManualResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [responseTime, setResponseTime] = useState(0);
@@ -91,7 +91,7 @@ export function useAgentConfig() {
         setAgentDescription(data.agentDescription || "");
         setUserDescription(data.userDescription || "");
         setRules(data.rules || []);
-        setManualInput(typeof data.inputFormat === 'object' ? JSON.stringify(data.inputFormat, null, 2) : data.inputFormat || "");
+        setbody(typeof data.inputFormat === 'object' ? JSON.stringify(data.inputFormat, null, 2) : data.inputFormat || "");
         setManualResponse(typeof data.latestOutput?.responseData === 'object'
             ? JSON.stringify(data.latestOutput.responseData, null, 2)
             : data.latestOutput?.responseData || ""
@@ -109,10 +109,20 @@ export function useAgentConfig() {
     setLoading(true);
     const startTime = Date.now();
     try {
+      let parsedBody;
+      try {
+        parsedBody = JSON.parse(body);
+      } catch (parseError) {
+        console.error("Invalid JSON in body:", parseError);
+        setManualResponse("Error: Your input is not valid JSON");
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(agentEndpoint, {
         method: "POST",
         headers: Object.fromEntries(headers.map(h => [h.key, h.value])),
-        body: JSON.stringify(JSON.parse(manualInput))
+        body: JSON.stringify(parsedBody)
       });
       const data = await response.json();
       setManualResponse(JSON.stringify(data, null, 2));
@@ -130,7 +140,7 @@ export function useAgentConfig() {
         name: testName,
         endpoint: agentEndpoint,
         headers: Object.fromEntries(headers.map(h => [h.key, h.value])),
-        input: manualInput,
+        input: body,
         agent_response: manualResponse,
         rules,
         responseTime,
@@ -160,7 +170,7 @@ export function useAgentConfig() {
     testName, setTestName,
     agentEndpoint, setAgentEndpoint,
     headers, setHeaders,
-    manualInput, setManualInput,
+    body, setbody,
     manualResponse, setManualResponse,
     loading, responseTime, setResponseTime,
     rules, setRules,
