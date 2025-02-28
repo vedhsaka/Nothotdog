@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useAgentConfig } from "@/hooks/useAgentConfig";
 import AgentSetup from "@/components/tools/AgentSetup";
-import AgentInput from "@/components/tools/AgentInput";
 import AgentResponse from "@/components/tools/AgentResponse";
 import AgentRules from "@/components/tools/AgentRules";
 import AgentDescription from "@/components/tools/agentDescription";
@@ -16,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MessageSquare } from "lucide-react";
 
 export default function ToolsPage() {
   const {
@@ -26,8 +25,6 @@ export default function ToolsPage() {
     setAgentEndpoint,
     headers,
     setHeaders,
-    manualInput,
-    setManualInput,
     manualResponse,
     loading,
     responseTime,
@@ -43,10 +40,11 @@ export default function ToolsPage() {
     testManually,
     saveTest,
     currentAgentId,
+    body,
+    setbody,
   } = useAgentConfig();
 
   const [activeTab, setActiveTab] = useState("description");
-  const [body, setBody] = useState("");
 
   return (
     <div className="relative min-h-screen p-6">
@@ -142,8 +140,16 @@ export default function ToolsPage() {
                 headers={headers}
                 setHeaders={setHeaders}
                 body={body}
-                setBody={setBody}
+                setBody={setbody}
               />
+              <Button
+                onClick={testManually}
+                disabled={loading || !body || !agentEndpoint}
+                className="w-full mt-4"
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                {loading ? "Testing..." : "Test Agent"}
+            </Button>
             </div>
             <div className="flex flex-col">
               <AgentRules
