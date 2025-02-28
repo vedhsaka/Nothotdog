@@ -4,9 +4,6 @@ import { SimplifiedTestCases, TestVariation } from '@/types/variations';
 import { PersonaMappings } from '@/types/persona-mapping';
 import { Rule } from '../agents/claude/types';
 
-const DEFAULT_USER_ID = '11111111-1111-1111-1111-111111111111';
-const DEFAULT_ORG_ID = '00000000-0000-0000-0000-000000000000';
-
 export class DbService {
   private static instance: DbService;
 
@@ -19,36 +16,23 @@ export class DbService {
     return DbService.instance;
   }
 
-  async initialize() {
-    await prisma.organizations.upsert({
-      where: { id: DEFAULT_ORG_ID },
-      update: {},
-      create: {
-        id: DEFAULT_ORG_ID,
-        name: 'Default Organization'
-      }
-    });
-
-    await prisma.profiles.upsert({
-      where: { id: DEFAULT_USER_ID },
-      update: {},
-      create: {
-        id: DEFAULT_USER_ID,
-        clerk_id: 'default',
-        org_id: DEFAULT_ORG_ID
-      }
-    });
-  }
-
-  async getAgentConfigs(): Promise<any[]> {
+  async getAgentConfigs(userId: string): Promise<any[]> {
     const configs = await prisma.agent_configs.findMany({
-      where: { org_id: DEFAULT_ORG_ID },
+      where: {
+        organizations: {
+          profiles: {
+            some: {
+              clerk_id: userId
+            }
+          }
+        }
+      },
       include: {
         agent_headers: true,
         agent_persona_mappings: true,
       },
     });
-
+  
     return configs.map(config => ({
       id: config.id,
       name: config.name,
@@ -59,6 +43,7 @@ export class DbService {
       }), {}),
     }));
   }
+  
 
   async getAgentConfigAll(id: string) {
     const config = await prisma.agent_configs.findUnique({
@@ -68,7 +53,6 @@ export class DbService {
         agent_descriptions: true,
         agent_user_descriptions: true,
         validation_rules: true,
-        // Remove test_scenarios since we don't need them
         agent_outputs: {
           orderBy: { created_at: 'desc' },
           take: 1
@@ -104,91 +88,95 @@ export class DbService {
   }
 
   async saveAgentConfig(configData: any) {
-    const parsedResponse = this.safeJsonParse(configData.agent_response);
-    let input_format = this.safeJsonParse(configData.input);
-
-    if (configData.id) {
-      // Update existing config
-      return prisma.agent_configs.update({
-        where: { id: configData.id },
-        data: {
-          name: configData.name,
-          endpoint: configData.endpoint,
-          input_format: input_format,
-          agent_headers: {
-            deleteMany: {},
-            create: Object.entries(configData.headers).map(([key, value]) => ({
-              key,
-              value: String(value),
-            }))
-          },
-          agent_descriptions: {
-            deleteMany: {},
-            create: { description: configData.agentDescription }
-          },
-          agent_user_descriptions: {
-            deleteMany: {},
-            create: { description: configData.userDescription }
-          },
-          validation_rules: {
-            deleteMany: {},
-            create: configData.rules.map((rule: any) => ({
-              path: rule.path,
-              condition: rule.condition,
-              expected_value: rule.value,
-              description: rule.description || ""
-            }))
-          },
-          agent_outputs: {
-            deleteMany: {},
-            create: {
-              response_data: parsedResponse,
-              response_time: configData.responseTime,
-              status: "success",
-              error_message: ""
+    try {
+      const parsedResponse = this.safeJsonParse(configData.agent_response);
+      let input_format = this.safeJsonParse(configData.input);
+  
+      if (configData.id) {
+        // Update existing config
+        return prisma.agent_configs.update({
+          where: { id: configData.id },
+          data: {
+            name: configData.name,
+            endpoint: configData.endpoint,
+            input_format: input_format,
+            agent_headers: {
+              deleteMany: {},
+              create: Object.entries(configData.headers).map(([key, value]) => ({
+                key,
+                value: String(value),
+              }))
+            },
+            agent_descriptions: {
+              deleteMany: {},
+              create: { description: configData.agentDescription }
+            },
+            agent_user_descriptions: {
+              deleteMany: {},
+              create: { description: configData.userDescription }
+            },
+            validation_rules: {
+              deleteMany: {},
+              create: configData.rules.map((rule: any) => ({
+                path: rule.path,
+                condition: rule.condition,
+                expected_value: rule.value,
+                description: rule.description || ""
+              }))
+            },
+            agent_outputs: {
+              deleteMany: {},
+              create: {
+                response_data: parsedResponse,
+                response_time: configData.responseTime,
+                status: "success",
+                error_message: ""
+              }
             }
           }
-        }
-      });
-    } else {
-      // Create new config
-      return prisma.agent_configs.create({
-        data: {
-          name: configData.name,
-          endpoint: configData.endpoint,
-          input_format: input_format,
-          org_id: DEFAULT_ORG_ID,
-          created_by: DEFAULT_USER_ID,
-          agent_headers: {
-            create: Object.entries(configData.headers).map(([key, value]) => ({
-              key,
-              value: String(value),
-            }))
-          },
-          agent_descriptions: {
-            create: { description: configData.agentDescription }
-          },
-          agent_user_descriptions: {
-            create: { description: configData.userDescription }
-          },
-          validation_rules: {
-            create: configData.rules.map((rule: any) => ({
-              path: rule.path,
-              condition: rule.condition,
-              expected_value: rule.value,
-              description: rule.description || ""
-            }))
-          },
-          agent_outputs: {
-            create: {
-              response_data: parsedResponse,
-              response_time: configData.responseTime,
-              status: "success",
-              error_message: ""
+        });
+      } else {
+        return prisma.agent_configs.create({
+          data: {
+            name: configData.name,
+            endpoint: configData.endpoint,
+            input_format: input_format,
+            org_id: configData.org_id,
+            created_by: configData.created_by,
+            agent_headers: {
+              create: Object.entries(configData.headers).map(([key, value]) => ({
+                key,
+                value: String(value),
+              }))
+            },
+            agent_descriptions: {
+              create: { description: configData.agentDescription }
+            },
+            agent_user_descriptions: {
+              create: { description: configData.userDescription }
+            },
+            validation_rules: {
+              create: configData.rules.map((rule: any) => ({
+                path: rule.path,
+                condition: rule.condition,
+                expected_value: rule.value,
+                description: rule.description || ""
+              }))
+            },
+            agent_outputs: {
+              create: {
+                response_data: parsedResponse,
+                response_time: configData.responseTime,
+                status: "success",
+                error_message: ""
+              }
             }
           }
-        }
-      });
+        });
+      }
+    } catch (error) {
+      console.error("Error saving agent config:", error);
+      throw error;
     }
   }
   
@@ -236,11 +224,17 @@ export class DbService {
     });
   }
   
-  async getPersonaMappings(): Promise<PersonaMappings> {
+  async getPersonaMappings(userId: string): Promise<PersonaMappings> {
     const mappings = await prisma.agent_persona_mappings.findMany({
       where: {
         agent_configs: {
-          org_id: DEFAULT_ORG_ID
+          organizations: {
+            profiles: {
+              some: {
+                clerk_id: userId
+              }
+            }
+          }
         }
       }
     });
@@ -358,10 +352,29 @@ export class DbService {
     return this.getPersonaMappingByAgentId(agentId);
   }
 
-  async getPersonas(): Promise<any[]> {
-    return prisma.personas.findMany({
-      where: { org_id: '00000000-0000-0000-0000-000000000000' },
-    });
+  async getPersonas(userId: string): Promise<any[]> {
+    try {
+      const profile = await prisma.profiles.findUnique({
+        where: { clerk_id: userId }
+      });
+      
+      if (!profile || !profile.org_id) {
+        return [];
+      }
+      
+      const personas = await prisma.personas.findMany({
+        where: {
+          OR: [
+            { org_id: profile.org_id },
+            { org_id: '00000000-0000-0000-0000-000000000000'}
+          ]
+        }
+      });
+      
+      return personas;
+    } catch (error) {
+      return [];
+    }
   }
 
   async updateValidationRules(agentId: string, rules: Rule[]) {
@@ -474,7 +487,53 @@ export class DbService {
       createdBy: run.created_by,
     }));
   }
-  
+
+  async signupUser(data: { 
+    clerkId: string; 
+    orgName: string; 
+    orgDescription: string; 
+    role: string; 
+    status: string; 
+  }) {
+    const { clerkId, orgName, orgDescription, role, status } = data;
+    return await prisma.$transaction(async (tx) => {
+      const newOrg = await tx.organizations.create({
+        data: {
+          name: orgName,
+          description: orgDescription,
+        },
+      });
+      const newProfile = await tx.profiles.create({
+        data: {
+          clerk_id: clerkId,
+          org_id: newOrg.id,
+        },
+      });
+      const newOrgMember = await tx.org_members.create({
+        data: {
+          org_id: newOrg.id,
+          user_id: newProfile.id,
+          role,
+          status,
+        },
+      });
+      return { organization: newOrg, profile: newProfile, orgMember: newOrgMember };
+    });
+  }
+
+  async getProfileByClerkId(clerkId: string) {
+    return prisma.profiles.findUnique({
+      where: { clerk_id: clerkId }
+    });
+  }
+
+  async getOrganization(orgId: string) {
+    return prisma.organizations.findUnique({
+      where: { id: orgId }
+    });
+  }
+
+
 
 }
 

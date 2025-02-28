@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
+    "@clerk/nextjs": "^6.10.6",
     "@langchain/anthropic": "^0.3.12",
     "@langchain/core": "^0.3.33",
     "@prisma/client": "^6.3.1",

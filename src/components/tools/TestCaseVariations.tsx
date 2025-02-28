@@ -30,16 +30,15 @@ export function TestCaseVariations({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showApiKeyWarning, setShowApiKeyWarning] = useState(false);
-  const {
-    variationData,
-    loading,
-    error,
+  const { 
+    variationData, 
+    loading, 
+    error, 
     addVariation,
     updateVariation,
     deleteVariation,
-    setLoading,
+    setLoading
   } = useTestVariations(selectedTestId);
-
   useEffect(() => {
     if (variationData && selectedTestId) {
       setGeneratedCases(
