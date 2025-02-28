@@ -19,7 +19,6 @@ export default function SignupHandler() {
           const isNewUser = createdAtSec === lastSignInAtSec;
   
           if (isNewUser) {
-            console.log("New user detected");
             const payload = {
               clerkId: user.id,
               orgName: user.firstName + `'s organization` || "Default Organization",
@@ -34,7 +33,6 @@ export default function SignupHandler() {
                 body: JSON.stringify(payload),
               });
               const data = await res.json();
-              console.log("Signup API result:", data);
             } catch (err) {
               console.error("Failed to call signup API:", err);
             }
